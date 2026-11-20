@@ -1,0 +1,1000 @@
+    W=0;H=0;
+    R.stats.quality=Q.name;
+  }
+
+  /* ---------- svetlo i okruženje (realistican nocni kontrast i prirodan ambijent) ---------- */
+  function lighting(S){
+    const a=(S.hour-6)/24*TAU,el=[.78,.92,.7,.46][clamp(S.season|0,0,3)],y=Math.sin(a)*el,hz=Math.sqrt(Math.max(0,1-y*y)),sun=[Math.cos(a)*hz,y,Math.sin(a)*hz];
+    const rainK=1-.78*S.rain,day=smoothstep(-.02,.24,sun[1]),night=smoothstep(.02,.3,-sun[1]);
+    let Ld,Lc;
+    if(sun[1]>=0){const w=smoothstep(.04,.5,sun[1]);Ld=sun;Lc=[1,lerp(.52,.93,w),lerp(.28,.82,w)].map(v=>v*2.15*day*rainK)}
+    else{Ld=[-sun[0],-sun[1],-sun[2]];Lc=[.40,.54,.96].map(v=>v*.88*night*(1-.68*S.rain))}
+    const sd=Math.max(.0,S.dusk),dim=1-.42*S.rain;
+    const skyAmb=[lerp(.31,.046,sd),lerp(.41,.078,sd),lerp(.60,.185,sd)].map(v=>v*dim);
+    const gndAmb=[lerp(.15,.018,sd),lerp(.145,.024,sd),lerp(.11,.038,sd)].map(v=>v*dim);
+    const sdir=[...Ld];if(sdir[1]<.22){const k=Math.sqrt((1-.0484)/(Math.max(1e-4,sdir[0]*sdir[0]+sdir[2]*sdir[2])));sdir[0]*=k;sdir[2]*=k;sdir[1]=.22}
+    return {sun,Ld,Lc,skyAmb,gndAmb,sdir,lightOn:Lc[0]+Lc[1]+Lc[2]>.01};
+  }
+
+  /* ---------- crtanje ---------- */
+  function drawList(list){let first=-1,cnt=0,calls=0,tris=0;for(const c of list){if(first>=0&&c.first===first+cnt)cnt+=c.count;else{if(cnt){gl.drawArrays(gl.TRIANGLES,first,cnt);calls++;tris+=cnt/3}first=c.first;cnt=c.count}}if(cnt){gl.drawArrays(gl.TRIANGLES,first,cnt);calls++;tris+=cnt/3}R.stats.draws+=calls;R.stats.tris+=tris}
+  function drawDyn(){if(!dyn.verts)return;gl.bindVertexArray(dyn.vao);gl.drawArrays(gl.TRIANGLES,0,dyn.verts);R.stats.draws++;R.stats.tris+=dyn.verts/3}
+  function cascadeMatrix(Ld,center,Rr,Sz){
+    const D=Rr+170,lk=M4.lookDir([0,0,0],[-Ld[0],-Ld[1],-Ld[2]]),X=lk.x,Y=lk.y,tex=2*Rr/Sz;
+    const dx=center[0]*X[0]+center[1]*X[1]+center[2]*X[2],dy=center[0]*Y[0]+center[1]*Y[1]+center[2]*Y[2],sx=Math.round(dx/tex)*tex-dx,sy=Math.round(dy/tex)*tex-dy;
+    const C=[center[0]+X[0]*sx+Y[0]*sy,center[1]+X[1]*sx+Y[1]*sy,center[2]+X[2]*sx+Y[2]*sy],eye=[C[0]+Ld[0]*D,C[1]+Ld[1]*D,C[2]+Ld[2]*D];
+    const view=M4.lookDir(eye,[-Ld[0],-Ld[1],-Ld[2]]).m,proj=M4.ortho(-Rr,Rr,-Rr,Rr,1,D+Rr+60);
+    return {vp:M4.mul(proj,view),C,X,Y,L:Ld,R:Rr,D};
+  }
+  function casterList(cm){const out=[];for(const c of stat.chunks){const px=c.c[0]-cm.C[0],py=c.c[1]-cm.C[1],pz=c.c[2]-cm.C[2],lx=px*cm.X[0]+py*cm.X[1]+pz*cm.X[2],ly=px*cm.Y[0]+py*cm.Y[1]+pz*cm.Y[2],lz=px*cm.L[0]+py*cm.L[1]+pz*cm.L[2],r=c.r;
+      if(Math.abs(lx)>cm.R+r||Math.abs(ly)>cm.R+r||lz+r<-(cm.R+40)||lz-r>cm.D-1)continue;out.push(c)}return out}
+
+  const lights12=new Float32Array(36);
+  R.frame=function(S){
+    const t0=performance.now();R.stats.draws=0;R.stats.tris=0;R.stats.shadowDraws=0;
+    if(S.quality!==curQ||(curQ>=0&&!sunSh&&Q.sh)){const first=curQ<0;applyQuality(S.quality);if(first)setAniso(Q.aniso)}
+    ensureTargets(S.W,S.H);
+    const eye=S.eye,interior=!!S.interior,town=!interior&&!S.cineSet;
+    const proj=M4.persp(S.fov,S.W/S.H,S.near,S.far),view=M4.look(eye,S.target,S.roll),vp=M4.mul(proj,view),planes=M4.planes(vp);
+    const LT=lighting(S);if(interior){LT.Lc=[0,0,0];LT.lightOn=false;LT.skyAmb=[.62,.56,.48];LT.gndAmb=[.34,.3,.25]}
+    uploadDyn(S.dyn);
+    if(town)veg.prepare(eye,planes,Q,aabbVisible,S.grass);R.stats.grassClumps=town?veg.grassCount||0:0;R.stats.trees=0;
+    // Pripremi niz od 12 svetala (podrzava i stare 6-light i nove 12-light ulaze)
+    if(S.lights&&S.lights.length>=36)lights12.set(S.lights.subarray(0,36));
+    else{lights12.fill(1e4);if(S.lights)lights12.set(S.lights.subarray(0,Math.min(36,S.lights.length)))}
+    gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.colorMask(true,true,true,true);gl.disable(gl.CULL_FACE);gl.disable(gl.SCISSOR_TEST);
+
+    const fogDens=(S.fogDens!=null?S.fogDens:.00165)*(1+S.rain*1.55+S.dusk*(/[?&]cinema=0/.test(location.search)?.85:1.25)),fogEnd=S.fogEnd||250;
+    const vis=[];R.stats.visChunks=0;
+    if(town){
+      const far=Math.max(fogEnd+45,130),far2=far*far;
+      for(const c of stat.chunks){const dx=Math.max(c.min[0]-eye[0],0,eye[0]-c.max[0]),dz=Math.max(c.min[2]-eye[2],0,eye[2]-c.max[2]);if(dx*dx+dz*dz>far2)continue;if(!aabbVisible(planes,c.min,c.max))continue;vis.push(c)}
+      R.stats.visChunks=vis.length;
+    }
+
+    /* 1) senka sunca/meseca (2-cascade atlas) */
+    const casc=[],cs=Q.nc===1?[Math.min(95,S.far*.2)]:[26,112];
+    const fwd=[S.target[0]-eye[0],S.target[1]-eye[1],S.target[2]-eye[2]],fl=Math.hypot(...fwd)||1;
+    const useSun=!!(sunSh&&LT.lightOn&&!interior);
+    if(useSun){
+      gl.bindFramebuffer(gl.FRAMEBUFFER,sunSh.f);gl.drawBuffers([gl.NONE]);gl.viewport(0,0,sunSh.w,sunSh.h);gl.clearDepth(1);gl.clear(gl.DEPTH_BUFFER_BIT);
+      const sp=prog('shadow',VS_SHADOW,FS_DEPTH);gl.useProgram(sp);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(1.4,2.6);
+      for(let i=0;i<cs.length;i++){const Rr=cs[i],ctr=[eye[0]+fwd[0]/fl*Rr*.32,eye[1]+fwd[1]/fl*Rr*.32-1,eye[2]+fwd[2]/fl*Rr*.32],cm=cascadeMatrix(LT.sdir,ctr,Rr,sunS);casc.push(cm);
+        gl.viewport(i*sunS,0,sunS,sunS);gl.useProgram(sp);sp.m4('uVP',cm.vp);gl.bindVertexArray(stat.vao);const list=town?casterList(cm):[];const before=R.stats.draws;drawList(list);drawDyn();if(town&&veg.n){const tp=prog('treeSh',VS_TREE,FS_TREE_DEPTH);gl.useProgram(tp);tp.m4('uVP',cm.vp);tp.f1('uTime',S.time);tp.f1('uWind',S.wind||0);tp.f1('uSeason',S.season);veg.draw(true)}R.stats.shadowDraws+=R.stats.draws-before}
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+    }
+
+    /* 2) senka baterijske lampe */
+    let spotVP=null,useSpot=false;
+    if(spotSh&&S.torch>.02&&!S.noTorchShadow){
+      const dir=S.torchDir,fov=Math.min(2.2,2*Math.acos(clamp(S.beam[0],.2,.999))+.16),pr=M4.persp(fov,1,.3,54),vw=M4.lookDir(S.torchPos,dir).m;spotVP=M4.mul(pr,vw);useSpot=true;
+      gl.bindFramebuffer(gl.FRAMEBUFFER,spotSh.f);gl.drawBuffers([gl.NONE]);gl.viewport(0,0,spotSh.w,spotSh.h);gl.clear(gl.DEPTH_BUFFER_BIT);
+      const sp=prog('shadow',VS_SHADOW,FS_DEPTH);gl.useProgram(sp);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(1.8,3.6);sp.m4('uVP',spotVP);gl.bindVertexArray(interior?inner.vao:stat.vao);
+      if(interior){gl.drawArrays(gl.TRIANGLES,0,inner.verts)}else{const list=[];for(const c of stat.chunks){const px=c.c[0]-S.torchPos[0],py=c.c[1]-S.torchPos[1],pz=c.c[2]-S.torchPos[2],d=Math.hypot(px,py,pz);if(d-c.r>56)continue;if(px*dir[0]+py*dir[1]+pz*dir[2]<-c.r)continue;list.push(c)}drawList(list);drawDyn()}
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+    }
+
+    /* 2.5) Depth Pre-Pass + SSAO + Bilateral Blur (VISOKO / ULTRA / ULTRA MAX) */
+    const useAO=!!(Q.ssao>0&&T.ao0&&T.ao1);
+    if(useAO){
+      gl.bindFramebuffer(gl.FRAMEBUFFER,T.hdr.f);gl.viewport(0,0,W,H);
+      gl.colorMask(false,false,false,false);gl.clearDepth(1);gl.clear(gl.DEPTH_BUFFER_BIT);
+      const pp=prog('prepass',VS_PREPASS,FS_DEPTH);gl.useProgram(pp);pp.m4('uVP',vp);pp.v3('uEye',eye);
+      if(interior){gl.bindVertexArray(inner.vao);gl.drawArrays(gl.TRIANGLES,0,inner.verts);drawDyn()}
+      else{
+        gl.bindVertexArray(stat.vao);drawList(vis);
+        drawDyn();
+        if(town&&veg.n){const tp=prog('treeDepth',VS_TREE,FS_TREE_DEPTH);gl.useProgram(tp);tp.m4('uVP',vp);tp.f1('uTime',S.time);tp.f1('uWind',S.wind||0);tp.f1('uSeason',S.season);veg.draw(false)}
+      }
+      gl.colorMask(true,true,true,true);
+      // SSAO prolaz u pola rezolucije
+      const taps=Q.ssao>=2?14:8;
+      const aop=prog('ssao',VS_FS,FS_SSAO,'#define SSAO_TAPS '+taps+'\n'+(curQ>=3?'#define CONTACT\n':''));gl.useProgram(aop);
+      gl.disable(gl.DEPTH_TEST);gl.bindVertexArray(emptyVAO);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,T.ao0.f);gl.viewport(0,0,T.ao0.w,T.ao0.h);
+      gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,T.hdr.d);
+      aop.i1('uDepth',0);aop.m4('uInvP',M4.inv(proj));aop.m4('uProj',proj);
+      aop.v3('uViewLight',[0,1,2].map(row=>view[row]*LT.Ld[0]+view[4+row]*LT.Ld[1]+view[8+row]*LT.Ld[2]));
+      aop.f1('uRadius',interior?.55:.88);aop.f1('uBias',.045);
+      gl.drawArrays(gl.TRIANGLES,0,3);
+      // Separabilni bilateralni blur (cuva ostre ivice fasada i trotoara)
+      const blp=prog('ssaoBlur',VS_FS,FS_SSAO_BLUR);gl.useProgram(blp);blp.i1('uSrc',0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,T.ao1.f);gl.bindTexture(gl.TEXTURE_2D,T.ao0.c);blp.f2('uDir',1/T.ao0.w,0);gl.drawArrays(gl.TRIANGLES,0,3);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,T.ao0.f);gl.bindTexture(gl.TEXTURE_2D,T.ao1.c);blp.f2('uDir',0,1/T.ao0.h);gl.drawArrays(gl.TRIANGLES,0,3);
+      gl.enable(gl.DEPTH_TEST);
+    }
+
+    /* 3) glavni PBR prolaz u HDR */
+    gl.bindFramebuffer(gl.FRAMEBUFFER,T.hdr.f);gl.drawBuffers([gl.COLOR_ATTACHMENT0]);gl.viewport(0,0,W,H);
+    gl.clearColor(.018,.026,.038,0);gl.clearDepth(1);
+    gl.clear(useAO?gl.COLOR_BUFFER_BIT:(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT));
+    gl.depthFunc(useAO?gl.EQUAL:gl.LEQUAL);gl.depthMask(!useAO);
+    const defs=(useSun?'#define SUN_SHADOW\n#define SHADOW_TAPS '+Q.taps+'\n':'')+(spotSh?'#define SPOT_SHADOW\n':'')+(useAO?'#define SSAO\n':'')+(Q.vol?'#define VOL_FOG\n':'')+(Q.tri?'#define TRIPLANAR\n':'')+(Q.nmap?'#define NORMALMAP\n':'')+(curQ>=3?'#define KB_ARCH_HIGH\n':'')+(curQ>=4?'#define KB_ARCH_MAX\n':'');
+    const mp=prog('main',VS_MAIN,FS_MAIN,defs);gl.useProgram(mp);
+    const setMain=(mp)=>{
+      mp.m4('uVP',vp);mp.v3('uEye',eye);mp.v3('uLDir',LT.Ld);mp.v3('uSunDir',LT.sun);mp.v3('uLCol',LT.Lc);mp.v3('uSkyAmb',LT.skyAmb);mp.v3('uGndAmb',LT.gndAmb);
+      mp.f2('uFog',48,fogEnd);mp.f1('uFogDens',fogDens);mp.f1('uGroundY',S.groundY||0);mp.f1('uSeason',S.season);mp.f1('uTorch',S.torch);mp.f1('uMorse',S.morse==null?1:S.morse);
+      mp.v3('uTorchPos',S.torchPos);mp.v3('uTorchDir',S.torchDir);mp.f2('uBeam',S.beam[0],S.beam[1]);
+      {const l=mp.u('uLights[0]');if(l)gl.uniform3fv(l,lights12)}
+      const colors=mp.u('uLightRGB[0]'),lobes=mp.u('uLobe[0]');
+      const windows=mp.u('uWindows[0]');if(windows)gl.uniform4fv(windows,S.windows);
+      if(colors)gl.uniform3fv(colors,S.lightRGB);if(lobes)gl.uniform4fv(lobes,S.lobes);
+      mp.v3('uSignal',S.signal||[1e5,1e5,1e5]);mp.v3('uFlashPos',S.torchPos);mp.f1('uFlash',S.flash);
+      mp.f1('uDusk',interior?1:S.dusk);mp.f1('uRain',S.rain);mp.f1('uTime',S.time);mp.f1('uWet',Math.min(1,S.rain*1.35));mp.f1('uInterior',interior?1:0);mp.f1('uTexOn',1);
+      mp.f1('uAOOn',useAO?1:0);mp.f2('uInvRes',1/W,1/H);
+      if(useSun){const l=mp.u('uSunVP[0]');const buf=new Float32Array(32);buf.set(casc[0].vp,0);buf.set((casc[1]||casc[0]).vp,16);gl.uniformMatrix4fv(l,false,buf);mp.f2('uCasc',cs[0],cs[1]||cs[0]);mp.f1('uCascN',cs.length);mp.f2('uShadowTexel',1/sunSh.w,1/sunSh.h);
+        gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sunSh.tex);mp.i1('uSunShadow',0)}
+      if(spotSh){mp.f1('uSpotOn',useSpot?1:0);mp.f2('uSpotTexel',1/spotSh.w,1/spotSh.h);if(useSpot)mp.m4('uSpotVP',spotVP);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,spotSh.tex);mp.i1('uSpotShadow',1)}
+      gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D_ARRAY,texA);mp.i1('uTexA',2);gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D_ARRAY,texN);mp.i1('uTexN',3);
+      gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,terr.n||dummyTex);mp.i1('uTerrN',4);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,terr.m||dummyTex);mp.i1('uTerrM',5);gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,sign.t||dummyTex);mp.i1('uSign',6);
+      gl.activeTexture(gl.TEXTURE7);gl.bindTexture(gl.TEXTURE_2D,useAO?T.ao0.c:dummyTex);mp.i1('uAO',7);
+      mp.v3('uTerrBox',terr.box);mp.f1('uTerrOn',town?terr.on:0);
+    };
+    setMain(mp);
+    gl.activeTexture(gl.TEXTURE0);
+    if(interior){gl.bindVertexArray(inner.vao);gl.drawArrays(gl.TRIANGLES,0,inner.verts);R.stats.draws++;R.stats.tris+=inner.verts/3;drawDyn()}
+    else{
+      gl.bindVertexArray(stat.vao);
+      drawList(vis);
+      if(town&&veg.n){const tp=prog('tree',VS_TREE,FS_MAIN,defs);gl.useProgram(tp);setMain(tp);tp.m4('uVP',vp);tp.f1('uTime',S.time);tp.f1('uWind',S.wind||0);tp.f1('uSeason',S.season);const tr=veg.draw(false);R.stats.tris+=tr;R.stats.trees=veg.drawn;gl.useProgram(mp);gl.bindVertexArray(stat.vao)}
+      drawDyn();
+    }
+    gl.depthFunc(gl.LEQUAL);gl.depthMask(true);
+    if(!interior){
+      const sk=prog('sky',VS_SKY,FS_SKY,(Q.clouds?'#define CLOUDS\n#define CLOUD_OCT '+Math.max(1,Q.clouds)+'\n':''));gl.useProgram(sk);
+      gl.depthMask(false);gl.depthFunc(gl.LEQUAL);
+      sk.m4('uInvVP',M4.inv(vp));sk.v3('uEye',eye);sk.v3('uSunDir',LT.sun);sk.v3('uLDir',LT.Ld);sk.f1('uDusk',S.dusk);sk.f1('uRain',S.rain);sk.f1('uFlash',S.flash);sk.f1('uTime',S.time);
+      gl.bindVertexArray(emptyVAO);gl.drawArrays(gl.TRIANGLES,0,3);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
+    }
+    if(!interior){
+      if(town&&wire.n){const wp=prog('wire',VS_WIRE,FS_WIRE);gl.useProgram(wp);wp.m4('uVP',vp);wp.v3('uEye',eye);wp.f2('uFog',48,fogEnd);wp.f1('uFogDens',fogDens);wp.f1('uGroundY',S.groundY||0);wp.v3('uSkyAmb',LT.skyAmb);wp.v3('uLCol',LT.Lc);wp.v3('uSunDir',LT.sun);wp.v3('uLDir',LT.Ld);wp.f1('uDusk',S.dusk);wp.f1('uRain',S.rain);wp.f1('uFlash',S.flash);wp.f1('uTime',S.time);gl.bindVertexArray(wire.vao);gl.drawArrays(gl.LINES,0,wire.n);R.stats.draws++;gl.useProgram(mp);gl.bindVertexArray(stat.vao)}
+      if(dyn.alpha){
+        gl.useProgram(mp);gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ZERO,gl.ONE);
+        gl.depthMask(false);gl.bindVertexArray(dyn.vao);gl.drawArrays(gl.TRIANGLES,dyn.verts,dyn.alpha);
+        R.stats.draws++;gl.depthMask(true);gl.disable(gl.BLEND);
+      }
+    }
+
+    /* 4) čestice (kiša/sneg/lišće) sa osvetljenjem od lampi */
+    if((town||S.memoryRain)&&Q.prt>0){const kind=S.season===3?1:(S.rain>.12?0:(S.season===2?2:-1));
+      if(kind>=0){drawParticles(kind,S,vp,Q.prt*(kind===0?1650*(.4+S.rain):kind===1?1900:280)|0,LT)}}
+    gl.bindVertexArray(null);
+
+    /* 5) bloom (meki threshold za realistican sjaj bez preterivanja) */
+    let sceneColor=T.hdr.c;
+    const useSSR=!!(T.reflection&&S.rain>.015&&!interior);
+    if(useSSR){
+      const sp=prog('wetReflection',VS_FS,FS_SSR);gl.useProgram(sp);gl.disable(gl.DEPTH_TEST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,T.reflection.f);gl.bindVertexArray(emptyVAO);gl.viewport(0,0,W,H);
+      gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,T.hdr.c);sp.i1('uColor',0);
+      gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,T.hdr.d);sp.i1('uDepth',1);
+      sp.m4('uProjection',proj);sp.m4('uUnproject',M4.inv(proj));sp.m4('uView',view);
+      gl.drawArrays(gl.TRIANGLES,0,3);sceneColor=T.reflection.c;
+    }
+    R.stats.earlyZ=useAO;R.stats.contact=useAO&&curQ>=3;R.stats.ssr=useSSR;
+    let bloomOn=false;
+    if(T.bloom.length&&hdr){
+      const pre=prog('bloomPre',VS_FS,FS_BLOOM_PRE),dn=prog('bloomDn',VS_FS,FS_BLOOM_DOWN),up=prog('bloomUp',VS_FS,FS_BLOOM_UP);
+      gl.disable(gl.DEPTH_TEST);gl.bindVertexArray(emptyVAO);gl.activeTexture(gl.TEXTURE0);
+      gl.useProgram(pre);gl.bindFramebuffer(gl.FRAMEBUFFER,T.bloom[0].f);gl.viewport(0,0,T.bloom[0].w,T.bloom[0].h);gl.bindTexture(gl.TEXTURE_2D,sceneColor);pre.i1('uSrc',0);pre.f2('uTexel',1/W,1/H);pre.f1('uThr',1.25);gl.drawArrays(gl.TRIANGLES,0,3);
+      gl.useProgram(dn);dn.i1('uSrc',0);
+      for(let i=1;i<T.bloom.length;i++){const s=T.bloom[i-1],d=T.bloom[i];gl.bindFramebuffer(gl.FRAMEBUFFER,d.f);gl.viewport(0,0,d.w,d.h);gl.bindTexture(gl.TEXTURE_2D,s.c);dn.f2('uTexel',1/s.w,1/s.h);gl.drawArrays(gl.TRIANGLES,0,3)}
+      gl.useProgram(up);up.i1('uSrc',0);up.f1('uK',.92);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);
+      for(let i=T.bloom.length-2;i>=0;i--){const s=T.bloom[i+1],d=T.bloom[i];gl.bindFramebuffer(gl.FRAMEBUFFER,d.f);gl.viewport(0,0,d.w,d.h);gl.bindTexture(gl.TEXTURE_2D,s.c);up.f2('uTexel',1/s.w,1/s.h);gl.drawArrays(gl.TRIANGLES,0,3)}
+      gl.disable(gl.BLEND);bloomOn=true;
+    }
+
+    /* 6) kompozit sa glatkom svetlosnom adaptacijom oka (mrak <-> lampa/baterija) */
+    const night=interior?.8:S.dusk;
+    let lampGlow=0;
+    if(!interior&&S.dusk>.1){
+      for(let i=0;i<12;i++){const dx=lights12[i*3]-eye[0],dy=lights12[i*3+1]-eye[1],dz=lights12[i*3+2]-eye[2],d=Math.hypot(dx,dy,dz);if(d<24){const facing=(dx*fwd[0]+dy*fwd[1]+dz*fwd[2])/Math.max(.01,d*fl);lampGlow+=Math.max(0,1-d/24)*(.12+.88*Math.max(0,facing)**3)}}
+      lampGlow=Math.min(1,lampGlow*.45+S.torch*.22+S.flash*.5);
+    }
+    const baseExpo=interior?1.48:lerp(1.02,/[?&]cinema=0/.test(location.search)?1.92:1.80,S.dusk)*(1+S.rain*.08);
+    const targetExpo=baseExpo*(1-lampGlow*.16);
+    curExpo=lerp(curExpo,targetExpo,1-Math.exp(-clamp(S.dt||.016,.001,.12)*(targetExpo<curExpo?2.2:.85)));
+
+    const cp=prog('comp',VS_FS,FS_COMP,(Q.ca>0?'#define CA\n':'')+(bloomOn?'#define BLOOM\n':''));gl.useProgram(cp);
+    gl.disable(gl.DEPTH_TEST);gl.bindVertexArray(emptyVAO);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,Q.fxaa?T.ldr.f:null);gl.viewport(0,0,W,H);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sceneColor);cp.i1('uHDR',0);
+    if(bloomOn){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,T.bloom[0].c);cp.i1('uBloom',1);gl.activeTexture(gl.TEXTURE0)}
+    const CG=/[?&]cinema=0/.test(location.search)?0:1;
+    cp.f1('uExposure',curExpo);cp.f1('uCine',CG);cp.f1('uBloomK',lerp(.11,.19+.035*CG,night));cp.f1('uVig',Q.vig+S.dusk*(.09+.10*CG)+.03*CG);
+    {const rm=S.reduced?0:1;cp.f1('uGrain',Q.grain*(1+night*(.6+.35*CG)+S.danger*1.3)*rm);cp.f1('uCA',Q.ca*(1+S.danger*3.5+S.hurt*2.5)*rm)}
+    cp.f1('uTime',S.time);cp.f1('uDanger',S.danger||0);cp.f1('uHurt',clamp(S.hurt||0,0,1));cp.f1('uNight',night);cp.f1('uAspect',W/H);cp.f2('uRes',W,H);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+
+    /* 7) FXAA + CAS sharpening na ekran */
+    if(Q.fxaa){const fx=prog('fxaa',VS_FS,FS_FXAA);gl.useProgram(fx);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.bindTexture(gl.TEXTURE_2D,T.ldr.c);fx.i1('uSrc',0);fx.f2('uTexel',1/W,1/H);fx.f1('uSharp',Q.cas||0);gl.drawArrays(gl.TRIANGLES,0,3)}
+
+    /* vrati stanje koje očekuje stari put */
+    gl.bindVertexArray(null);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.useProgram(null);
+    gl.activeTexture(gl.TEXTURE0);
+    R.stats.cpuMs=performance.now()-t0;
+  };
+
+  /* ---------- čestice bez atributa (kiša hvata odsjaj uličnih lampi i baterije) ---------- */
+  const VS_PRT=GLSL_HEAD+GLSL_NOISE+`
+  uniform mat4 uVP;uniform vec3 uCenter;uniform vec3 uEye;uniform float uTime;uniform int uKind;uniform float uBox;
+  uniform vec3 uLights[12];uniform vec3 uLightRGB[12];uniform float uDusk;uniform vec3 uTorchPos;uniform vec3 uTorchDir;uniform float uTorch;
+  out vec2 vUV;out float vA;out vec3 vGlow;
+  void main(){
+    float id=float(gl_InstanceID);vec3 r=vec3(h11(id*1.731+.3),h11(id*3.117+7.7),h11(id*5.309+13.1));
+    float H=20.;vec3 box=vec3(uBox*2.,H,uBox*2.);
+    vec3 vel=uKind==0?vec3(-1.4,-25.-r.x*6.,.45):(uKind==1?vec3(sin(id)*.5+sin(uTime*.4+id)*.35,-1.3-r.y*.8,cos(id*1.3)*.5+cos(uTime*.3+id)*.35):vec3(sin(uTime*.5+id)*1.4+1.2,-.9-r.y*.6,cos(uTime*.4+id*2.)*1.4));
+    vec3 w=vec3(r.x*box.x,r.y*box.y,r.z*box.z)+vel*uTime;
+    vec3 rel=mod(w-vec3(uCenter.x-uBox,uCenter.y-3.,uCenter.z-uBox),box);vec3 P=vec3(uCenter.x-uBox,uCenter.y-3.,uCenter.z-uBox)+rel;
+    vec2 c=vec2(float(gl_VertexID&1),float((gl_VertexID>>1)&1))-.5;vUV=c+.5;
+    vec3 toC=normalize(uEye-P);vec3 pos;float sz;
+    if(uKind==0){vec3 d=normalize(vel);vec3 s=normalize(cross(d,toC));pos=P+s*c.x*.012+d*c.y*.62;vA=.36;}
+    else{vec3 rt=normalize(cross(vec3(0.,1.,0.),toC));vec3 up=cross(toC,rt);float rot=uTime*(.8+r.z*1.5)+id;vec2 q=mat2(cos(rot),-sin(rot),sin(rot),cos(rot))*c;sz=uKind==1?.045:.16;pos=P+rt*q.x*sz+up*q.y*sz*(uKind==1?1.:.55);vA=uKind==1?.85:.9;}
+    vec3 glow=vec3(0.);
+    if(uDusk>.1){
+      for(int i=0;i<12;i++){vec3 q=P-uLights[i];float d2=dot(q,q);if(d2<324.){float fade=1.-sqrt(d2)/18.;glow+=uLightRGB[i]*fade*fade*1.1;}}
+      if(uTorch>.01){vec3 td=P-uTorchPos;float tdL=length(td);float cn=smoothstep(.88,.98,dot(td/max(tdL,.001),uTorchDir));glow+=vec3(1.,.92,.74)*cn*exp(-tdL*.09)*uTorch*1.4;}
+    }
+    vGlow=glow;
+    float dist=distance(P,uEye);vA*=(1.-smoothstep(uBox*.58,uBox*1.05,dist))*smoothstep(.35,1.5,dist);
+    gl_Position=uVP*vec4(pos,1.);
+  }`;
+  const FS_PRT=GLSL_HEAD+`
+  in vec2 vUV;in float vA;in vec3 vGlow;uniform int uKind;uniform vec3 uTint;layout(location=0) out vec4 oC;
+  void main(){float a;if(uKind==0){a=smoothstep(0.,.25,vUV.y)*(1.-smoothstep(.6,1.,vUV.y))*(1.-abs(vUV.x-.5)*2.);}else if(uKind==1){a=(1.-smoothstep(.18,.5,length(vUV-.5)));}else{a=(1.-smoothstep(.35,.5,abs(vUV.x-.5)))*(1.-smoothstep(.3,.5,abs(vUV.y-.5)));}
+    oC=vec4(uTint+vGlow,a*vA);if(oC.a<.01)discard;}`;
+  function drawParticles(kind,S,vp,count,LT){
+    const p=prog('prt',VS_PRT,FS_PRT);gl.useProgram(p);gl.bindVertexArray(emptyVAO);
+    p.m4('uVP',vp);p.v3('uEye',S.eye);p.v3('uCenter',S.eye);p.f1('uTime',S.time);p.i1('uKind',kind);p.f1('uBox',Q.pdist*.22+8);
+    {const l=p.u('uLights[0]'),c=p.u('uLightRGB[0]');if(l)gl.uniform3fv(l,lights12);if(c)gl.uniform3fv(c,S.lightRGB);}
+    p.f1('uDusk',S.dusk);p.v3('uTorchPos',S.torchPos);p.v3('uTorchDir',S.torchDir);p.f1('uTorch',S.torch);
+    const amb=[(LT.skyAmb[0]*1.2+LT.Lc[0]*.12),(LT.skyAmb[1]*1.2+LT.Lc[1]*.12),(LT.skyAmb[2]*1.2+LT.Lc[2]*.12)];
+    const tint=kind===0?[.62*amb[0]+.10,.70*amb[1]+.12,.80*amb[2]+.15]:kind===1?[.95*(.4+amb[0]),.97*(.4+amb[1]),1.02*(.4+amb[2])]:[.64*(.3+amb[0]),.46*(.3+amb[1]),.25*(.3+amb[2])];
+    p.v3('uTint',tint);
+    gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ZERO,gl.ONE);gl.depthMask(false);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,count);R.stats.draws++;
+    gl.depthMask(true);gl.disable(gl.BLEND);
+  }
+  R.setOverride=function(ov){OV=Object.assign({},ov||{});if(curQ>=0){try{applyQuality(curQ,true)}catch(e){console.warn('KBR2 override:',e)}}};
+  R.dispose=function(){try{freeTargets()}catch(e){}R.ready=false};
+  try{applyQuality(1);buildTextures();setAniso(Q.aniso);R.ready=true}catch(e){R.failed=e;console.warn('KBR2 init:',e);return null}
+  return R;
+}
+window.KBR2={create,QUALITY:QT.map(q=>q.name),version:'3.1.0-v16',chunkize};
+
+})();
+</script>
+<script id="kb-real-world-runtime">/* KALAČ BRDO — jedinstveni pogon sa ugrađenim geografskim podacima. */
+(()=>{'use strict';
+
+// Ugovor dodatka v2: jedan vlasnik AI-a i zvuka, isti fiksni korak simulacije.
+let part2=null;
+let directorShot=null,shotHud=null,shotButton=null,storyPatrol=null,patrolKey='',patrolExposure=0;
+const motion={stance:0,landing:0,sprint:0,fov:1.22,arm:4.6,lastYaw:null,turn:0,ground:null,
+  cAt:0,cHeld:false,ctrl:false,previous:false,cTimer:0,hand:null,lens:null};
+let r2=null,bake=true,r2Collect=false,r2Dyn=null,r2Terr=false,r2Zone=null,r2ZoneN=0;const R2S=1800,padAx={x:0,z:0};
+function installPart2(factory){
+ if(part2)return part2.publicAPI;
+ if(typeof factory!=='function')throw new TypeError('Drugi deo mora biti fabrika modula.');
+ const host={version:2,$,scene,gm,clamp,distance,height,lineClear,moveBody,follower,clearSpot,nearestRoad,findPath,segDist,angleLerp,collide,lightAt,closeTuner,switchActor,
+  paceAllowed:kbPaceAllowed,paceMove:kbPaceMove,
+  b1Route(pos){if(pos)routeTo(pos,true);},
+  b1Enter(){saveGame();freeRoam(false);dayMode=3;dayTime=23;dusk=Math.max(dusk,.75);if(!cine)cine=newCine();cine.peraFound=true;clearInput();},
+  b1Place(pos){const q=clearSpot({x:clamp(pos.x,-HALF+8,HALF-8),z:clamp(pos.z,-HALF+8,HALF-8)},.8);for(let i=0;i<3;i++){const p=clearSpot({x:q.x+i*1.8,z:q.z},.8);Object.assign(actors[i],p,{vx:0,vz:0,move:0,path:[],trail:[],hold:null});}active=0;snapCamera();},
+  holdForDirector(){kbA1BetaObserve();window.KBStoryExtensions?.pauseInput();const before=paused;paused=true;clearInput();const pointer=joyPointer;joyPointer=null;try{if(pointer!==null)joyEl.releasePointerCapture(pointer);}catch(_){}try{if(document.pointerLockElement===scene)document.exitPointerLock();}catch(_){}return ()=>{clearInput();if(live){paused=before;last=performance.now();accumulator=0;}};},
+  tip,say,archive,missionFail,respawn,clearInput,drawSignalLock,patrolCarModel,planProject,ensureCine(){return cine||(cine=newCine())},
+  get actors(){return actors},get active(){return active},get dogs(){return dogs},get cine(){return cine},get story(){return story},get task(){return task()},
+  get time(){return time},get dusk(){return dusk},get yaw(){return yaw},get rain(){return rain},get live(){return live},get paused(){return paused},
+  get interior(){return interior},get football(){return football},get mini(){return worldMini},get field(){return FIELD},get ride(){return ride},get torch(){return torch},get mission(){return missionScene},
+  get roads(){return roads},get segments(){return roadSegments},get park(){return PARK},get parkCenter(){return PARK_POS},get locations(){return LOC},get event(){return worldEvent},
+  set hurt(v){hurt=Math.max(hurt,v)},get hurt(){return hurt},get audio(){return audio},set audio(v){audio=v},groundMaterial,
+  finishTune(){if(!cine?.tuning)return;cine.tune=cine.requiredTune;cine.scanner=true;cine.signal=Math.max(cine.signal,.6);cine.drift=18;sound('clue');tip('SIGNAL USKLAĐEN · Lazar drži očitavanje. 1 / 3: pomozi ekipi.',4);closeTuner();saveGame();}
+ };
+ window.KBMissionDirector?.adapters.connect('3d',host);
+ part2=factory(Object.freeze(host));
+ if(!part2||part2.version!==2)throw new Error('Neodgovarajuća verzija drugog dela.');
+ if(live)initAudio();
+ return part2.publicAPI;
+}
+
+const gm=document.getElementById('gm'),legacy=document.getElementById('gc'),mm=document.getElementById('mm');
+if(!gm||!legacy||!mm)return;
+const $=id=>document.getElementById(id),GEO=JSON.parse($('kb-real-map-data').textContent);
+const O={lon:GEO.meta.center[0],lat:GEO.meta.center[1]},RAD=Math.PI/180,XM=111320*Math.cos(O.lat*RAD),ZM=111132,HALF=GEO.meta.half_m,TAU=Math.PI*2;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),hyp=(a,b)=>Math.hypot(a,b),hypot=(...a)=>Math.hypot(...a),lerp=(a,b,t)=>a+(b-a)*t;
+const gps=(lon,lat)=>[(lon-O.lon)*XM,(O.lat-lat)*ZM],ll=(x,z)=>[O.lon+x/XM,O.lat-z/ZM],toRad=n=>n*RAD;
+function randSeed(seed){let v=seed>>>0;return()=>((v=(Math.imul(v,1664525)+1013904223)>>>0)/4294967296)}
+const fn=n=>{const v=Math.sin(n*127.1)*43758.5453;return v-Math.floor(v)},FALLBACK=GEO.geojson,FIELD=GEO.field;
+let fieldY=0;
+const at=(n,coord,icon,desc,extra={})=>{const [x,z]=gps(...coord);return {n,x,z,icon,desc,...extra}};
+const PARK={...GEO.park,poly:GEO.park.outline.map(p=>gps(...p)),paths:GEO.park.paths.map(r=>r.map(p=>gps(...p))),trees:GEO.park.trees.map(p=>gps(...p))},PARK_POS=at('Parkić u Njegoševoj',PARK.center,'◇','Travna površina, X staze i sedam stabala');
+const LOC=[at('Kalač brdo',GEO.meta.center,'◈','Početna koordinata, naslagana drva i šumski put'),at('Tajna kuća',[21.88282,43.30737],'⌂','Izmišljena priča u stvarnom kraju'),at('Klupica',[21.88355,43.30675],'▰','Igrivi vidikovac iznad doline'),at('Ograda',[21.8806,43.30555],'┃','Igriva ograda uz šumsku stazu'),at('Šumska staza',[21.87985,43.3051],'☁','Južna padina i zemljani prolazi'),at('Ruševina',[21.8807,43.30455],'⌗','Autorska lokacija priče'),at('Napuštena kuća',[21.88435,43.30712],'⌂','Izmišljena priča; arhitektura je stilizovana'),at('Durmitorska',[21.8862149,43.307276],'◇','Stvarna geometrija ulice iz otvorene karte'),at('Ukleta meteo stanica',[21.8794,43.3038],'✧','Izmišljena stanica priče na južnoj padini')];
+const OTHER={n:'Grobarsko · igriva zona',x:FIELD.x-30,z:FIELD.z-50,icon:'✝'},LANDMARKS=[PARK_POS,at('TAMI Residence',[21.8872231,43.3068144],'⌂','Položaj prema OpenStreetMap podacima',{source:'OpenStreetMap'}),at('MAMABABA Bar & Lounge',[21.890946,43.302296],'◉','Položaj prema javnoj karti Yandex Maps',{source:'Yandex Maps · približan položaj'}),at('Polazna koordinata',GEO.meta.center,'＋','43°18′26.96″N, 21°52′59.44″E')];
+let origin='OSM / OVERTURE · UGRAĐENO',heightOrigin='COPERNICUS DEM · 30 m',roads=[],houses=[],buildings=[],gates=[],poles=[],trees=[],dogs=[],worldGeo=FALLBACK,woods=[],greens=[],wires=[],colliderGrid=new Map(),colliders=[],roadSegments=[],roadGrid=new Map();
+let elevation=GEO.dem.values,elevBox=GEO.dem.base,demBusy=false;
+function rawHeight(x,z){const dem=GEO.dem,a=ll(x,z),u=clamp((a[0]-dem.west)/dem.dx-.5,0,dem.columns-1.00001),v=clamp((dem.north-a[1])/dem.dy-.5,0,dem.rows-1.00001),i=Math.floor(u),j=Math.floor(v),fx=u-i,fz=v-j,h=(xx,zz)=>elevation[clamp(zz,0,dem.rows-1)*dem.columns+clamp(xx,0,dem.columns-1)];return (r2Terr?r2Cubic(h,i,j,fx,fz)+r2Detail(x,z):lerp(lerp(h(i,j),h(i+1,j),fx),lerp(h(i,j+1),h(i+1,j+1),fx),fz))-elevBox;}
+function height(x,z){const h=rawHeight(x,z),d=Math.max(Math.abs(x-FIELD.x)-31,Math.abs(z-FIELD.z)-22),f=clamp(d/10,0,1),s=f*f*(3-2*f);return lerp(fieldY,h,s)}
+function segDist(x,z,a,b){const dx=b[0]-a[0],dz=b[1]-a[1],t=clamp(((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1),0,1);return hyp(x-a[0]-t*dx,z-a[1]-t*dz)}
+function pointInside(x,z,p){let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>z)!=(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1]||1e-8)+a[0])yes=!yes}return yes}
+function insideRings(x,z,rings){return !!rings.length&&pointInside(x,z,rings[0])&&!rings.slice(1).some(p=>pointInside(x,z,p))}
+function boxPoly(x,z,w,d){return [[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2],[x-w/2,z-d/2]]}
+function centroid(p){let x=0,z=0;const n=p.length>3&&hyp(p[0][0]-p[p.length-1][0],p[0][1]-p[p.length-1][1])<.001?p.length-1:p.length;for(let i=0;i<n;i++){x+=p[i][0];z+=p[i][1]}return [x/n,z/n]}
+function polyBounds(p){const xs=p.map(a=>a[0]),zs=p.map(a=>a[1]);return [Math.min(...xs),Math.min(...zs),Math.max(...xs),Math.max(...zs)]}
+function validPoly(p){return p.length>=4&&p.every(a=>Number.isFinite(a[0])&&Number.isFinite(a[1]))}
+function parseGeo(geo){const rr=[],bb=[];for(const f of geo.features||[]){const p=f.properties||{},g=f.geometry;if(!g)continue;if(g.type==='LineString'&&p.highway){const pts=g.coordinates.map(a=>gps(...a));if(pts.length>1)rr.push({name:p.name||(/path|foot|track|steps/.test(p.highway)?'Zemljana staza':'Sporedna ulica'),p:pts,type:p.highway,source:p.source,width:Number(p.width)||(/path|footway|steps/.test(p.highway)?1.7:/track/.test(p.highway)?2.7:/service/.test(p.highway)?3.8:5.8)});}if(g.type==='Polygon'&&p.building){const rings=g.coordinates.map(r=>r.map(a=>gps(...a)));if(validPoly(rings[0])){const poly=rings[0],bound=polyBounds(poly),c=centroid(poly);bb.push({poly,rings,bound,c,name:p.name||'',floors:clamp(Number(p['building:levels'])||Math.round((Number(p.height)||6)/3),1,8),height:Number(p.height)||0,source:p.source,sourceId:p.source_id,roof:p['roof:shape']||'',osm:true,kind:p.building||'yes',lv:Number(p['building:levels'])||0});}}}return {rr,bb};}
+function nearestRoad(x,z){let best={d:Infinity,p:null,road:null};const cell=64,cx=Math.floor(x/cell),cz=Math.floor(z/cell),near=new Set();for(let r=0;r<=2;r++){for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++)for(const s of roadGrid.get((cx+i)+','+(cz+j))||[])near.add(s);if(near.size)break;}const all=near.size?[...near]:roadSegments;for(const s of all){const a=s.a,b=s.b,dx=b[0]-a[0],dz=b[1]-a[1],t=clamp(((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1),0,1),px=lerp(a[0],b[0],t),pz=lerp(a[1],b[1],t),d=hyp(x-px,z-pz);if(d<best.d)best={d,p:[px,pz],road:s.road};}return best;}
+function indexRoads(){roadSegments=[];roadGrid.clear();for(const road of roads)for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],s={a,b,road};roadSegments.push(s);const n=Math.ceil(hyp(a[0]-b[0],a[1]-b[1])/24);for(let j=0;j<=n;j++){const k=Math.floor(lerp(a[0],b[0],j/(n||1))/64)+','+Math.floor(lerp(a[1],b[1],j/(n||1))/64);if(!roadGrid.has(k))roadGrid.set(k,new Set());roadGrid.get(k).add(s);}}}
+function inWood(x,z){return woods.some(p=>insideRings(x,z,p))}
+function inGreen(x,z){return pointInside(x,z,PARK.poly)||greens.some(p=>insideRings(x,z,p))}
+function addCollider(c){c.id=colliders.length;colliders.push(c);const b=c.bound;for(let x=Math.floor(b[0]/32);x<=Math.floor(b[2]/32);x++)for(let z=Math.floor(b[1]/32);z<=Math.floor(b[3]/32);z++){const k=x+','+z;if(!colliderGrid.has(k))colliderGrid.set(k,[]);colliderGrid.get(k).push(c);}}
+function nearbyColliders(x,z,r=1){const result=new Set();for(let i=Math.floor((x-r)/32);i<=Math.floor((x+r)/32);i++)for(let j=Math.floor((z-r)/32);j<=Math.floor((z+r)/32);j++)for(const c of colliderGrid.get(i+','+j)||[])result.add(c);return result;}
+function rebuildColliders(){colliders=[];colliderGrid.clear();r2ChurchCollider();for(const h of houses)addCollider({kind:'building',house:h,rings:h.rings,bound:h.bound});for(const t of trees)addCollider({kind:'tree',tree:t,x:t.x,z:t.z,r:.32,bound:[t.x-.32,t.z-.32,t.x+.32,t.z+.32]});for(const p of poles)addCollider({kind:'pole',x:p.x,z:p.z,r:.17,bound:[p.x-.17,p.z-.17,p.x+.17,p.z+.17]});for(const l of [LOC[3]])addCollider({kind:'fence',rings:[boxPoly(l.x,l.z,13,.18)],bound:[l.x-6.5,l.z-.1,l.x+6.5,l.z+.1]});const st=LOC[8];addCollider({kind:'station',rings:[boxPoly(st.x,st.z,7,5)],bound:[st.x-3.5,st.z-2.5,st.x+3.5,st.z+2.5]});
+const solid=(kind,x,z,w,d)=>{const rings=[boxPoly(x,z,w,d)];addCollider({kind,rings,bound:polyBounds(rings[0])});};
+for(const off of [-6,6])solid('bench',PARK_POS.x+off,PARK_POS.z-16,1.7,.65);
+solid('bench',LOC[2].x,LOC[2].z,3.8,.65);solid('ruin',LOC[5].x-.45,LOC[5].z-4,10.4,.4);
+const r=nearestRoad(LOC[0].x,LOC[0].z);if(r.p){const x=r.p[0]+7,z=r.p[1]+3;if(!buildingAt(x,z,1.5))solid('logs',x+.8,z,2.0,1.65);}
+for(const sign of [-1,1])for(const side of [-1,1]){const x=FIELD.x+sign*25,z=FIELD.z+side*3.5;addCollider({kind:'goalpost',x,z,r:.10,bound:[x-.1,z-.1,x+.1,z+.1]});const lx=FIELD.x+sign*29,lz=FIELD.z+side*20;addCollider({kind:'floodlight',x:lx,z:lz,r:.20,bound:[lx-.2,lz-.2,lx+.2,lz+.2]});}
+}
+function buildingAt(x,z,r=0){for(const c of nearbyColliders(x,z,Math.max(r,1))){if(c.kind!=='building')continue;const b=c.bound;if(x<b[0]-r||x>b[2]+r||z<b[1]-r||z>b[3]+r)continue;if(insideRings(x,z,c.rings))return true;if(r>0)for(const ring of c.rings)for(let i=1;i<ring.length;i++)if(segDist(x,z,ring[i-1],ring[i])<r)return true;}return false;}
+function setup(geo){worldGeo=geo;fieldY=rawHeight(FIELD.x,FIELD.z);const p=parseGeo(geo);roads=p.rr;houses=p.bb;buildings=houses;indexRoads();woods=[];greens=[];for(const f of GEO.land){const arrays=f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[f.geometry.coordinates];for(const rings of arrays){const pp=rings.map(r=>r.map(a=>gps(...a)));(/wood|forest|scrub/.test(f.properties.landuse)?woods:greens).push(pp);}}
+ trees=[];poles=[];wires=[];gates=[];dogs=[];rebuildColliders();
+ // Sedam modelovanih stabala duž zapadne staze; istočna čistina ostaje otvorena.
+ for(const p of PARK.trees)trees.push({x:p[0],z:p[1],h:7.8,pine:false,park:true});
+ const rg=randSeed(20261027);for(let i=0;i<9000&&trees.length<1750;i++){const x=(rg()-.5)*HALF*2,z=(rg()-.5)*HALF*2;if(!inWood(x,z)||pointInside(x,z,PARK.poly)||Math.abs(x-FIELD.x)<38&&Math.abs(z-FIELD.z)<28||LOC.some(p=>hyp(x-p.x,z-p.z)<13)||nearestRoad(x,z).d<4||buildingAt(x,z,2))continue;trees.push({x,z,h:5+rg()*10,pine:rg()<.64});}
+ for(const road of roads.filter(r=>!/path|foot|track|steps|cycle|pedestrian/.test(r.type))){let carry=9;for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dz=b[1]-a[1],L=hyp(dx,dz)||1,nx=-dz/L,nz=dx/L;for(let s=carry;s<L;s+=38){const x=a[0]+dx*s/L+nx*(road.width/2+.65),z=a[1]+dz*s/L+nz*(road.width/2+.65);if(Math.abs(x)>HALF-4||Math.abs(z)>HALF-4||buildingAt(x,z,.3)||poles.some(p=>hyp(x-p.x,z-p.z)<12))continue;poles.push({x,z,street:road.name});}carry=(carry-L)%38;if(carry<0)carry+=38;}}
+ const used=new Set();for(let i=0;i<poles.length;i++){const p=poles[i],near=poles.map((q,j)=>({q,j,d:hyp(p.x-q.x,p.z-q.z)})).filter(o=>o.j!==i&&o.q.street===p.street&&o.d>12&&o.d<65).sort((a,b)=>a.d-b.d).slice(0,2);for(const q of near){const k=Math.min(i,q.j)+','+Math.max(i,q.j);if(!used.has(k)){used.add(k);wires.push([p,q.q]);}}}
+ for(const index of [1,6]){const l=LOC[index],h=houses.reduce((b,a)=>hyp(a.c[0]-l.x,a.c[1]-l.z)<hyp(b.c[0]-l.x,b.c[1]-l.z)?a:b,houses[0]);if(h){h.hero=index===1?'secret':'abandoned';const road=nearestRoad(...h.c),edge=h.poly.slice(0,-1).map((a,i)=>{const b=h.poly[i+1],c=[(a[0]+b[0])/2,(a[1]+b[1])/2];return {a,b,c,d:road.p?hyp(c[0]-road.p[0],c[1]-road.p[1]):0}}).sort((a,b)=>a.d-b.d)[0];const dx=edge.c[0]-h.c[0],dz=edge.c[1]-h.c[1],L=hyp(dx,dz)||1;h.door={x:edge.c[0]+dx/L*.7,z:edge.c[1]+dz/L*.7};}}
+ for(const p of [LOC[0],LOC[7],LOC[4]]){const r=nearestRoad(p.x,p.z);if(r.p)dogs.push({x:r.p[0]+2,z:r.p[1],ph:rg()*6,yard:false});}for(const d of dogs)Object.assign(d,{hx:d.x,hz:d.z,state:'patrol',timer:2,phase:0,yaw:0,fear:0,attack:0,path:[]});
+ rebuildColliders();buildR6Fences();buildGraph();renderWorld();$('kbGeoSource').textContent='© OpenStreetMap / Overture · Copernicus DEM 30 m';
+}
+
+/* ISC License
+
+Copyright (c) 2026, Mapbox
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+ */
+/**
+ * A vertex in a circular doubly linked list representing a polygon ring.
+ * `prev`/`next` are always linked (set immediately after {@link createNode}), so they're typed
+ * non-null; `prevZ`/`nextZ` are the z-order list links and are null at the ends.
+ *
+ * @typedef {object} Node
+ * @property {number} i vertex index in the coordinates array
+ * @property {number} x vertex x coordinate
+ * @property {number} y vertex y coordinate
+ * @property {Node} prev previous vertex node in the polygon ring
+ * @property {Node} next next vertex node in the polygon ring
+ * @property {number} z z-order curve value; doubles as the owning block index during eliminateHoles
+ * @property {Node | null} prevZ previous node in z-order
+ * @property {Node | null} nextZ next node in z-order
+ */
+
+// single-vertex holes to preserve through filterPoints (steiner points); kept off the Node
+// shape since they're rare — the empty-set fast path means non-steiner inputs pay nothing
+/** @type {Set<Node>} */
+const steiners = new Set();
+
+// halves of split polygons waiting to be triangulated, drained by earcut in a loop so that the
+// call stack doesn't grow with the nesting depth of splits
+/** @type {Node[]} */
+const splitStack = [];
+
+// set by filterPoints whenever it removes at least one node; read by earcutLinked's stall
+// handler to decide whether another clip pass is worth attempting before the costlier stages
+let filteredOut = false;
+
+/**
+ * Triangulate a polygon given as a flat array of vertex coordinates.
+ *
+ * @param {ArrayLike<number>} data flat array of vertex coordinates
+ * @param {ArrayLike<number> | null} [holeIndices] indices (in vertices, not coordinates) where each hole ring starts
+ * @param {number} [dim=2] number of coordinates per vertex in `data`
+ * @returns {number[]} triangles as triplets of vertex indices into `data`
+ * @example earcut([10,0, 0,50, 60,60, 70,10]); // [1,0,3, 3,2,1]
+ */
+function earcut(data, holeIndices, dim = 2) {
+
+    const hasHoles = holeIndices && holeIndices.length;
+    const outerLen = hasHoles ? holeIndices[0] * dim : data.length;
+    if (steiners.size) steiners.clear();
+
+    let outerNode = linkedList(data, 0, outerLen, dim, true);
+    /** @type {number[]} */
+    const triangles = [];
+
+    if (!outerNode || outerNode.next === outerNode.prev) return triangles;
+
+    let minX = 0, minY = 0, invSize = 0;
+
+    if (hasHoles) outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
+
+    // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
+    if (data.length > 80 * dim) {
+        minX = data[0];
+        minY = data[1];
+        let maxX = minX;
+        let maxY = minY;
+
+        for (let i = dim; i < outerLen; i += dim) {
+            const x = data[i];
+            const y = data[i + 1];
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+
+        // minX, minY and invSize are later used to transform coords into integers for z-order calculation
+        invSize = Math.max(maxX - minX, maxY - minY);
+        invSize = invSize !== 0 ? 32767 / invSize : 0;
+    }
+
+    earcutLinked(outerNode, triangles, minX, minY, invSize);
+    while (splitStack.length) earcutLinked(/** @type {Node} */ (splitStack.pop()), triangles, minX, minY, invSize);
+
+    return triangles;
+}
+
+// create a circular doubly linked list from polygon points in the specified winding order
+/** @param {ArrayLike<number>} data @param {number} start @param {number} end @param {number} dim @param {boolean} clockwise @returns {Node | null} */
+function linkedList(data, start, end, dim, clockwise) {
+    /** @type {Node | null} */
+    let last = null;
+
+    if (clockwise === (signedArea(data, start, end, dim) > 0)) {
+        for (let i = start; i < end; i += dim) last = insertNode(i / dim | 0, data[i], data[i + 1], last);
+    } else {
+        for (let i = end - dim; i >= start; i -= dim) last = insertNode(i / dim | 0, data[i], data[i + 1], last);
+    }
+
+    if (last && equals(last, last.next)) {
+        removeNode(last);
+        last = last.next;
+    }
+
+    return last;
+}
+
+// Remove collinear or coincident points; removability depends only on a node's immediate
+// neighbors, so we sweep forward and re-check the predecessor after each removal. With no `end`
+// we sweep the whole ring, lapping until nothing is removable (the fixpoint the clipper needs).
+// With an explicit `end` we heal only the dirty window around a bridge/diagonal cut, stopping at
+// `end` rather than lapping — O(window) instead of O(ring).
+/** @param {Node} start @param {Node} [end] @returns {Node} */
+function filterPoints(start, end = start) {
+    const full = end === start;
+
+    let p = start, again;
+    do {
+        again = false;
+        if (p !== p.next && (steiners.size === 0 || !steiners.has(p)) &&
+            (equals(p, p.next) || area(p.prev, p, p.next) === 0)) {
+            if (full || p === end) end = p.prev; // pull the stop bound back past the removal
+            filteredOut = true;
+            removeNode(p);
+            p = p.prev;         // re-check the predecessor
+            again = true;
+        } else if (full || p !== end) {
+            p = p.next;
+            again = !full;      // local heal: keep looping until the sweep reaches end
+        }
+    } while (again || p !== end);
+
+    return end;
+}
+
+// main ear slicing loop which triangulates a polygon (given as a linked list)
+/** @param {Node} ear @param {number[]} triangles @param {number} minX @param {number} minY @param {number} invSize */
+function earcutLinked(ear, triangles, minX, minY, invSize) {
+    // interlink polygon nodes in z-order
+    if (invSize) indexCurve(ear, minX, minY, invSize);
+
+    // a strictly convex ring has no vertex that could block an ear, so skip the point checks until a candidate fails;
+    // without this, a big convex ring is cut as one fan of long triangles and each hashed check scans O(n) points
+    let stop = ear, cured = false, convex = invSize ? isConvex(ear) : false;
+
+    // iterate through ears, slicing them one by one
+    while (ear.prev !== ear.next) {
+        const prev = ear.prev;
+        /** @type {Node} */
+        const next = ear.next;
+
+        if (area(prev, ear, next) < 0 && (convex || (invSize ? isEarHashed(ear, minX, minY, invSize) : isEar(ear)))) {
+            triangles.push(prev.i, ear.i, next.i); // cut off the triangle
+
+            removeNode(ear);
+            ear = next;
+            stop = next;
+            continue;
+        }
+
+        convex = false;
+        ear = next;
+
+        // if we looped through the whole remaining polygon and can't find any more ears
+        if (ear === stop) {
+            // try filtering collinear/coincident points and slicing again — repeat as long as
+            // filtering actually removes nodes, since each removal can expose new ears
+            filteredOut = false;
+            ear = filterPoints(ear);
+            if (filteredOut) { stop = ear; continue; }
+
+            // filtering is exhausted: cure small local self-intersections once, then retry
+            if (!cured) {
+                ear = cureLocalIntersections(ear, triangles);
+                stop = ear;
+                cured = true;
+                continue;
+            }
+
+            // as a last resort, try splitting the remaining polygon into two
+            splitEarcut(ear);
+            break;
+        }
+    }
+}
+
+// check whether every vertex of a ring is strictly convex
+/** @param {Node} start @returns {boolean} */
+function isConvex(start) {
+    let p = start;
+    do {
+        if (area(p.prev, p, p.next) >= 0) return false;
+        p = p.next;
+    } while (p !== start);
+    return true;
+}
+
+// check whether a polygon node forms a valid ear with adjacent nodes
+/** @param {Node} ear @returns {boolean} */
+function isEar(ear) {
+    // reflex check (area(a, b, c) >= 0) is hoisted into the earcutLinked caller to avoid non-inlined call here
+    const a = ear.prev, b = ear, c = ear.next,
+        ax = a.x, bx = b.x, cx = c.x, ay = a.y, by = b.y, cy = c.y,
+        x0 = Math.min(ax, bx, cx), // triangle bbox
+        y0 = Math.min(ay, by, cy),
+        x1 = Math.max(ax, bx, cx),
+        y1 = Math.max(ay, by, cy);
+
+    // make sure we don't have other points inside the potential ear
+    let p = c.next;
+    while (p !== a) {
+        if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && !(ax === p.x && ay === p.y) &&
+            pointInTriangle(ax, ay, bx, by, cx, cy, p.x, p.y) && area(p.prev, p, p.next) >= 0) return false;
+        p = p.next;
+    }
+    return true;
+}
+
+/** @param {Node} ear @param {number} minX @param {number} minY @param {number} invSize @returns {boolean} */
+function isEarHashed(ear, minX, minY, invSize) {
+    // reflex check is hoisted into the earcutLinked caller (see isEar)
+    const a = ear.prev, b = ear, c = ear.next,
+        ax = a.x, bx = b.x, cx = c.x, ay = a.y, by = b.y, cy = c.y,
+        x0 = Math.min(ax, bx, cx), // triangle bbox
+        y0 = Math.min(ay, by, cy),
+        x1 = Math.max(ax, bx, cx),
+        y1 = Math.max(ay, by, cy),
+        minZ = zOrder(x0, y0, minX, minY, invSize), // z-order range for the current triangle bbox;
+        maxZ = zOrder(x1, y1, minX, minY, invSize);
+
+    let p = ear.prevZ;
+    while (p && p.z >= minZ) { // look for points inside the triangle in decreasing z-order
+        if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && p !== c && !(ax === p.x && ay === p.y) &&
+            pointInTriangle(ax, ay, bx, by, cx, cy, p.x, p.y) && area(p.prev, p, p.next) >= 0) return false;
+        p = p.prevZ;
+    }
+    let n = ear.nextZ;
+    while (n && n.z <= maxZ) { // look for points in increasing z-order
+        if (n.x >= x0 && n.x <= x1 && n.y >= y0 && n.y <= y1 && n !== c && !(ax === n.x && ay === n.y) &&
+            pointInTriangle(ax, ay, bx, by, cx, cy, n.x, n.y) && area(n.prev, n, n.next) >= 0) return false;
+        n = n.nextZ;
+    }
+    return true;
+}
+
+// go through all polygon nodes and cure small local self-intersections
+/** @param {Node} start @param {number[]} triangles @returns {Node} */
+function cureLocalIntersections(start, triangles) {
+    let p = start;
+    let cured = false;
+    do {
+        const a = p.prev,
+            b = p.next.next;
+
+        if (intersects(a, p, p.next, b, false) && locallyInside(a, b) && locallyInside(b, a)) {
+
+            triangles.push(a.i, p.i, b.i);
+
+            // remove two nodes involved
+            removeNode(p);
+            removeNode(p.next);
+
+            p = start = b;
+            cured = true;
+        }
+        p = p.next;
+    } while (p !== start);
+
+    return cured ? filterPoints(p) : p;
+}
+
+// try splitting polygon into two and triangulate them independently
+/** @param {Node} start */
+function splitEarcut(start) {
+    // look for a valid diagonal that divides the polygon into two
+    let a = start;
+    do {
+        let b = a.next.next;
+        while (b !== a.prev) {
+            if (a.i !== b.i && isValidDiagonal(a, b)) {
+                // split the polygon in two by the diagonal
+                let c = splitPolygon(a, b);
+
+                // filter colinear points around the cuts
+                a = filterPoints(a, a.next);
+                c = filterPoints(c, c.next);
+
+                // queue both halves for earcut, a on top so it's triangulated first
+                splitStack.push(c, a);
+                return;
+            }
+            b = b.next;
+        }
+        a = a.next;
+    } while (a !== start);
+}
+
+// true only while eliminateHoles merges holes, so removeNode keeps the block index live (growBlock)
+let indexActive = false;
+
+// link every hole into the outer loop, producing a single-ring polygon without holes
+/** @param {ArrayLike<number>} data @param {ArrayLike<number>} holeIndices @param {Node} outerNode @param {number} dim @returns {Node} */
+function eliminateHoles(data, holeIndices, outerNode, dim) {
+    const queue = [];
+
+    for (let i = 0, len = holeIndices.length; i < len; i++) {
+        const start = holeIndices[i] * dim;
+        const end = i < len - 1 ? holeIndices[i + 1] * dim : data.length;
+        const list = /** @type {Node} */ (linkedList(data, start, end, dim, false));
+        if (list === list.next) steiners.add(list);
+        queue.push(getLeftmost(list));
+    }
+
+    queue.sort(compareXYSlope);
+
+    // block-bbox index for findHoleBridge, grown append-only as holes merge (see notes
+    // above buildBlockIndex). Seed it with the outer ring, then append each merged hole.
+    buildBlockIndex(data.length / dim, holeIndices.length);
+    indexSegment(outerNode, outerNode);
+
+    // process holes from left to right; indexActive lets removeNode keep block bboxes live as
+    // filterPoints heals edges during merges (see growBlock)
+    indexActive = true;
+    for (let i = 0; i < queue.length; i++) {
+        outerNode = eliminateHole(queue[i], outerNode);
+    }
+    indexActive = false;
+
+    // collapse collinear/coincident points across the whole merged ring once before clipping
+    return filterPoints(outerNode);
+}
+
+/** @param {Node} a @param {Node} b @returns {number} */
+function compareXYSlope(a, b) {
+    // when the left-most point of 2 holes meet at a vertex, sort the holes counterclockwise so that when we find
+    // the bridge to the outer shell is always the point that they meet at.
+    return a.x - b.x || a.y - b.y ||
+        (a.next.y - a.y) / (a.next.x - a.x) -
+        (b.next.y - b.y) / (b.next.x - b.x);
+}
+
+// find a bridge between vertices that connects hole with an outer ring and link it
+/** @param {Node} hole @param {Node} outerNode @returns {Node} */
+function eliminateHole(hole, outerNode) {
+    const bridge = findHoleBridge(hole, outerNode);
+    if (!bridge) {
+        return outerNode;
+    }
+
+    const bridgeReverse = splitPolygon(bridge, hole);
+
+    // index the merged-in segment before filtering: in ring order the splice runs
+    // bridge -> hole -> bridgeReverse -> bridge2 -> (bridge's old next), covering the
+    // hole's edges and both new slit edges. filterPoints below only drops collinear /
+    // coincident points, so these bboxes stay valid (conservative) supersets.
+    const bridge2 = bridgeReverse.next;
+    indexSegment(bridge, bridge2.next);
+
+    // heal collinear/coincident points around the two new slit edges, but leave bridge2 alone: dropping it as collinear
+    // would leave bridge lying on the healed edge, where a later hole could bridge into it from outside its sector
+    filterPoints(bridgeReverse.prev, bridgeReverse);
+
+    // likewise, if bridge lies strictly between its prev and hole, healing would drop it and leave bridge2 on the healed
+    // edge; skip the heal then (a spike at bridge, e.g. a hole touching an outer edge, still needs it)
+    const a = bridge.prev;
+    if (area(a, bridge, hole) === 0 && (a.x - bridge.x) * (hole.x - bridge.x) + (a.y - bridge.y) * (hole.y - bridge.y) < 0) return bridge;
+
+    return filterPoints(bridge, bridge.next);
+}
+
+// Block-bbox index for findHoleBridge (issue #183): one [minX,minY,maxX,maxY] bbox per K
+// consecutive ring edges, in a flat Float64Array, so the leftward-ray scan can skip whole
+// blocks in O(1) instead of walking the entire merged ring. Grown append-only — the outer
+// ring seeds it, then each merged hole appends a segment (head node, stop node, K-blocks
+// over head..stop); independent segments, not a ring tiling, since splices land mid-ring.
+// Buffers are sized once from the input upper bound and reused across calls.
+//
+// filterPoints only drops collinear/coincident points, so a stale bbox stays a conservative
+// superset of its live edges (never a false skip); the scan skips dead nodes (p.prev.next !==
+// p) and lazily advances a dead stop. Blocks are scanned in append (not ring) order, so the
+// chosen bridge can differ from the un-indexed code — a different but equally valid result.
+const K = 16; // edges per block
+
+let blockBBox = new Float64Array(0); // [minX,minY,maxX,maxY] per block
+let numBlocks = 0;
+/** @type {Node[]} */
+const blockHead = []; // first node of each block's segment
+/** @type {Node[]} */
+const blockStop = []; // node just past each block's segment (exclusive walk bound)
+
+/** @param {number} maxNodes @param {number} numHoles */
+function buildBlockIndex(maxNodes, numHoles) {
+    // upper bound: every input node indexed once, +2 bridge nodes per hole, plus a partial
+    // trailing block per appended segment (outer ring + one per hole)
+    const maxBlocks = Math.ceil((maxNodes + 2 * numHoles) / K) + numHoles + 2;
+    if (blockBBox.length < maxBlocks * 4) blockBBox = new Float64Array(maxBlocks * 4);
+    numBlocks = 0;
+}
+
+// index the ring run head..stop (exclusive) as ceil(len / K) blocks; head === stop means
+// the whole ring. each block's bbox covers both endpoints of every edge it owns.
+/** @param {Node} head @param {Node} stop */
+function indexSegment(head, stop) {
+    let p = head;
+    do {
+        const b = numBlocks++;
+        blockHead[b] = p;
+        let minX = p.x, minY = p.y, maxX = p.x, maxY = p.y;
+        let k = 0;
+        do {
+            const c = p.next; // edge p->c; bbox must bound both endpoints
+            p.z = b; // reuse z as the owning block during eliminateHoles (see growBlock)
+            if (c.x < minX) minX = c.x; if (c.x > maxX) maxX = c.x;
+            if (c.y < minY) minY = c.y; if (c.y > maxY) maxY = c.y;
+            p = c;
+        } while (++k < K && p !== stop);
+        blockStop[b] = p;
+        const g = b * 4;
+        blockBBox[g] = minX; blockBBox[g + 1] = minY; blockBBox[g + 2] = maxX; blockBBox[g + 3] = maxY;
+    } while (p !== stop);
+}
+
+// when filterPoints heals an edge head->tail (removing the collinear node between them), the
+// healed edge can extend past head's frozen block bbox if its old far endpoint lived in another
+// block; grow head's block bbox to cover tail so the leftward-ray prune can't false-skip it.
+/** @param {Node} head @param {Node} tail */
+function growBlock(head, tail) {
+    const g = head.z * 4;
+    if (tail.x < blockBBox[g]) blockBBox[g] = tail.x;
+    if (tail.y < blockBBox[g + 1]) blockBBox[g + 1] = tail.y;
+    if (tail.x > blockBBox[g + 2]) blockBBox[g + 2] = tail.x;
+    if (tail.y > blockBBox[g + 3]) blockBBox[g + 3] = tail.y;
+}
+
+/** @param {number} b @returns {Node} */
+function liveBlockStop(b) {
+    let stop = blockStop[b];
+    while (stop.prev.next !== stop) stop = stop.next;
+    blockStop[b] = stop;
+    return stop;
+}
+
+// the block's head node can be removed by filterPoints during merges; advance it to the next
+// live node so the walk doesn't start on (and immediately terminate at) a dead node. For the
+// single full-ring seed block (head === stop) the same forward advance keeps them equal, so the
+// do-while still laps the whole ring instead of collapsing to an empty walk.
+/** @param {number} b @returns {Node} */
+function liveBlockHead(b) {
+    let head = blockHead[b];
+    while (head.prev.next !== head) head = head.next;
+    blockHead[b] = head;
+    return head;
+}
+
+// David Eberly's algorithm for finding a bridge between hole and outer polygon
+/** @param {Node} hole @param {Node} outerNode @returns {Node | null} */
+function findHoleBridge(hole, outerNode) {
+    let p = outerNode;
+    const hx = hole.x;
+    const hy = hole.y;
+    let qx = -Infinity;
+    /** @type {Node | undefined} */
+    let m;
+
+    // find a segment intersected by a ray from the hole's leftmost point to the left;
+    // segment's endpoint with lesser x will be potential connection point
+    // unless they intersect at a vertex, then choose the vertex
+    if (equals(hole, p)) return p;
+
+    // scan blocks; skip any whose bbox can't hold a crossing that beats qx and lies left
+    // of hx (the prune Morton order can't express — explicit per-axis [minY,maxY]/[minX,maxX])
+    for (let b = 0, g = 0; b < numBlocks; b++, g += 4) {
+        if (hy < blockBBox[g + 1] || hy > blockBBox[g + 3] || blockBBox[g] > hx || blockBBox[g + 2] <= qx) continue;
+
+        // ensure the walk's exclusive bound is live so we don't overrun into other blocks
+        const stop = liveBlockStop(b);
+
+        p = liveBlockHead(b);
+        do {
+            if (equals(hole, p.next)) return p.next;
+            else if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
+                const x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
+                if (x <= hx && x > qx) {
+                    qx = x;
+                    m = p.x < p.next.x ? p : p.next;
+                    if (x === hx) return m; // hole touches outer segment; pick leftmost endpoint
+                }
+            }
+            p = p.next;
+        } while (p !== stop);
+    }
+
+    if (!m) return null;
+
+    // look for points inside the triangle of hole point, segment intersection and endpoint;
+    // if there are no points found, we have a valid connection;
+    // otherwise choose the point of the minimum angle with the ray as connection point
+
+    const mx = m.x;
+    const my = m.y;
+    const tminY = Math.min(hy, my); // the triangle's y span; x span is [mx, hx]
+    const tmaxY = Math.max(hy, my);
+    let tanMin = Infinity;
+
+    // scan the same blocks; skip any whose bbox can't overlap the triangle's [mx,hx]×[tminY,tmaxY] box
+    for (let b = 0, g = 0; b < numBlocks; b++, g += 4) {
+        if (blockBBox[g + 2] < mx || blockBBox[g] > hx || blockBBox[g + 3] < tminY || blockBBox[g + 1] > tmaxY) continue;
+
+        const stop = liveBlockStop(b);
+
+        p = liveBlockHead(b);
+        do {
+            if (hx >= p.x && p.x >= mx && hx !== p.x &&
+                    pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
+
+                const tan = Math.abs(hy - p.y) / (hx - p.x); // tangential
+
+                // if hole point sits on p's horizontal edge (T-junction touch): the bridge runs
+                // along that edge — locallyInside rejects it as collinear, but it's valid
+                if ((locallyInside(p, hole) || (p.y === hy && p.next.y === hy && p.next.x > hx)) &&
+                    (tan < tanMin || (tan === tanMin && (p.x > m.x || (p.x === m.x && sectorContainsSector(m, p)))))) {
+                    m = p;
+                    tanMin = tan;
+                }
+            }
+
+            p = p.next;
+        } while (p !== stop);
+    }
+
+    return m;
+}
+
+// whether sector in vertex m contains sector in vertex p in the same coordinates
+/** @param {Node} m @param {Node} p @returns {boolean} */
+function sectorContainsSector(m, p) {
+    return area(m.prev, m, p.prev) < 0 && area(p.next, m, m.next) < 0;
+}
+
+// scratch buffers reused across calls and grown on demand: two node-ref arrays that
+// ping-pong during the radix passes, plus parallel z-value arrays so the passes read
+// z from contiguous memory instead of dereferencing each node. 256-entry histogram for
+// 8-bit digits; the small histogram keeps per-call setup cheap (most rings are short)
+/** @type {Node[]} */
+const sortArr = [];
+/** @type {Node[]} */
+let sortBuf = [];
+let zArr = new Uint32Array(0);
+let zBuf = new Uint32Array(0);
+const counts = new Uint32Array(256);
+
+// interlink polygon nodes in z-order: collect into an array, sort by z, relink
+/** @param {Node} start @param {number} minX @param {number} minY @param {number} invSize */
+function indexCurve(start, minX, minY, invSize) {
+    let p = start;
+    let n = 0;
+    do {
+        // always (re)compute: z may still hold a block index left over from eliminateHoles
+        p.z = zOrder(p.x, p.y, minX, minY, invSize);
+        sortArr[n++] = p;
+        p = p.next;
+    } while (p !== start);
+
+    sortNodes(n);
+
+    /** @type {Node | null} */
+    let prev = null;
+    for (let i = 0; i < n; i++) {
+        const node = sortArr[i];
+        node.prevZ = prev;
+        if (prev) prev.nextZ = node;
+        prev = node;
+    }
+    /** @type {Node} */ (prev).nextZ = null;
+
+    // drop the node refs but keep the capacity: setting length to 0 leaves sortBuf unresized
+    // (its growth is gated on zArr), so the radix scatter regrows it out of order every call
+    sortArr.fill(/** @type {Node} */ (/** @type {unknown} */ (null)), 0, n);
+    sortBuf.fill(/** @type {Node} */ (/** @type {unknown} */ (null)), 0, n);
+}
+
+// sort the first n nodes of sortArr by z, in place: insertion sort for small n (cheaper
+// than histogram setup), else LSD radix in four 8-bit passes (covering z's 30 bits)
+/** @param {number} n */
+function sortNodes(n) {
+    if (n <= 32) {
+        for (let i = 1; i < n; i++) {
+            const node = sortArr[i], z = node.z;
+            let j = i - 1;
+            while (j >= 0 && sortArr[j].z > z) { sortArr[j + 1] = sortArr[j]; j--; }
+            sortArr[j + 1] = node;
+        }
+        return;
+    }
+
+    if (zArr.length < n) {
+        zArr = new Uint32Array(n);
+        zBuf = new Uint32Array(n);
+        sortBuf = new Array(n);
+    }
+    for (let i = 0; i < n; i++) zArr[i] = sortArr[i].z;
+
+    // even pass count lands the sorted result back in sortArr
+    radixPass(n, sortArr, zArr, sortBuf, zBuf, 0);
+    radixPass(n, sortBuf, zBuf, sortArr, zArr, 8);
+    radixPass(n, sortArr, zArr, sortBuf, zBuf, 16);
+    radixPass(n, sortBuf, zBuf, sortArr, zArr, 24);
+}
+
+// one LSD radix pass: stably scatter the first n nodes (and their z) from src to dst,
+// bucketed by the 8-bit digit of z at the given bit shift
+/** @param {number} n @param {Node[]} src @param {Uint32Array} srcZ @param {Node[]} dst @param {Uint32Array} dstZ @param {number} shift */
+function radixPass(n, src, srcZ, dst, dstZ, shift) {
+    counts.fill(0);
+    for (let i = 0; i < n; i++) counts[(srcZ[i] >>> shift) & 0xff]++;
+    // turn per-bucket counts into start offsets (prefix sum)
+    let sum = 0;
+    for (let b = 0; b < 256; b++) { const c = counts[b]; counts[b] = sum; sum += c; }
+    for (let i = 0; i < n; i++) {
+        const z = srcZ[i];
+        const pos = counts[(z >>> shift) & 0xff]++;
+        dst[pos] = src[i];
+        dstZ[pos] = z;
+    }
+}
+
+// z-order of a point given coords and inverse of the longer side of data bbox
+/** @param {number} x @param {number} y @param {number} minX @param {number} minY @param {number} invSize @returns {number} */
+function zOrder(x, y, minX, minY, invSize) {
+    // coords are transformed into non-negative 15-bit integer range
+    x = (x - minX) * invSize | 0;
+    y = (y - minY) * invSize | 0;
+
+    x = (x | (x << 8)) & 0x00FF00FF;
+    x = (x | (x << 4)) & 0x0F0F0F0F;
+    x = (x | (x << 2)) & 0x33333333;
+    x = (x | (x << 1)) & 0x55555555;
+

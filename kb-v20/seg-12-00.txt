@@ -1,0 +1,1000 @@
+  for(const [x,z] of [[0,0],[50,0],[100,0],[0,100],[50,100],[100,100]]){
+   const pocket=document.createElement('i');pocket.className='pocket';pocket.style.left=x+'%';pocket.style.top=z+'%';felt.appendChild(pocket);
+  }
+  for(let i=0;i<13;i++){const dot=document.createElement('i');dot.className='ball';felt.appendChild(dot);this.ballDots.push(dot);}
+ },
+ createBalls(){
+  const balls=[{x:-1.11,z:0,vx:0,vz:0,col:'#fffaf0',pocket:false}];
+  const cols=['#f5ca54','#f6f3db','#cc493e','#513c92','#e89c43','#25778c','#d5b95a','#7c292a','#e5e6df','#408865','#ac6d4c','#784e94'];
+  let n=0;
+  for(let row=0;row<4;row++)for(let j=0;j<=row;j++){
+   if(n>=12)break;
+   balls.push({x:.52+row*.185,z:(j-row*.5)*.19,vx:0,vz:0,col:cols[n++],pocket:false});
+  }
+  balls.push({x:1.24,z:.31,vx:0,vz:0,col:'#4c6e9d',pocket:false});
+  this.balls=balls;
+ },
+ start(source='manual'){
+  if(!live||directorShot||this.active||kb12Story.active||kb12Story.callOpen||football||interior||mapOpen||transition||window.KBStoryExtensions?.modal||cine?.choice){
+   if(live)tip('Filmska scena je dostupna dok slobodno stojiš u 3D svetu.',3);
+   return false;
+  }
+  if(paused)setPaused(false);
+  if(!this.overlay)this.setup();
+  this.queued=false;
+  this.startedVia=source;
+  this.t=0;this.shotDone=false;this.cueIndex=-1;this.speaker='';this.firstCamera=true;
+  this.active=true;
+  this.previous={view,yaw,pitch,camEye:cam.eye.slice(),camTarget:cam.target.slice(),camRoll:cam.roll};
+  const home=LAZA.house||houses.find(h=>h.hero==='secret'),anchor=home?.c||[LOC[1].x,LOC[1].z];
+  this.stage={x:anchor[0],z:anchor[1],y:height(anchor[0],anchor[1])+.16};
+  this.actors=[
+   {n:'Andrej',x:this.stage.x-2.42,z:this.stage.z+1.88,yaw:2.23,phase:0,move:0,jump:0,lean:0,kb11Cine:true,kb11Action:'idle'},
+   {n:'Lazar',x:this.stage.x+2.50,z:this.stage.z+1.90,yaw:-2.28,phase:0,move:0,jump:0,lean:0,kb11Cine:true,kb11Action:'idle'},
+   {n:'Petar',x:this.stage.x+2.36,z:this.stage.z-1.72,yaw:-1.07,phase:0,move:0,jump:0,lean:0,kb11Cine:true,kb11Action:'idle'}
+  ];
+  this.createBalls();
+  if(!software)view=1;
+  clearInput();
+  if(document.pointerLockElement===scene)document.exitPointerLock();
+  this.overlay.hidden=false;
+  this.preview.hidden=!software;
+  gm.classList.add('kb11-cutscene');
+  this.updateCue(true);
+  this.camera(1);
+  try{audio?.resume?.().catch(()=>{})}catch(_){}
+  return true;
+ },
+ tick(dt){
+  if(!this.active)return;
+  this.t=Math.min(this.sceneLength,this.t+dt);
+  if(this.t>=14.45&&!this.shotDone){
+   this.shotDone=true;
+   this.balls[0].vx=4.4;this.balls[0].vz=.28;
+   this.sound(.76,190,.11);
+  }
+  this.physics(dt);
+  this.updateCue(false);
+  for(let i=0;i<this.actors.length;i++){
+   const a=this.actors[i];a.phase+=dt*(i===2?1.05:.82);
+   a.kb11Action=this.speaker===a.n?(this.currentCue?.action||'talk'):'idle';
+   if(i===2&&this.t>13&&this.t<17.7)a.kb11Action='pool';
+   if(i===1&&this.t>24.7&&this.t<47)a.kb11Action='phone';
+  }
+  if(this.progress)this.progress.style.width=(this.t/this.sceneLength*100).toFixed(2)+'%';
+  if(this.t>=this.sceneLength)this.finish(false,false);
+ },
+ updateCue(force){
+  const index=this.script.findIndex(c=>this.t>=c.at&&this.t<c.until);
+  if(index<0||(!force&&index===this.cueIndex))return;
+  this.cueIndex=index;
+  const c=this.script[index];
+  this.currentCue=c;this.speaker=c.name==='Pera'?'Petar':c.name;
+  this.subtitleName.textContent=c.name.toUpperCase();
+  this.subtitle.textContent=c.line;
+  if(this.voiceOn)this.speak(c);
+  if(c.name==='Vuk'&&this.t>46)this.sound(.33,360,.08);
+  if(c.name==='Lazar'&&this.t>24&&this.t<28)this.sound(.43,590,.09);
+  if(this.t>31&&this.t<32)this.sound(.38,220,.1);
+ },
+ refreshVoiceButton(){
+  if(!this.voiceButton)return;
+  this.voiceButton.textContent=this.voiceOn?'🔊 GLAS: ON':'🔇 GLAS: OFF';
+  this.voiceButton.setAttribute('aria-pressed',String(this.voiceOn));
+ },
+ speak(c){
+  if(!this.voiceOn||!window.speechSynthesis||typeof SpeechSynthesisUtterance!=='function')return;
+  try{
+   window.speechSynthesis.cancel();
+   const utterance=new SpeechSynthesisUtterance(c.line);
+   utterance.lang='sr-RS';
+   const voices=window.speechSynthesis.getVoices();
+   const voice=voices.find(v=>/^sr(?:-|$)/i.test(v.lang))||voices.find(v=>/^(hr|bs)(?:-|$)/i.test(v.lang));
+   if(voice)utterance.voice=voice;
+   const profiles={Vuk:[.85,.98],Andrej:[1.01,1.04],Pera:[1.16,1.02],Lazar:[.95,1.08]};
+   const profile=profiles[c.name]||[1,1];
+   utterance.pitch=profile[0];utterance.rate=profile[1];utterance.volume=.85;
+   window.speechSynthesis.speak(utterance);
+  }catch(e){console.warn('Kinematografski govor nije dostupan:',e)}
+ },
+ sound(volume=0.2,freq=270,duration=.09){
+  if(!audio||audio.state==='closed')return;
+  try{const o=audio.createOscillator(),g=audio.createGain(),now=audio.currentTime;
+   o.type='triangle';o.frequency.setValueAtTime(freq,now);
+   o.frequency.exponentialRampToValueAtTime(Math.max(60,freq*.7),now+duration);
+   g.gain.setValueAtTime(Math.max(.0001,volume*.045),now);
+   g.gain.exponentialRampToValueAtTime(.0001,now+duration);
+   o.connect(g);g.connect(audio.destination);o.start(now);o.stop(now+duration+.015);
+   o.onended=()=>{try{o.disconnect();g.disconnect()}catch(_){}};
+  }catch(_){}
+ },
+ physics(dt){
+  const b=this.balls,r=.09,minX=-1.6,maxX=1.6,minZ=-.77,maxZ=.77;
+  let soundAt=false;
+  for(let i=0;i<b.length;i++){
+   const a=b[i];if(a.pocket)continue;
+   a.x+=a.vx*dt;a.z+=a.vz*dt;
+   const d=Math.hypot(a.vx,a.vz),drag=Math.exp(-1.15*dt);
+   a.vx*=drag;a.vz*=drag;
+   if(d<.015){a.vx=0;a.vz=0}
+   const pockets=[[-1.61,-.77],[-1.61,.77],[0,-.78],[0,.78],[1.61,-.77],[1.61,.77]];
+   if(pockets.some(p=>Math.hypot(a.x-p[0],a.z-p[1])<.21)){a.pocket=true;a.vx=a.vz=0;this.sound(.27,145,.12);continue;}
+   if(a.x<minX+r||a.x>maxX-r){a.x=clamp(a.x,minX+r,maxX-r);a.vx*=-.72;soundAt=soundAt||Math.abs(a.vx)>.75}
+   if(a.z<minZ+r||a.z>maxZ-r){a.z=clamp(a.z,minZ+r,maxZ-r);a.vz*=-.72;soundAt=soundAt||Math.abs(a.vz)>.75}
+  }
+  for(let i=0;i<b.length;i++)for(let j=i+1;j<b.length;j++){
+   const a=b[i],c=b[j];if(a.pocket||c.pocket)continue;
+   let dx=c.x-a.x,dz=c.z-a.z,d=Math.hypot(dx,dz);if(d>=r*2||d<.000001)continue;
+   const nx=dx/d,nz=dz/d,over=(r*2-d)*.5;
+   a.x-=nx*over;a.z-=nz*over;c.x+=nx*over;c.z+=nz*over;
+   const rel=(c.vx-a.vx)*nx+(c.vz-a.vz)*nz;
+   if(rel<0){
+    const impulse=-.89*rel;
+    a.vx-=nx*impulse;a.vz-=nz*impulse;c.vx+=nx*impulse;c.vz+=nz*impulse;
+    if(Math.abs(rel)>1.2)soundAt=true;
+   }
+  }
+  if(soundAt&&Math.floor(this.t*10)%3===0&&this.lastClack!==Math.floor(this.t*10)){
+   this.lastClack=Math.floor(this.t*10);this.sound(.22,400,.045);
+  }
+  if(software&&this.preview&&!this.preview.hidden){
+   for(let i=0;i<this.ballDots.length;i++){
+    const dot=this.ballDots[i],a=b[i];dot.hidden=!a||a.pocket;
+    if(a&&!a.pocket){dot.style.left=((a.x+1.6)/3.2*100).toFixed(2)+'%';dot.style.top=((a.z+.77)/1.54*100).toFixed(2)+'%';dot.style.background=a.col;}
+   }
+  }
+ },
+ camera(dt){
+  if(!this.active||!this.stage)return;
+  const shot=this.cameras[this.currentCue?.shot]||this.cameras.wide,S=this.stage;
+  const at=shot.target.map((v,i)=>v+(i===0?S.x:i===1?S.y:S.z));
+  const eye=shot.eye.map((v,i)=>v+(i===0?S.x:i===1?S.y:S.z));
+  const start=this.currentCue?.at||0,end=this.cues?.[this.cueIndex+1]?.at||this.sceneLength||start+4;
+  const k=easeShot(clamp((this.t-start)/Math.max(.5,end-start),0,1));
+  if(!reduced){const offset=bezierPoint([-.14,.035,0],[-.09,.05,.055],[.05,.015,.09],[.13,0,.11],k);for(let i=0;i<3;i++)eye[i]+=offset[i];}
+  const breathe=reduced?0:Math.sin(this.t*.37)*.023;
+  eye[0]+=breathe;at[1]+=breathe*.6;
+  const f=this.firstCamera?1:1-Math.exp(-dt*(reduced?24:3.5));
+  this.firstCamera=false;
+  for(let i=0;i<3;i++){cam.eye[i]=lerp(cam.eye[i],eye[i],f);cam.target[i]=lerp(cam.target[i],at[i],f)}
+  cam.roll=lerp(cam.roll,0,f);
+ },
+ buildRoom(m){
+  const {x,z,y}=this.stage;
+  const box=(dx,dy,dz,w,h,d,col,mat=3)=>m.box(x+dx,y+dy,z+dz,w,h,d,col,mat);
+  box(0,-.17,0,16,.35,15,'#3d332c',3);
+  for(let i=-7;i<=7;i+=1.4)box(i,.018,0,.023,.016,14.8,'#5b4635',3);
+  box(0,2.35,-7.45,16,4.7,.35,'#283a39');
+  box(-7.87,2.35,0,.35,4.7,15,'#2c3937');
+  box(7.87,2.35,0,.35,4.7,15,'#2c3937');
+  box(-5.2,2.3,7.36,5.2,4.6,.32,'#293a37');
+  box(5.2,2.3,7.36,5.2,4.6,.32,'#293a37');
+  box(0,4.38,7.36,5,1.0,.32,'#293a37');
+  for(const side of [-1,1]){box(side*7.63,2.4,-3.7,.24,4.7,.25,'#6c5844');box(side*7.63,2.4,3.7,.24,4.7,.25,'#6c5844');}
+  box(0,4.85,-7.1,15.9,.23,.45,'#5b4939');
+  for(const xx of [-5,0,5]){box(xx,4.84,0,.25,.25,14.6,'#5b4939');m.rod([x+xx,y+4.75,z-1.2],[x+xx,y+3.62,z-1.2],.04,'#6d6350');m.sphere(x+xx,y+3.57,z-1.2,.57,.14,.43,'#a28a53',4);m.sphere(x+xx,y+3.45,z-1.2,.42,.055,.3,'#ffe2a0',4);}
+  box(-5.65,1.23,-6.9,2.25,2.0,.16,'#594232',3);
+  box(-5.65,1.34,-6.79,1.81,1.29,.07,'#1a2c34',4);
+  box(-4.3,.65,-5.75,1.28,1.2,.6,'#4d3a2d');
+  box(-4.3,1.2,-5.38,.88,.12,.33,'#5d4630');
+  for(let j=0;j<4;j++)box(-7.55,1.0+j*.55,-4.7,.13,.1,2.8,'#775d3d');
+  box(0,2.8,-7.26,4.7,.9,.055,'#202c2b');
+  for(let i=0;i<8;i++)box(-2.0+i*.56,2.64,-7.20,.17,.1,.07,i%2?'#b8a27b':'#776247',4);
+  for(const k of [-1,1]){box(k*3.1,.5,-5.85,1.15,.62,.7,'#604631');box(k*3.1,.88,-5.85,1.1,.13,.75,'#967450');}
+  box(5.75,.9,-6.98,1.8,1.6,.3,'#2f4b4c');
+  box(5.75,.98,-6.79,1.32,1.23,.05,'#427a72',4);
+  this.buildTable(m);
+ },
+ buildTable(m){
+  const {x,z,y}=this.stage,box=(dx,dy,dz,w,h,d,c,mat=3)=>m.box(x+dx,y+dy,z+dz,w,h,d,c,mat);
+  for(const dx of [-1.45,1.45])for(const dz of [-.72,.72])box(dx,.51,dz,.26,1.04,.27,'#4e2d21');
+  box(0,.98,0,3.87,.29,2.27,'#523727');
+  box(0,1.15,0,3.53,.12,1.96,'#0b4c35');
+  box(0,1.22,0,3.30,.04,1.70,'#226b4b',4);
+  for(const dz of [-1,1]){
+   box(0,1.30,dz*.95,3.85,.16,.23,'#76512d');
+   box(0,1.34,dz*.83,3.27,.11,.07,'#487449');
+  }
+  for(const dx of [-1,1]){
+   box(dx*1.82,1.30,0,.22,.16,1.93,'#76512d');
+   box(dx*1.68,1.34,0,.07,.11,1.54,'#487449');
+  }
+  for(const dx of [-1.65,0,1.65])for(const dz of [-.86,.86]){
+   if(dx===0&&dz===0)continue;
+   m.sphere(x+dx,y+1.314,z+dz,.16,.018,.16,'#090d0b',3);
+  }
+  box(0,.8,-1.0,3.1,.09,.12,'#312820');
+  box(0,.8,1.0,3.1,.09,.12,'#312820');
+ },
+ paint(m){
+  if(!this.active||!this.stage)return;
+  this.buildRoom(m);
+  const {x,z,y}=this.stage;
+  for(let i=0;i<this.balls.length;i++){
+   const b=this.balls[i];if(b.pocket)continue;
+   m.sphere(x+b.x,y+1.345,z+b.z,.091,.091,.091,b.col,3);
+   if(i!==0)m.box(x+b.x,y+1.402,z+b.z,.058,.015,.058,'#f7e8ca',3);
+  }
+  if(this.t>=12.4&&this.t<17.7){
+   const pull=this.t<14.45?(Math.sin(this.t*12)*.16):Math.min(.28,(this.t-14.45)*1.2);
+   m.rod([x-2.95+pull,y+1.43,z+.13],[x-1.28+pull,y+1.38,z+.02],.032,'#b99562',3);
+   m.rod([x-1.67+pull,y+1.39,z+.05],[x-1.28+pull,y+1.38,z+.02],.042,'#ebdcca',3);
+  }
+  for(let i=0;i<this.actors.length;i++){
+   const a=this.actors[i],tmp=Mesh();kb11Model(tmp,a,i,false);
+   const correction=y-height(a.x,a.z);
+   for(let j=0;j<tmp.out.length;j+=7){
+    m.out.push(tmp.out[j],tmp.out[j+1]+correction,tmp.out[j+2],tmp.out[j+3],tmp.out[j+4],tmp.out[j+5],tmp.out[j+6]);
+   }
+  }
+  const v=VUK,saved={x:v.x,z:v.z,yaw:v.yaw,move:v.move,phase:v.phase,wR:v.wR,wL:v.wL,lt:v.lt,mode:v.mode};
+  const vi0=m.out.length;
+  try{v.x=x-2.48;v.z=z-1.86;v.yaw=1.03;v.move=0;v.phase=this.t*.6;vukHuman(m)}
+  finally{Object.assign(v,saved)}
+  {const vc=y-height(x-2.48,z-1.86);if(vc)for(let i=vi0+1;i<m.out.length;i+=7)m.out[i]+=vc}
+  if(this.t>=30){
+   const dog={x:x+5.6,z:z+5.7,yaw:-2.2,phase:this.t*2,move:0,state:'idle'};
+   const tmp=Mesh();dogModel(tmp,dog,true);const dy=y-height(dog.x,dog.z);
+   for(let j=0;j<tmp.out.length;j+=7)m.out.push(tmp.out[j],tmp.out[j+1]+dy,tmp.out[j+2],tmp.out[j+3],tmp.out[j+4],tmp.out[j+5],tmp.out[j+6]);
+  }
+  if(this.t>=24.8){
+   const blink=Math.sin(this.t*5)>.3?4:3;
+   m.box(x+2.2,y+1.13,z+2.0,.35,.055,.22,'#13252c');
+   m.box(x+2.2,y+1.164,z+2.0,.28,.01,.16,blink===4?'#a4e0da':'#467c7e',blink);
+  }
+  m.box(x-5.8,y+.32,z+3.4,1.1,.08,.25,'#7e6a4a');
+  m.box(x-5.8,y+.14,z+3.4,.12,.3,.18,'#5e4a34');
+ },
+ finish(abort=false,skipped=false){
+  if(!this.active)return false;
+  this.active=false;this.queued=false;
+  if(this.previous){
+   view=this.previous.view;
+   yaw=this.previous.yaw;pitch=this.previous.pitch;
+   cam.eye=this.previous.camEye.slice();
+   cam.target=this.previous.camTarget.slice();
+   cam.roll=this.previous.camRoll;
+  }
+  this.previous=null;this.speaker='';this.currentCue=null;
+  if(this.voiceOn&&window.speechSynthesis)try{window.speechSynthesis.cancel()}catch(_){}
+  if(this.overlay)this.overlay.hidden=true;
+  gm.classList.remove('kb11-cutscene');
+  clearInput();
+  if(!abort){
+   stateStore.put(this.seenKey,true);
+   if(story.on)tip(skipped?'KAT-SCENA PRESKOČENA · nastavlja se misija':'KAT-SCENA ZAVRŠENA · pratite trag prema meteo-stanici.',5);
+   else tip(skipped?'Filmska scena preskočena.':'Poslednja partija · scena odigrana. Pokreni priču za misije.',5);
+  }
+  return true;
+ }
+};
+window.KBCinematicV11=Object.freeze({
+ start:()=>kb11Cutscene.start('manual'),
+ skip:()=>kb11Cutscene.finish(false,true),
+ get active(){return kb11Cutscene.active},
+ get queued(){return kb11Cutscene.queued},
+ get time(){return kb11Cutscene.t},
+ get cue(){return kb11Cutscene.currentCue?.name||null},
+ get progress(){return Math.round(100*kb11Cutscene.t/kb11Cutscene.sceneLength)},
+ get balls(){return kb11Cutscene.balls.map(b=>({x:b.x,z:b.z,pocket:b.pocket}))}
+});
+kb11Cutscene.setup();
+
+
+/* ===== KALAČ BRDO V12 · GDE JE PERA? · NIŠKA TVRĐAVA / MAJIN POZIV =====
+   Režirana scena u postojećem 60 Hz update/render sistemu; bez dodatne RAF petlje. */
+const kb12Audio={
+ held:false,phoneWasPlaying:false,speakerWasPlaying:false,
+ hold(){
+  if(this.held)return;
+  this.held=true;
+  const a=SPK.el;
+  this.speakerWasPlaying=!!(a&&!a.paused);
+  if(a){try{a.pause();SPK.autoPaused=this.speakerWasPlaying}catch(_){}}
+  try{this.phoneWasPlaying=!!window.KBPhone3D?.cinemaHold?.()}catch(_){this.phoneWasPlaying=false}
+ },
+ release(){
+  if(!this.held)return;
+  this.held=false;
+  if(this.speakerWasPlaying&&SPK.el&&!SPK.userPaused){SPK.autoPaused=true}
+  try{window.KBPhone3D?.cinemaRelease?.(this.phoneWasPlaying)}catch(_){}
+  this.phoneWasPlaying=this.speakerWasPlaying=false;
+ }
+};
+/* ===== KB · SEĆANJA (oblačić 2 s -> ceo ekran) · ilustrovane animirane scene ===== */
+const kb12Mem=(()=>{
+ const f=n=>+n.toFixed(1);
+ /* --- lice --- */
+ function face(hr,e){
+  const ey=-hr*.04,ex=hr*.38,r=hr*.105,mc='#7a2f33',ink='#2a1d18';let s='';
+  const eye=x=>{
+   if(e==='closed')return `<path d="M${f(x-r*1.5)} ${f(ey+r*.3)} q${f(r*1.5)} ${f(r*1.6)} ${f(r*3)} 0" fill="none" stroke="${ink}" stroke-width="${f(hr*.07)}" stroke-linecap="round"/>`;
+   if(e==='shock'||e==='yell')return `<ellipse cx="${f(x)}" cy="${f(ey)}" rx="${f(r*1.6)}" ry="${f(r*1.9)}" fill="#fff"/><circle cx="${f(x)}" cy="${f(ey)}" r="${f(r*.85)}" fill="${ink}"/>`;
+   if(e==='sulk')return `<ellipse cx="${f(x+r)}" cy="${f(ey)}" rx="${f(r)}" ry="${f(r*1.2)}" fill="${ink}"/>`;
+   return `<ellipse cx="${f(x)}" cy="${f(ey)}" rx="${f(r)}" ry="${f(r*1.3)}" fill="${ink}"/><circle cx="${f(x+r*.35)}" cy="${f(ey-r*.45)}" r="${f(r*.38)}" fill="#fff"/>`;
+  };
+  s+=eye(-ex)+eye(ex);
+  const my=hr*.44;
+  if(e==='worry'||e==='yell'||e==='shock'){
+   const a=e==='worry'?-1:1;
+   s+=`<path d="M${f(-ex-r*1.8)} ${f(ey-r*2.6-a*r*.9)} L${f(-ex+r*1.8)} ${f(ey-r*2.6+a*r*.9)} M${f(ex+r*1.8)} ${f(ey-r*2.6-a*r*.9)} L${f(ex-r*1.8)} ${f(ey-r*2.6+a*r*.9)}" stroke="${ink}" stroke-width="${f(hr*.07)}" stroke-linecap="round" fill="none"/>`;
+  }
+  if(e==='grin')s+=`<path d="M${f(-hr*.36)} ${f(my-hr*.1)} Q0 ${f(my+hr*.55)} ${f(hr*.36)} ${f(my-hr*.1)}Z" fill="${mc}"/><path d="M${f(-hr*.28)} ${f(my-hr*.06)} H${f(hr*.28)}" stroke="#fff" stroke-width="${f(hr*.1)}"/>`;
+  else if(e==='shock')s+=`<ellipse cx="0" cy="${f(my+hr*.04)}" rx="${f(hr*.14)}" ry="${f(hr*.2)}" fill="${mc}"/>`;
+  else if(e==='yell')s+=`<path d="M${f(-hr*.3)} ${f(my-hr*.1)} Q0 ${f(my+hr*.7)} ${f(hr*.3)} ${f(my-hr*.1)}Z" fill="${mc}"/>`;
+  else if(e==='worry')s+=`<path d="M${f(-hr*.22)} ${f(my+hr*.08)} q${f(hr*.11)} ${f(-hr*.15)} ${f(hr*.22)} 0 t${f(hr*.22)} 0" fill="none" stroke="${mc}" stroke-width="${f(hr*.07)}" stroke-linecap="round"/>`;
+  else if(e==='sulk')s+=`<path d="M${f(-hr*.2)} ${f(my+hr*.05)} H${f(hr*.2)}" stroke="${mc}" stroke-width="${f(hr*.07)}" stroke-linecap="round"/>`;
+  else s+=`<path d="M${f(-hr*.25)} ${f(my-hr*.04)} Q0 ${f(my+hr*.22)} ${f(hr*.25)} ${f(my-hr*.04)}" fill="none" stroke="${mc}" stroke-width="${f(hr*.07)}" stroke-linecap="round"/>`;
+  if(e==='blush'||e==='closed'||e==='grin'||e==='worry')s+=`<circle cx="${f(-hr*.62)}" cy="${f(my-hr*.12)}" r="${f(hr*.17)}" fill="#ff6f7a" opacity=".38"/><circle cx="${f(hr*.62)}" cy="${f(my-hr*.12)}" r="${f(hr*.17)}" fill="#ff6f7a" opacity=".38"/>`;
+  return s;
+ }
+ /* --- kosa --- */
+ function hairBack(hr,st,c){
+  if(st==='long')return `<path d="M${f(-hr-9)} ${f(-hr*.2)} Q${f(-hr-14)} ${f(hr*2.4)} ${f(-hr*.2)} ${f(hr*2.5)} L${f(hr*.2)} ${f(hr*2.5)} Q${f(hr+14)} ${f(hr*2.4)} ${f(hr+9)} ${f(-hr*.2)} Q0 ${f(-hr*1.5)} ${f(-hr-9)} ${f(-hr*.2)}Z" fill="${c}"/>`;
+  if(st==='pony')return `<path d="M${f(hr*.7)} ${f(-hr*.7)} Q${f(hr*2.0)} ${f(-hr*.9)} ${f(hr*1.7)} ${f(hr*.8)} Q${f(hr*1.35)} ${f(hr*.1)} ${f(hr*.75)} ${f(-hr*.3)}Z" fill="${c}"><animateTransform attributeName="transform" type="rotate" values="0 ${f(hr*.8)} ${f(-hr*.6)};7 ${f(hr*.8)} ${f(-hr*.6)};0 ${f(hr*.8)} ${f(-hr*.6)}" dur="1.3s" repeatCount="indefinite"/></path>`;
+  if(st==='pig')return `<circle cx="${f(-hr-9)}" cy="${f(hr*.2)}" r="${f(hr*.3)}" fill="${c}"/><circle cx="${f(hr+9)}" cy="${f(hr*.2)}" r="${f(hr*.3)}" fill="${c}"/><rect x="${f(-hr-6)}" y="${f(-hr*.12)}" width="${f(hr*.42)}" height="${f(hr*.2)}" rx="4" fill="#ff5a8a"/><rect x="${f(hr-hr*.42+6)}" y="${f(-hr*.12)}" width="${f(hr*.42)}" height="${f(hr*.2)}" rx="4" fill="#ff5a8a"/>`;
+  if(st==='braid')return `<path d="M${f(-hr-3)} ${f(hr*.1)} q${f(-hr*.45)} ${f(hr*1.2)} ${f(hr*.1)} ${f(hr*1.9)}" stroke="${c}" stroke-width="${f(hr*.36)}" stroke-linecap="round" fill="none"/><path d="M${f(hr+3)} ${f(hr*.1)} q${f(hr*.45)} ${f(hr*1.2)} ${f(-hr*.1)} ${f(hr*1.9)}" stroke="${c}" stroke-width="${f(hr*.36)}" stroke-linecap="round" fill="none"/>`;
+  return '';
+ }
+ function hairFront(hr,st,c){
+  if(st==='boy')return `<path d="M${f(-hr-3)} ${f(hr*.02)} C${f(-hr-6)} ${f(-hr*1.45)} ${f(hr+6)} ${f(-hr*1.45)} ${f(hr+3)} ${f(hr*.02)} C${f(hr*.65)} ${f(-hr*.55)} ${f(-hr*.1)} ${f(-hr*.82)} ${f(-hr-3)} ${f(hr*.02)}Z" fill="${c}"/>`;
+  if(st==='crop')return `<path d="M${f(-hr-3)} ${f(-hr*.1)} C${f(-hr-3)} ${f(-hr*1.38)} ${f(hr+3)} ${f(-hr*1.38)} ${f(hr+3)} ${f(-hr*.1)} C${f(hr*.5)} ${f(-hr*.72)} ${f(-hr*.5)} ${f(-hr*.72)} ${f(-hr-3)} ${f(-hr*.1)}Z" fill="${c}"/>`;
+  return `<path d="M${f(-hr-4)} ${f(hr*.12)} C${f(-hr-8)} ${f(-hr*1.5)} ${f(hr+8)} ${f(-hr*1.5)} ${f(hr+4)} ${f(hr*.12)} C${f(hr*.8)} ${f(-hr*.35)} ${f(hr*.1)} ${f(-hr*.72)} ${f(-hr*.35)} ${f(-hr*.5)} C${f(-hr*.6)} ${f(-hr*.35)} ${f(-hr*.9)} ${f(-hr*.15)} ${f(-hr-4)} ${f(hr*.12)}Z" fill="${c}"/>`;
+ }
+ /* --- osoba: stopala na (x,y) --- */
+ function P(o){
+  const kid=!!o.kid,hr=kid?38:33,legH=kid?60:98,torsoH=kid?72:88,tw=kid?58:64,sk=o.skin||'#e3b08c',top=o.top||'#4a6fa5',bot=o.bot||'#2d3b55',hc=o.hair||'#2c1e17',s=o.s||1;
+  const yH=-legH,yS=-legH-torsoH+16,yHead=-legH-torsoH-hr*.72,sw=(kid?24:27);
+  const L=o.L||[-6,62],R=o.R||[6,62];
+  const arm=(sx,h,mode)=>{const hx=sx+h[0],hy=yS+h[1];
+   return `<path d="M${sx} ${yS} L${f(hx)} ${f(hy)}" stroke="${top}" stroke-width="${kid?15:17}" stroke-linecap="round"/><circle cx="${f(hx)}" cy="${f(hy)}" r="${kid?8.5:9.5}" fill="${sk}"/>`};
+  let g=`<g transform="translate(${o.x} ${o.y}) scale(${s}${o.flip?' -'+s:''})"`;
+  g=`<g transform="translate(${o.x} ${o.y}) scale(${o.flip?-s:s} ${s})">`;
+  g+=`<ellipse cx="0" cy="3" rx="${kid?46:54}" ry="9" fill="#000" opacity=".22"/>`;
+  g+=`<g class="bob">`;
+  if(o.bounce)g+=`<animateTransform attributeName="transform" type="translate" values="0 0;0 -7;0 0" dur="${o.bounce}s" repeatCount="indefinite"/>`;
+  g+=`<g transform="translate(0 ${f(yHead)}) rotate(${o.tilt||0})">`+hairBack(hr,o.hs,hc)+`</g>`;
+  /* noge */
+  const lw=kid?19:22;
+  g+=`<rect x="${-lw-2}" y="${yH}" width="${lw}" height="${legH-6}" rx="9" fill="${o.legs||sk}"/><rect x="2" y="${yH}" width="${lw}" height="${legH-6}" rx="9" fill="${o.legs||sk}"/>`;
+  if(o.dress)g+=`<path d="M${-tw/2-8} ${yS+8} L${tw/2+8} ${yS+8} L${tw/2+22} ${yH+26} L${-tw/2-22} ${yH+26}Z" fill="${top}"/>`;
+  else g+=`<rect x="${-lw-5}" y="${yH-4}" width="${lw*2+10}" height="${kid?30:46}" rx="8" fill="${bot}"/>`;
+  g+=`<rect x="${-lw-5}" y="-14" width="${lw+3}" height="14" rx="6" fill="${o.shoe||'#f2f2f2'}"/><rect x="2" y="-14" width="${lw+3}" height="14" rx="6" fill="${o.shoe||'#f2f2f2'}"/>`;
+  /* torzo */
+  if(!o.dress)g+=`<rect x="${-tw/2}" y="${yS-6}" width="${tw}" height="${torsoH+4}" rx="${kid?18:20}" fill="${top}"/>`;
+  else g+=`<rect x="${-tw/2+2}" y="${yS-6}" width="${tw-4}" height="${torsoH-18}" rx="16" fill="${top}"/>`;
+  if(o.hood)g+=`<path d="M${-tw/2+6} ${yS-4} Q0 ${yS+22} ${tw/2-6} ${yS-4}" fill="none" stroke="${o.hoodTrim||'#00000033'}" stroke-width="8"/>`;
+  if(o.stripe)g+=`<rect x="${-tw/2}" y="${yS+torsoH*.42}" width="${tw}" height="9" fill="${o.stripe}"/>`;
+  /* ruke */
+  g+=`<g class="armL">${arm(-tw/2+5,L)}</g><g class="armR">${arm(tw/2-5,R)}</g>`;
+  /* vrat + glava */
+  g+=`<rect x="-9" y="${yHead+hr-6}" width="18" height="${kid?18:22}" rx="6" fill="${sk}"/>`;
+  g+=`<g transform="translate(0 ${f(yHead)}) rotate(${o.tilt||0})">`;
+  g+=`<circle cx="${f(-hr-1)}" cy="2" r="${f(hr*.18)}" fill="${sk}"/><circle cx="${f(hr+1)}" cy="2" r="${f(hr*.18)}" fill="${sk}"/>`;
+  g+=`<ellipse cx="0" cy="0" rx="${hr}" ry="${f(hr*1.04)}" fill="${sk}"/>`;
+  g+=face(hr,o.e||'smile');
+  g+=hairFront(hr,o.hs==='long'||o.hs==='pony'||o.hs==='pig'||o.hs==='braid'?'girl':(o.hs||'boy'),hc);
+  g+=`</g></g></g>`;
+  return g;
+ }
+ const svg=(inner,defs='')=>`<svg viewBox="0 0 960 540" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>${inner}</svg>`;
+ const heart=(x,y,s,c,dur,del)=>`<g transform="translate(${x} ${y}) scale(${s})" opacity="0"><path d="M0 8 C-18 -6 -10 -22 0 -11 C10 -22 18 -6 0 8Z" fill="${c}"/><animateTransform attributeName="transform" type="translate" values="${x} ${y};${x+8} ${y-90}" dur="${dur}s" begin="${del}s" repeatCount="indefinite" additive="replace"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.2;.7;1" dur="${dur}s" begin="${del}s" repeatCount="indefinite"/></g>`;
+ const rain=(n,seed,op=.55,len=34,spd=.55,w=960,h=540,col='#cfe3ff')=>{let s='';for(let i=0;i<n;i++){const x=((i*173+seed*97)%w),y0=((i*89+seed*31)%h)-h,d=(spd+((i*7)%5)*.05).toFixed(2);
+  s+=`<line x1="${x}" y1="0" x2="${x-12}" y2="${len}" stroke="${col}" stroke-width="2" opacity="${op}" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 ${y0};0 ${h+60}" dur="${d}s" begin="-${(i%7)*.09}s" repeatCount="indefinite"/></line>`}return s};
+ const tw=(x,y)=>`<g opacity=".9"><path d="M${x} ${y} l3 10 10 3 -10 3 -3 10 -3 -10 -10 -3 10 -3z" fill="#fff6c7"><animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite" begin="${(x%5)*.3}s"/></path></g>`;
+
+ /* ================== LAZAROVO SEĆANJE ================== */
+ const kidLena=(x,y,o={})=>P(Object.assign({x,y,kid:1,s:1.18,skin:'#f1c6a6',hair:'#6b3d22',hs:'pig',top:'#ffd24a',dress:1,legs:'#f1c6a6',shoe:'#ff7aa8'},o));
+ const kidLazar=(x,y,o={})=>P(Object.assign({x,y,kid:1,s:1.18,skin:'#e0ad88',hair:'#2a1c14',hs:'boy',top:'#3f7bd6',bot:'#2e4a7a',legs:'#e0ad88',shoe:'#fff'},o));
+ const friend=(x,y,o={})=>P(Object.assign({x,y,kid:1,s:1.22,skin:'#d9a07a',hair:'#21140f',hs:'braid',top:'#a56be0',dress:1,legs:'#d9a07a',shoe:'#e8e8e8'},o));
+ const L1=()=>svg(`
+  <defs><linearGradient id="lsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fc3ff"/><stop offset="1" stop-color="#e9f6ff"/></linearGradient>
+  <linearGradient id="lsea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1fa5d8"/><stop offset="1" stop-color="#7fd7ea"/></linearGradient>
+  <radialGradient id="lsun"><stop offset="0" stop-color="#fff7b0"/><stop offset="1" stop-color="#ffe46b" stop-opacity="0"/></radialGradient></defs>
+  <rect width="960" height="540" fill="url(#lsky)"/><circle cx="800" cy="110" r="150" fill="url(#lsun)"/><circle cx="800" cy="110" r="46" fill="#fff3a0"/>
+  <g fill="#fff" opacity=".9"><ellipse cx="190" cy="100" rx="80" ry="24"><animateTransform attributeName="transform" type="translate" values="0 0;40 0;0 0" dur="14s" repeatCount="indefinite"/></ellipse><ellipse cx="250" cy="82" rx="54" ry="22"/><ellipse cx="560" cy="150" rx="70" ry="20"/></g>
+  <rect y="238" width="960" height="120" fill="url(#lsea)"/>
+  <g stroke="#fff" stroke-width="3" opacity=".6" stroke-linecap="round" fill="none"><path d="M60 270q20-10 40 0t40 0"/><path d="M360 300q20-10 40 0t40 0"/><path d="M700 262q20-10 40 0t40 0"/><path d="M520 330q20-10 40 0t40 0"><animateTransform attributeName="transform" type="translate" values="0 0;16 0;0 0" dur="3s" repeatCount="indefinite"/></path></g>
+  <path d="M0 350 Q480 322 960 350 V540 H0Z" fill="#f2deb0"/><rect y="400" width="960" height="140" fill="#e9cf9d"/>
+  <g stroke="#d9bd86" stroke-width="3"><path d="M0 430H960M0 470H960M0 510H960M120 400V540M300 400V540M480 400V540M660 400V540M840 400V540"/></g>
+  <g><path d="M120 400 Q132 300 108 200" stroke="#8a5a32" stroke-width="16" fill="none" stroke-linecap="round"/><g fill="#2f9a4a"><path d="M108 200 Q40 190 10 235 Q70 205 108 210Z"/><path d="M108 200 Q70 140 20 150 Q80 160 108 196Z"/><path d="M108 200 Q150 130 210 140 Q150 160 112 198Z"/><path d="M108 200 Q180 190 215 238 Q150 208 110 210Z"/><animateTransform attributeName="transform" type="rotate" values="-1.5 108 200;1.5 108 200;-1.5 108 200" dur="3.4s" repeatCount="indefinite"/></g></g>
+  <g><rect x="838" y="270" width="8" height="150" fill="#a8a8a8"/><path d="M780 280 Q842 200 904 280Z" fill="#e8413a"/><path d="M842 200 L842 280 M812 238 L826 280 M872 238 L858 280" stroke="#fff" stroke-width="10" opacity=".95"/><ellipse cx="842" cy="428" rx="60" ry="9" fill="#000" opacity=".12"/></g>
+  ${kidLazar(640,470,{e:'worry',R:[8,58]})}
+  ${kidLena(300,470,{e:'grin',bounce:.5,R:[34,-92],L:[-6,60]})}
+  <g><text x="300" y="150" font-family="Arial" font-weight="900" font-size="56" fill="#ff7aa8" text-anchor="middle" opacity="0">!<animate attributeName="opacity" values="0;1;1;0" dur="1.2s" repeatCount="indefinite"/></text></g>
+ `);
+ const L2=()=>svg(`
+  <defs><linearGradient id="lw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbeed3"/><stop offset="1" stop-color="#ead2a5"/></linearGradient></defs>
+  <rect width="960" height="540" fill="url(#lw)"/><rect y="0" width="960" height="70" fill="#d6b887"/><rect y="70" width="960" height="14" fill="#b4925f"/>
+  <rect y="420" width="960" height="120" fill="#7e5b3a"/><g stroke="#6a4a2d" stroke-width="3"><path d="M0 450H960M0 490H960M160 420V540M420 420V540M700 420V540"/></g>
+  <g fill="#fff6e2" stroke="#caa56e" stroke-width="6"><rect x="80" y="130" width="130" height="190" rx="8"/><rect x="700" y="130" width="130" height="190" rx="8"/></g>
+  <rect x="94" y="144" width="102" height="162" fill="#8fd2ff"/><rect x="714" y="144" width="102" height="162" fill="#8fd2ff"/>
+  <path d="M94 306 Q145 240 196 306Z" fill="#7bc060"/><path d="M714 306 Q765 250 816 306Z" fill="#7bc060"/>
+  <g><rect x="372" y="104" width="216" height="318" rx="10" fill="#9b6a42" stroke="#6f4a2b" stroke-width="10"/><rect x="396" y="128" width="168" height="270" rx="6" fill="#b07c52"/><circle cx="548" cy="270" r="10" fill="#f1d48a"/>
+  <rect x="440" y="52" width="80" height="42" rx="8" fill="#2f7fd1"/><text x="480" y="84" font-family="Arial" font-weight="900" font-size="30" fill="#fff" text-anchor="middle">WC</text></g>
+  <g><rect x="780" y="310" width="70" height="110" rx="8" fill="#c97b4a"/><path d="M815 310 Q760 230 770 190 Q800 240 815 300 Q830 220 880 200 Q850 260 818 310Z" fill="#2f9a4a"><animateTransform attributeName="transform" type="rotate" values="-1.5 815 310;1.5 815 310;-1.5 815 310" dur="2.6s" repeatCount="indefinite"/></path>
+   <g><animateTransform attributeName="transform" type="translate" values="40 0;0 0" dur=".5s" begin="0s" fill="freeze"/>${friend(792,420,{e:'grin',tilt:-8,flip:1,L:[-14,-70]})}</g></g>
+  <g><animateTransform attributeName="transform" type="translate" values="-120 0;0 0" dur="1.3s" fill="freeze" calcMode="spline" keySplines=".3 .6 .3 1" keyTimes="0;1"/>${kidLena(250,470,{e:'grin',bounce:.45,R:[56,18]})}</g>
+  <g><animateTransform attributeName="transform" type="translate" values="-150 0;0 0" dur="1.5s" fill="freeze" calcMode="spline" keySplines=".3 .6 .3 1" keyTimes="0;1"/>${kidLazar(330,470,{e:'worry',tilt:6,L:[-4,60]})}</g>
+ `);
+ const L3=()=>svg(`
+  <defs><linearGradient id="lw3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbeed3"/><stop offset="1" stop-color="#ead2a5"/></linearGradient></defs>
+  <rect width="960" height="540" fill="url(#lw3)"/><rect y="0" width="960" height="70" fill="#d6b887"/><rect y="420" width="960" height="120" fill="#7e5b3a"/>
+  <g stroke="#6a4a2d" stroke-width="3"><path d="M0 450H960M0 490H960M160 420V540M420 420V540M700 420V540"/></g>
+  <g><rect x="250" y="84" width="260" height="336" rx="10" fill="#9b6a42" stroke="#6f4a2b" stroke-width="10"/><rect x="278" y="112" width="204" height="280" rx="6" fill="#b07c52"/><circle cx="460" cy="262" r="12" fill="#f1d48a"/>
+   <rect x="326" y="36" width="108" height="40" rx="8" fill="#2f7fd1"/><text x="380" y="67" font-family="Arial" font-weight="900" font-size="30" fill="#fff" text-anchor="middle">WC</text></g>
+  <g><rect x="470" y="256" width="46" height="14" rx="4" fill="#d8b24a"><animateTransform attributeName="transform" type="rotate" values="0 482 262;0 482 262;60 482 262" dur="1.6s" keyTimes="0;.45;.6" fill="freeze"/></rect></g>
+  ${friend(640,470,{e:'grin',tilt:-6,s:1.45,flip:1,L:[-38,-14],R:[0,60]})}
+  <g opacity="0"><text x="720" y="200" font-family="Impact,Arial Black,Arial" font-weight="900" font-size="104" fill="#ff3b3b" stroke="#fff" stroke-width="6" paint-order="stroke" text-anchor="middle" transform="rotate(-8 720 200)">KLIK!</text>
+   <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.42;.46;.8;1" dur="3.6s" fill="freeze"/><animateTransform attributeName="transform" type="scale" values="1;1;1.25;1" keyTimes="0;.42;.5;1" dur="3.6s" additive="sum"/></g>
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;220 0;520 0" keyTimes="0;.6;.8;1" dur="3.8s" fill="freeze"/></g>
+ `);
+ const L4=()=>svg(`
+  <defs><linearGradient id="lt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9efe9"/><stop offset="1" stop-color="#b6d6cf"/></linearGradient></defs>
+  <rect width="960" height="540" fill="url(#lt)"/>
+  <g stroke="#9cc4bb" stroke-width="3"><path d="M0 60H960M0 130H960M0 200H960M0 270H960M0 340H960M0 410H960M80 0V540M160 0V540M240 0V540M320 0V540M400 0V540M480 0V540M560 0V540M640 0V540M720 0V540M800 0V540M880 0V540"/></g>
+  <rect y="430" width="960" height="110" fill="#8fb8b0"/>
+  <g><rect x="90" y="120" width="120" height="84" rx="6" fill="#8fd2ff" stroke="#fff" stroke-width="8"/><path d="M150 120V204M90 162H210" stroke="#fff" stroke-width="6"/></g>
+  <g><rect x="470" y="90" width="270" height="350" rx="10" fill="#a56d43" stroke="#6f4a2b" stroke-width="10"/><rect x="498" y="118" width="214" height="296" rx="6" fill="#b87f54"/><circle cx="520" cy="280" r="12" fill="#f1d48a"/>
+   <g><animateTransform attributeName="transform" type="translate" values="0 0;-3 0;3 0;-2 0;0 0" dur=".25s" repeatCount="indefinite"/><rect x="498" y="118" width="214" height="296" rx="6" fill="none"/></g></g>
+  <g><rect x="130" y="270" width="150" height="40" rx="14" fill="#fff" stroke="#c8d6d3" stroke-width="5"/><rect x="170" y="310" width="70" height="120" rx="10" fill="#e6efed"/><ellipse cx="205" cy="272" rx="46" ry="14" fill="#9fe0f5"/><rect x="190" y="222" width="30" height="48" rx="8" fill="#b9c6c2"/></g>
+  ${kidLazar(380,500,{e:'yell',s:1.4,R:[56,-120],L:[-4,64],bounce:.25})}
+  ${kidLena(230,500,{e:'worry',s:1.38,L:[-14,40],R:[16,40],tilt:-5})}
+  <g fill="#ff3b3b" font-family="Impact,Arial Black,Arial" font-weight="900" font-size="46"><text x="540" y="470" text-anchor="middle" opacity="0">BUM!<animate attributeName="opacity" values="0;1;0;0;1;0" dur="1s" repeatCount="indefinite"/></text></g>
+  <text x="810" y="260" font-family="Arial" font-size="34" font-weight="900" fill="#7a2f33" opacity="0"><tspan>hihihi…</tspan><animate attributeName="opacity" values="0;1;1;0" dur="2.4s" begin="1s" repeatCount="indefinite"/></text>
+ `);
+ /* ================== ANDREJEVO SEĆANJE ================== */
+ const andrej=(x,y,o={})=>P(Object.assign({x,y,s:1.2,skin:'#e0ae8a',hair:'#25180f',hs:'boy',top:'#26324a',bot:'#1d2433',hood:1,hoodTrim:'#151c2b',legs:'#e0ae8a',shoe:'#f2f2f2'},o));
+ const danica=(x,y,o={})=>P(Object.assign({x,y,s:1.2,skin:'#efc3a2',hair:'#4a2a1a',hs:'long',top:'#e8e1d6',bot:'#2d3a52',legs:'#2d3a52',shoe:'#ecece6'},o));
+ const night=(extra='')=>`
+  <defs><linearGradient id="nsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2338"/><stop offset=".62" stop-color="#34425e"/><stop offset="1" stop-color="#4a5a78"/></linearGradient>
+  <radialGradient id="lamp" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".95"/><stop offset=".4" stop-color="#ffd27a" stop-opacity=".35"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+  <linearGradient id="wet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46556f"/><stop offset="1" stop-color="#2a3347"/></linearGradient></defs>
+  <rect width="960" height="540" fill="url(#nsky)"/>
+  <g fill="#232d44"><rect x="0" y="150" width="190" height="260"/><rect x="200" y="210" width="150" height="200"/><rect x="640" y="130" width="170" height="280"/><rect x="820" y="190" width="150" height="220"/></g>
+  <g fill="#f6d27c" opacity=".85"><rect x="24" y="180" width="26" height="34"/><rect x="70" y="180" width="26" height="34"/><rect x="24" y="250" width="26" height="34"/><rect x="226" y="240" width="26" height="30"/><rect x="668" y="160" width="26" height="34"/><rect x="716" y="230" width="26" height="34"/><rect x="852" y="220" width="26" height="30"/></g>
+  <rect y="410" width="960" height="130" fill="url(#wet)"/><rect y="406" width="960" height="12" fill="#5b6a84"/>
+  <g stroke="#7587a6" stroke-width="3" opacity=".45"><path d="M0 470H960M0 515H960"/></g>
+  ${extra}`;
+ const lampPost=(x)=>`<g><circle cx="${x}" cy="210" r="210" fill="url(#lamp)"/><rect x="${x-5}" y="214" width="10" height="200" fill="#10151f"/><path d="M${x-5} 214 q0-32 40-32" stroke="#10151f" stroke-width="10" fill="none"/><ellipse cx="${x+44}" cy="186" rx="22" ry="9" fill="#ffe9a8"/><ellipse cx="${x}" cy="446" rx="150" ry="22" fill="#ffe29a" opacity=".28"/></g>`;
+ const puddles=`<g fill="#6e82a8" opacity=".5"><ellipse cx="180" cy="490" rx="90" ry="14"/><ellipse cx="760" cy="505" rx="110" ry="16"/></g><g fill="none" stroke="#dbe8ff" stroke-width="2" opacity=".7"><ellipse cx="180" cy="490" rx="10" ry="3"><animate attributeName="rx" values="2;40" dur=".9s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur=".9s" repeatCount="indefinite"/></ellipse><ellipse cx="760" cy="505" rx="10" ry="3"><animate attributeName="rx" values="2;46" dur="1.1s" begin=".3s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.1s" begin=".3s" repeatCount="indefinite"/></ellipse></g>`;
+ const A1=()=>svg(night(lampPost(240)+puddles)+`
+  ${andrej(310,470,{e:'shock',L:[-4,60],R:[18,40]})}
+  <g><animateTransform attributeName="transform" type="translate" values="520 0;0 0" dur="2.4s" fill="freeze" calcMode="spline" keySplines=".25 .5 .35 1" keyTimes="0;1"/>${danica(560,470,{e:'grin',flip:1,L:[-26,-86],R:[26,-86],bounce:.32})}</g>
+  ${rain(70,1)}`);
+ const A2=()=>svg(night(lampPost(480)+puddles)+`
+  ${andrej(400,480,{e:'blush',s:1.45,L:[-2,62],R:[10,50],tilt:5})}
+  ${danica(570,480,{e:'grin',s:1.45,flip:1,L:[-6,60],R:[14,40],tilt:-5})}
+  ${tw(470,200)}${rain(80,2,.5)}`);
+ const A3=()=>svg(night(lampPost(480)+puddles)+`
+  <g transform="translate(480 0)"><circle cx="0" cy="300" r="260" fill="url(#lamp)" opacity=".55"/></g>
+  ${andrej(421,500,{e:'closed',s:1.7,L:[6,56],R:[52,8],tilt:13})}
+  ${danica(541,500,{e:'closed',s:1.7,flip:1,L:[6,56],R:[48,2],tilt:13})}
+  ${heart(480,250,1.6,'#ff5f86',3,0)}${heart(520,260,1.1,'#ff9db6',3.4,.9)}${heart(450,270,1.2,'#ff7aa0',2.8,1.7)}${tw(390,240)}${tw(580,230)}
+  ${rain(60,3,.4,30,.7)}`);
+ const A4=()=>svg(night(lampPost(130)+puddles)+`
+  <g><animateTransform attributeName="transform" type="translate" values="-200 0;240 0" dur="3.6s" fill="freeze"/>
+   <path d="M330 280 Q430 188 560 280 Q460 252 330 280Z" fill="#26324a"/>
+   ${andrej(420,490,{e:'smile',s:1.4,L:[8,-70],R:[20,36],tilt:6,bounce:.34})}
+   ${danica(500,490,{e:'grin',s:1.4,flip:1,L:[4,-70],R:[14,36],tilt:-6,bounce:.34})}</g>
+  ${rain(60,4,.5)}`);
+
+ /* ================== PERINO SEĆANJE (misija: meteo stanica) ================== */
+ const peraP=(x,y,o={})=>P(Object.assign({x,y,s:1.2,skin:'#d7a483',hair:'#2a1b13',hs:'crop',top:'#cfc8b4',bot:'#3a4152',legs:'#d7a483',shoe:'#e9e4d6'},o));
+ const spokes=(cx,cy,r,dur)=>{let t='';for(let k=0;k<6;k++){const a=k*Math.PI/3;t+=`<line x1="${f(cx-Math.cos(a)*r)}" y1="${f(cy-Math.sin(a)*r)}" x2="${f(cx+Math.cos(a)*r)}" y2="${f(cy+Math.sin(a)*r)}" stroke="#7b8187" stroke-width="2.5"/>`}
+  return `<g><animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="${dur}s" repeatCount="indefinite"/>${t}</g>`};
+ const hillN=(c,y,seed)=>{let d=`M0 540 L0 ${y}`;for(let i=0;i<=12;i++){d+=` L${i*80} ${f(y-30*Math.sin(i*1.3+seed)-18*Math.sin(i*2.7+seed*2))}`}return `<path d="${d} L960 540Z" fill="${c}"/>`};
+ const R1=()=>svg(`
+  <defs><linearGradient id="rsk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2f63"/><stop offset=".5" stop-color="#d46a5a"/><stop offset="1" stop-color="#ffb35f"/></linearGradient></defs>
+  <rect width="960" height="540" fill="url(#rsk)"/><circle cx="700" cy="350" r="70" fill="#ffd89a" opacity=".92"/>
+  ${hillN('#4b3150',380,1)}${hillN('#2f2038',420,3)}
+  <g fill="#3a2a40"><rect x="40" y="250" width="300" height="190"/><path d="M110 440 V340 q40-70 80 0 V440Z" fill="#181220"/><g><rect x="30" y="236" width="14" height="22"/><rect x="62" y="236" width="14" height="22"/><rect x="94" y="236" width="14" height="22"/><rect x="126" y="236" width="14" height="22"/><rect x="158" y="236" width="14" height="22"/><rect x="190" y="236" width="14" height="22"/><rect x="222" y="236" width="14" height="22"/><rect x="254" y="236" width="14" height="22"/><rect x="286" y="236" width="14" height="22"/><rect x="318" y="236" width="14" height="22"/></g></g>
+  <rect y="436" width="960" height="104" fill="#2b2a33"/><rect y="432" width="960" height="8" fill="#4a4856"/>
+  <g stroke="#e8d9a8" stroke-width="7" stroke-linecap="round" opacity=".8"><line x1="0" y1="490" x2="70" y2="490"><animateTransform attributeName="transform" type="translate" from="960 0" to="-120 0" dur="1.1s" repeatCount="indefinite"/></line><line x1="0" y1="490" x2="70" y2="490"><animateTransform attributeName="transform" type="translate" from="560 0" to="-520 0" dur="1.1s" repeatCount="indefinite"/></line></g>
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur=".42s" repeatCount="indefinite"/>
+   <ellipse cx="480" cy="448" rx="150" ry="10" fill="#000" opacity=".3"/>
+   <circle cx="400" cy="392" r="52" fill="none" stroke="#14171c" stroke-width="8"/>${spokes(400,392,48,.55)}
+   <circle cx="570" cy="392" r="52" fill="none" stroke="#14171c" stroke-width="8"/>${spokes(570,392,48,.55)}
+   <path d="M400 392 L448 318 L540 330 L570 392 M448 318 L470 392 L540 330 M470 392 L400 392" fill="none" stroke="#c0a15f" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+   <path d="M448 318 L440 296 M536 330 L548 292 L580 286" fill="none" stroke="#333a40" stroke-width="8" stroke-linecap="round"/>
+   <rect x="418" y="288" width="52" height="14" rx="6" fill="#222"/>
+   <rect x="440" y="244" width="38" height="62" rx="12" fill="#5a6b4a" transform="rotate(-18 460 276)"/>
+   <path d="M452 314 L505 254" stroke="#cfc8b4" stroke-width="36" stroke-linecap="round"/>
+   <path d="M500 262 L550 296" stroke="#cfc8b4" stroke-width="15" stroke-linecap="round"/><circle cx="552" cy="297" r="9" fill="#d7a483"/>
+   <g><animateTransform attributeName="transform" type="rotate" values="-14 455 322;14 455 322;-14 455 322" dur=".84s" repeatCount="indefinite"/><path d="M455 322 L488 366 L474 392" stroke="#3a4152" stroke-width="18" stroke-linecap="round" fill="none"/><rect x="456" y="384" width="34" height="13" rx="5" fill="#e9e4d6"/></g>
+   <rect x="508" y="222" width="22" height="30" rx="8" fill="#d7a483"/>
+   <circle cx="518" cy="212" r="32" fill="#d7a483"/><path d="M486 208 C486 170 548 170 552 208 C536 190 510 186 486 208Z" fill="#2a1b13"/>
+   <path d="M522 196 L544 204" stroke="#2a1b13" stroke-width="5" stroke-linecap="round"/><ellipse cx="535" cy="210" rx="4" ry="5.5" fill="#2a1b13"/><path d="M524 232 q9 -6 18 0" stroke="#7a2f33" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+  <g font-family="Arial" font-weight="900" font-size="30" fill="#fff" opacity="0" stroke="#2b1a2e" stroke-width="5" paint-order="stroke"><text x="600" y="150">Sunčica… Sunčica…</text><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.15;.25;.8;1" dur="4.5s" fill="freeze"/></g>
+ `);
+ const phoneBody=(inner)=>`<g transform="translate(480 290) rotate(-6)"><rect x="-150" y="-250" width="300" height="520" rx="42" fill="#0b0d10" stroke="#3b4048" stroke-width="6"/><rect x="-134" y="-232" width="268" height="484" rx="30" fill="#0e1824"/>${inner}</g>`;
+ const R2=()=>svg(`
+  <defs><linearGradient id="rbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a3556"/><stop offset="1" stop-color="#1e1a2c"/></linearGradient><radialGradient id="rgl"><stop offset="0" stop-color="#6fb2ff" stop-opacity=".5"/><stop offset="1" stop-color="#6fb2ff" stop-opacity="0"/></radialGradient></defs>
+  <rect width="960" height="540" fill="url(#rbg)"/>
+  <g opacity=".9"><rect x="0" y="0" width="960" height="540" fill="url(#rgl)" transform="translate(0 40) scale(1)" opacity=".5"/></g>
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;-4 2;4 -2;-3 -2;3 2;0 0" dur=".32s" begin="0s" repeatCount="9"/>
+  ${phoneBody(`
+   <circle cx="0" cy="-110" r="52" fill="#3f8f7c"/><text x="0" y="-92" font-family="Arial" font-weight="900" font-size="58" fill="#fff" text-anchor="middle">M</text>
+   <text x="0" y="-26" font-family="Arial" font-weight="900" font-size="46" fill="#fff" text-anchor="middle">MAMA</text>
+   <text x="0" y="12" font-family="Arial" font-weight="700" font-size="22" fill="#9fb6c2" text-anchor="middle">zove…</text>
+   <g><circle cx="-70" cy="170" r="40" fill="#e04a4a"/><text x="-70" y="177" font-family="Arial" font-weight="900" font-size="20" fill="#fff" text-anchor="middle">ODBIJ</text></g>
+   <g><circle cx="70" cy="170" r="40" fill="#34b36b"/><circle cx="70" cy="170" r="40" fill="none" stroke="#34b36b" stroke-width="3"><animate attributeName="r" values="40;66" dur=".9s" repeatCount="indefinite"/><animate attributeName="opacity" values=".9;0" dur=".9s" repeatCount="indefinite"/></circle><text x="70" y="177" font-family="Arial" font-weight="900" font-size="18" fill="#fff" text-anchor="middle">JAVI SE</text></g>
+   <rect x="-134" y="-232" width="268" height="484" rx="30" fill="#0b0f14" opacity="0"><animate attributeName="opacity" values="0;0;.94;.94" keyTimes="0;.62;.64;1" dur="4.2s" fill="freeze"/></rect>
+   <text x="0" y="8" font-family="Arial" font-weight="800" font-size="24" fill="#ff9c8e" text-anchor="middle" opacity="0">Poziv odbijen<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;.64;.7;1" dur="4.2s" fill="freeze"/></text>`)}
+  </g>
+  <g transform="translate(480 290) rotate(-6)"><g><animateTransform attributeName="transform" type="translate" values="150 120;150 120;78 90;78 90;150 120" keyTimes="0;.3;.6;.66;1" dur="4.2s" fill="freeze"/>
+   <ellipse cx="60" cy="150" rx="70" ry="32" fill="#d7a483" transform="rotate(-35)"/><ellipse cx="10" cy="130" rx="22" ry="52" fill="#d7a483" transform="rotate(-24)"/></g></g>
+  ${peraP(130,640,{s:2.7,e:'sulk',tilt:-4})}
+ `);
+ const R3=()=>svg(`
+  <defs><linearGradient id="rbg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16251f"/><stop offset="1" stop-color="#0a1013"/></linearGradient><radialGradient id="rgl3"><stop offset="0" stop-color="#8dffd0" stop-opacity=".6"/><stop offset="1" stop-color="#8dffd0" stop-opacity="0"/></radialGradient></defs>
+  <rect width="960" height="540" fill="url(#rbg3)"/><circle cx="700" cy="290" r="360" fill="url(#rgl3)"/>
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;3 -1;-3 1;2 2;0 0" dur=".25s" repeatCount="indefinite"/>
+  ${phoneBody(`
+   <rect x="-134" y="-232" width="268" height="484" rx="30" fill="#0a2a22"/>
+   <text x="0" y="-110" font-family="Courier New,monospace" font-weight="900" font-size="26" fill="#8dffd0" text-anchor="middle">NEPOZNAT BROJ</text>
+   <text x="0" y="-30" font-family="Courier New,monospace" font-weight="900" font-size="64" fill="#8dffd0" text-anchor="middle">018</text>
+   <text x="0" y="22" font-family="Courier New,monospace" font-size="20" fill="#5fcfa8" text-anchor="middle">centrala ugašena 1989.</text>
+   <g stroke="#8dffd0" stroke-width="3" opacity=".7"><line x1="-120" y1="70" x2="120" y2="70"><animate attributeName="y1" values="70;190;70" dur="1.4s" repeatCount="indefinite"/><animate attributeName="y2" values="70;190;70" dur="1.4s" repeatCount="indefinite"/></line></g>
+   <circle cx="0" cy="170" r="40" fill="#34b36b"/><text x="0" y="177" font-family="Arial" font-weight="900" font-size="18" fill="#fff" text-anchor="middle">JAVI SE</text>`)}
+  </g>
+  ${peraP(170,640,{s:2.7,e:'shock',tilt:3,top:'#a9b5a8'})}
+  <g font-family="Arial" font-weight="900" font-size="36" fill="#8dffd0" opacity="0" stroke="#0a1013" stroke-width="6" paint-order="stroke"><text x="660" y="70" text-anchor="middle" font-size="30">„Ovde stanica Kalač. Dođi sam.“</text><animate attributeName="opacity" values="0;0;1;1;.2;1" keyTimes="0;.25;.35;.8;.9;1" dur="4s" fill="freeze"/></g>
+ `);
+ const R4=()=>svg(`
+  <defs><linearGradient id="rbg4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050a18"/><stop offset=".7" stop-color="#1b2a45"/><stop offset="1" stop-color="#2d3f5c"/></linearGradient><radialGradient id="rwin"><stop offset="0" stop-color="#d9fff6" stop-opacity=".95"/><stop offset="1" stop-color="#d9fff6" stop-opacity="0"/></radialGradient></defs>
+  <rect width="960" height="540" fill="url(#rbg4)"/><circle cx="170" cy="100" r="42" fill="#e9eefc"/><circle cx="170" cy="100" r="110" fill="#9fb8ff" opacity=".12"/>
+  ${tw(300,60)}${tw(520,120)}${tw(760,70)}${tw(860,160)}
+  ${hillN('#101a2b',330,2)}
+  <path d="M0 540 L0 440 Q300 410 520 360 T960 300 V540Z" fill="#0b1220"/>
+  <path d="M260 540 Q420 440 560 380 T820 312" stroke="#2b3b55" stroke-width="30" fill="none" stroke-linecap="round"/>
+  <g><circle cx="760" cy="270" r="90" fill="url(#rwin)" opacity=".7"/><rect x="720" y="262" width="82" height="52" fill="#dce1d8"/><path d="M712 262 L761 238 L810 262Z" fill="#b8c1b8"/><rect x="750" y="280" width="22" height="34" fill="#657c83"/><rect x="778" y="272" width="16" height="16" fill="#d9fff6"><animate attributeName="opacity" values="1;.2;1;.6;1" dur="1.5s" repeatCount="indefinite"/></rect>
+   <rect x="806" y="200" width="4" height="62" fill="#9eaba5"/><g><animateTransform attributeName="transform" type="rotate" from="0 808 198" to="360 808 198" dur="2.4s" repeatCount="indefinite"/><rect x="788" y="196" width="40" height="4" fill="#ede3c1"/></g></g>
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;250 -128" dur="4.6s" fill="freeze"/>
+   <g transform="translate(310 470) scale(.9)"><ellipse cx="0" cy="4" rx="48" ry="8" fill="#000" opacity=".4"/>
+    <circle cx="-40" cy="-30" r="30" fill="none" stroke="#06080c" stroke-width="5"/><circle cx="46" cy="-30" r="30" fill="none" stroke="#06080c" stroke-width="5"/><path d="M-40 -30 L-8 -78 L40 -70 L46 -30" stroke="#06080c" stroke-width="5" fill="none"/>
+    <circle cx="-20" cy="-120" r="18" fill="#06080c"/><rect x="-34" y="-104" width="30" height="62" rx="12" fill="#06080c"/><path d="M-10 -96 L26 -78" stroke="#06080c" stroke-width="10"/></g></g>
+  <g fill="#c9d6ee" opacity=".12"><ellipse cx="200" cy="440" rx="260" ry="26"><animateTransform attributeName="transform" type="translate" values="0 0;90 0;0 0" dur="9s" repeatCount="indefinite"/></ellipse><ellipse cx="640" cy="390" rx="300" ry="30"><animateTransform attributeName="transform" type="translate" values="0 0;-110 0;0 0" dur="11s" repeatCount="indefinite"/></ellipse></g>
+ `);
+
+ const SCENES={
+  lazar:{label:'LAZAROVO SEĆANJE',bubble:'Lena… kad smo bili mali',tag:'LETOVANJE · PRE NEKOLIKO GODINA',
+   panels:[
+    {from:0,to:4.5,svg:L1,caps:[[.4,4.3,'Lena','Lazare, dođi! Da ti nešto pokažem!']]},
+    {from:4.5,to:9,svg:L2,caps:[[4.8,6.7,'Lazar','Gde me vodiš?'],[6.8,8.9,'Lena','Samo na sekund. Vidi!']]},
+    {from:9,to:13,svg:L3,sfx:[[10.7,'click']],caps:[[9.2,11.0,'Drugarica','Hihihi… ostanite tamo!'],[11.1,12.9,'','Lenina drugarica zaključa WC. Lazar i Lena su unutra.']]},
+    {from:13,to:18,svg:L4,caps:[[13.2,15.2,'Lazar','Otvori! Hej! Ima li nekoga?!'],[15.3,17.9,'','Od tada ga svi zezaju čim se Lena pomene.']]}]},
+  pera:{label:'PERINO SEĆANJE',bubble:'Ko je to zvao…?',tag:'POSLE SVAĐE · KASNO POPODNE',
+   panels:[
+    {from:0,to:4.5,svg:R1,caps:[[.3,4.2,'Pera','Sunčica, Sunčica… Ma prestani više!']]},
+    {from:4.5,to:9,svg:R2,sfx:[[4.5,'ring'],[5.2,'ring'],[6.4,'click']],caps:[[4.8,6.8,'','Telefon zvoni. MAMA.'],[6.9,8.9,'Pera','Mama… ne sada.']]},
+    {from:9,to:13.5,svg:R3,sfx:[[9.2,'ring'],[9.8,'ring'],[11.4,'chime']],caps:[[9.2,11.3,'','Odmah posle toga: nepoznat broj. 018.'],[11.4,13.4,'Glas','Ovde stanica Kalač. Dođi sam.']]},
+    {from:13.5,to:18.5,svg:R4,caps:[[13.7,16.4,'Pera','To je… moj glas?!'],[16.5,18.4,'','I Pera pođe uz brdo, prema beloj stanici.']]}]},
+  andrej:{label:'ANDREJEVO SEĆANJE',bubble:'Danica… onda po kiši',tag:'KIŠNA VEČER · ULICA KOD ŠKOLE',
+   panels:[
+    {from:0,to:4.5,svg:A1,caps:[[.3,2.2,'','Kišna večer. Ulica kod škole.'],[2.3,4.4,'Danica','Andrej! Čekaj me!']]},
+    {from:4.5,to:8.5,svg:A2,caps:[[4.7,6.5,'Andrej','Pokisla si skroz…'],[6.6,8.4,'Danica','Nije me briga. Htela sam da te vidim.']]},
+    {from:8.5,to:12.5,svg:A3,sfx:[[9.3,'chime']],caps:[[8.8,12.4,'','I tada, usred kiše, poljubili su se.']]},
+    {from:12.5,to:17,svg:A4,caps:[[12.8,16.9,'','Pokisli do kože, a nikad srećniji. Od tada Andrej pocrveni čim neko pomene Danicu.']]}]}
+ };
+
+ /* ================== UI sloj: oblačić -> ceo ekran, kartica, Perin telefon ================== */
+ const CSS=`
+  #kb12Skip,#kb12Voice{z-index:12!important}
+  #kb14Mem{position:absolute;inset:0;z-index:7;pointer-events:none;display:none;font-family:Inter,Arial,sans-serif;color:#fff}
+  #kb14Mem.on{display:block}
+  #kb14Mem .bub{position:absolute;left:50%;top:max(15vh,104px);width:min(52vw,340px);transform:translateX(-50%);opacity:0;text-shadow:none}
+  #kb14Mem.bp .bub{animation:kb14Pop .5s cubic-bezier(.2,1.5,.4,1) both}
+  #kb14Mem.fp .bub{display:none}
+  #kb14Mem .bub .card{background:#fffaf0;border:5px solid #fff;border-radius:34px;padding:11px 11px 9px;box-shadow:0 14px 48px #000a;color:#2b231e}
+  #kb14Mem .bub .mini{aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:#cde;position:relative}
+  #kb14Mem .bub .mini svg{position:absolute;inset:0;width:100%;height:100%}
+  #kb14Mem .bub .txt{font:900 clamp(13px,1.9vw,17px)/1.25 Arial,sans-serif;text-align:center;margin-top:8px;letter-spacing:.01em}
+  #kb14Mem .bub i{position:absolute;left:50%;background:#fffaf0;border:4px solid #fff;border-radius:50%;box-shadow:0 5px 16px #0008}
+  #kb14Mem .bub .t1{bottom:-30px;width:30px;height:30px;margin-left:-38px}
+  #kb14Mem .bub .t2{bottom:-52px;width:20px;height:20px;margin-left:-22px}
+  #kb14Mem .bub .t3{bottom:-68px;width:12px;height:12px;margin-left:-8px}
+  #kb14Mem .full{position:absolute;inset:0;background:#05070b;display:none;opacity:0}
+  #kb14Mem.fp .full{display:block;animation:kb14Fade .55s both}
+  #kb14Mem.fp.fo .full{animation:kb14FadeOut .6s both}
+  #kb14Mem[data-stage=webgl] .full{background:transparent}
+  #kb14Mem[data-stage=webgl] .stg{display:none}
+  #kb14Mem .stg{position:absolute;inset:0;overflow:hidden}
+  #kb14Mem .pn{position:absolute;inset:0;animation:kb14In .6s both}
+  #kb14Mem .pn.out{animation:kb14Out .6s both}
+  #kb14Mem .pn svg{position:absolute;inset:0;width:100%;height:100%}
+  #kb14Mem .vig{position:absolute;inset:0;box-shadow:inset 0 0 18vmin 4vmin #000c;background:radial-gradient(ellipse at center,#0000 55%,#0006 100%)}
+  #kb14Mem .lab{position:absolute;left:clamp(16px,4vw,52px);top:clamp(48px,11vh,98px);text-shadow:0 2px 12px #000}
+  #kb14Mem .lab small{display:block;font:800 10px Arial,sans-serif;letter-spacing:.2em;color:#ffd9a0;margin-bottom:6px}
+  #kb14Mem .lab b{font:900 clamp(16px,2.5vw,30px) Oswald,Arial,sans-serif;letter-spacing:.06em}
+  #kb14Mem .cap{position:absolute;left:50%;bottom:clamp(34px,8vh,84px);transform:translateX(-50%);width:min(92vw,860px);text-align:center;padding:12px 18px;border-radius:18px;
+   background:linear-gradient(90deg,#0000,#071016d8 12%,#071016d8 88%,#0000);text-shadow:0 2px 10px #000;opacity:0;transition:opacity .25s}
+  #kb14Mem .cap.show{opacity:1}
+  #kb14Mem .cap .who{display:block;color:#ffc98a;font:900 12px Arial,sans-serif;letter-spacing:.16em;margin-bottom:5px;text-transform:uppercase}
+  #kb14Mem .cap .line{font:700 clamp(16px,2.4vw,26px)/1.4 Arial,sans-serif}
+  #kb14Card{position:absolute;inset:0;z-index:8;display:none;place-items:center;text-align:center;background:#020305;pointer-events:none}
+  #kb14Card.on{display:grid;animation:kb14Fade .7s both}
+  #kb14Card small{display:block;font:800 12px Arial,sans-serif;letter-spacing:.3em;color:#d9b283;margin-bottom:14px}
+  #kb14Card b{font:900 clamp(22px,4.2vw,54px) Oswald,Arial,sans-serif;letter-spacing:.1em}
+  #kb14Phone{position:absolute;right:clamp(14px,4vw,56px);top:34%;z-index:6;width:min(44vw,208px);padding:13px 14px;border-radius:20px;text-align:center;
+   background:linear-gradient(165deg,#1a2c36f2,#0d171ff2);border:1px solid #8fb8b8aa;box-shadow:0 14px 40px #000b;opacity:0;transform:translateX(30px);transition:opacity .3s,transform .3s;text-shadow:none}
+  #kb14Phone.on{opacity:1;transform:none}
+  #kb14Phone.ring{animation:kb14Buzz .18s ease-in-out infinite}
+  #kb14Phone .ic{font-size:26px}
+  #kb14Phone .who{font:900 20px Arial,sans-serif;margin:3px 0 2px}
+  #kb14Phone .st{font:700 12px Arial,sans-serif;color:#b9d0d3;letter-spacing:.06em}
+  #kb14Phone .no{display:none;margin-top:8px;font:800 12px Arial,sans-serif;color:#ff9c8e;letter-spacing:.04em}
+  #kb14Phone.done .no{display:block}
+  #kb12Overlay.kb14-nosub #kb12Bottom{display:none}
+  @keyframes kb14Pop{0%{opacity:0;transform:translateX(-50%) scale(.4)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+  @keyframes kb14Fade{from{opacity:0}to{opacity:1}}
+  @keyframes kb14FadeOut{from{opacity:1}to{opacity:0}}
+  @keyframes kb14In{from{opacity:0;transform:scale(1.045)}to{opacity:1;transform:scale(1)}}
+  @keyframes kb14Out{from{opacity:1}to{opacity:0}}
+  @keyframes kb14Buzz{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px) rotate(-1deg)}75%{transform:translateX(3px) rotate(1deg)}}
+  @media(max-width:640px){#kb14Mem .bub{top:max(17vh,112px)}}
+  @media(prefers-reduced-motion:reduce){#kb14Phone.ring{animation:none}}
+ `;
+ const UI={SCENES,P,svg,el:null,t:0,sc:null,pi:-1,ci:-1,done:{},ring:0,
+  length(k){const p=SCENES[k].panels;return 2+p[p.length-1].to},
+  mount(ov){
+   if(this.el)return;
+   const st=document.createElement('style');st.id='kb14-mem-style';st.textContent=CSS;document.head.appendChild(st);
+   const d=document.createElement('div');d.id='kb14Mem';
+   d.innerHTML='<div class="bub"><div class="card"><div class="mini"></div><div class="txt"></div></div><i class="t1"></i><i class="t2"></i><i class="t3"></i></div>'
+    +'<div class="full"><div class="stg"></div><div class="vig"></div><div class="lab"><small>SEĆANJE</small><b></b></div><div class="cap"><span class="who"></span><span class="line"></span></div></div>';
+   ov.appendChild(d);this.el=d;
+   this.mini=d.querySelector('.mini');this.txt=d.querySelector('.bub .txt');this.stg=d.querySelector('.stg');
+   this.labB=d.querySelector('.lab b');this.labS=d.querySelector('.lab small');this.cap=d.querySelector('.cap');
+   this.capWho=d.querySelector('.cap .who');this.capLine=d.querySelector('.cap .line');
+   const c=document.createElement('div');c.id='kb14Card';c.innerHTML='<div><small></small><b></b></div>';ov.appendChild(c);this.card=c;
+   const ph=document.createElement('div');ph.id='kb14Phone';ph.setAttribute('aria-hidden','true');
+   ph.innerHTML='<div class="ic">📱</div><div class="who">MAMA</div><div class="st">zove…</div><div class="no">📵 ODBIJENO · PERA SE NE JAVLJA</div>';ov.appendChild(ph);this.phoneEl=ph;
+  },
+  play(kind){
+   const sc=SCENES[kind];if(!sc||!this.el)return;
+   this.el.dataset.stage=!software&&gl?'webgl':'illustration';this.sc=sc;this.kind=kind;this.t=0;this.pi=-1;this.ci=-1;this.done={};this.stg.innerHTML='';
+   this.mini.innerHTML=sc.panels[0].svg();this.txt.textContent=sc.bubble;
+   this.labB.textContent=sc.label;this.labS.textContent=sc.tag;this.cap.classList.remove('show');
+   this.el.className='on bp';
+  },
+  sfx(k){
+   try{const q=window.__kb14Sound;if(!q)return;
+    if(k==='click'){q(.22,150,.05);setTimeout(()=>q(.18,95,.09),90)}
+    else if(k==='chime'){q(.1,784,.28);setTimeout(()=>q(.09,1047,.34),180);setTimeout(()=>q(.08,1319,.4),380)}
+    else if(k==='ring'){q(.12,520,.09);setTimeout(()=>q(.12,520,.09),170)}
+   }catch(_){}
+  },
+  tick(dt,story){
+   if(this.sc){
+    this.t+=dt;const t=this.t,sc=this.sc;
+    if(t<2){if(this.el.className!=='on bp')this.el.className='on bp'}
+    else{
+     const ft=t-2,endF=sc.panels[sc.panels.length-1].to;
+     if(this.el.className.indexOf('fp')<0)this.el.className='on fp';
+     if(ft>endF-.6&&this.el.className.indexOf('fo')<0)this.el.className='on fp fo';
+     let i=sc.panels.findIndex(p=>ft>=p.from&&ft<p.to);if(i<0)i=sc.panels.length-1;
+     if(i!==this.pi){
+      for(const o of this.stg.querySelectorAll('.pn:not(.out)')){o.classList.add('out');setTimeout(()=>o.remove(),700)}
+      if(this.el.dataset.stage!=='webgl'){const n=document.createElement('div');n.className='pn';n.innerHTML=sc.panels[i].svg();this.stg.appendChild(n);}this.pi=i;
+     }
+     let ci=-1;sc.panels.forEach((p,pi)=>(p.caps||[]).forEach((c,k)=>{if(ft>=c[0]&&ft<c[1])ci=pi*10+k}));
+     if(ci!==this.ci){
+      this.ci=ci;
+      if(ci<0)this.cap.classList.remove('show');
+      else{const p=sc.panels[Math.floor(ci/10)],c=p.caps[ci%10];this.capWho.textContent=c[2]||'';this.capWho.style.display=c[2]?'block':'none';this.capLine.textContent=c[3];this.cap.classList.add('show');
+       if(c[2]&&story)try{story.speak({name:c[2],line:c[3]})}catch(_){}}
+     }
+     sc.panels.forEach((p,pi)=>(p.sfx||[]).forEach(s=>{const key=pi+':'+s[0];if(ft>=s[0]&&!this.done[key]){this.done[key]=1;this.sfx(s[1])}}));
+     if(t>=this.length(this.kind))this.stop();
+    }
+   }
+   const c=story&&story.cue;
+   /* Perin telefon: Maja zove, Pera ne diže */
+   if(c&&c.phone){
+    const pc=typeof c.phone==='object'?c.phone:{who:'MAMA',st:'zove…',no:'📵 ODBIJENO · PERA SE NE JAVLJA',final:'3 propuštena poziva',delay:1.4},k=story.t-c.at-(pc.delay??1.4);
+    if(k<0){this.phoneEl.className=''}
+    else{
+     const n=Math.min(3,Math.floor(k/1.5)+1),over=k>4.5+.6;
+     if(n!==this.ring){this.ring=n;if(!over)this.sfx('ring')}
+     this.phoneEl.className='on'+(over?' done':' ring');
+     this.phoneEl.querySelector('.who').textContent=pc.who;
+     this.phoneEl.querySelector('.no').textContent=pc.no;
+     this.phoneEl.querySelector('.st').textContent=over?pc.final:pc.st+' ('+n+')';
+    }
+   }else if(this.phoneEl&&this.phoneEl.className){this.phoneEl.className='';this.ring=0}
+   if(this.card){const on=!!(c&&c.card);if(on!==this.card.classList.contains('on')){this.card.classList.toggle('on',on);if(on){const p=String(c.card).split('|');this.card.querySelector('small').textContent=p[0];this.card.querySelector('b').textContent=p[1]||''}}}
+  },
+  stop(){
+   if(this.sc&&this.el?.dataset.stage==='webgl')kb12Story.firstCamera=true;this.sc=null;this.pi=-1;this.ci=-1;
+   if(this.el){this.el.className='';this.stg.innerHTML='';this.cap.classList.remove('show')}
+  },
+  reset(){this.stop();if(this.phoneEl)this.phoneEl.className='';if(this.card)this.card.classList.remove('on');this.ring=0}
+ };
+ return UI;
+})();
+
+
+const memoryScenery=new Map();
+function memoryOnStage(){return !!(kb12Story.active&&kb12Mem.sc&&kb12Mem.t>=2&&kb12Mem.el?.dataset.stage==='webgl');}
+function memoryBeat(){
+ const t=Math.max(0,kb12Mem.t-2),list=kb12Mem.sc.panels;
+ const index=list.findIndex(p=>t>=p.from&&t<p.to),i=index<0?list.length-1:index,p=list[i];
+ return {t,i,u:easeShot(clamp((t-p.from)/(p.to-p.from),0,1)),kids:kb12Mem.kind==='lazar'};
+}
+function memoryCamera(stage){
+ const {i,u,kids}=memoryBeat(),shots=kids?[
+  [[-3.7,1.65,5.9],[-2.65,1.47,4.35],[0,1.04,-.02]],
+  [[3.04,1.42,3.54],[2.6,1.35,2.58],[.45,1.05,-1.32]],
+  [[2.4,1.32,-.12],[1.9,1.39,-.40],[.64,1.12,-2.45]],
+  [[-2.25,1.48,-3.15],[-1.83,1.41,-3.40],[.06,1.05,-3.91]]]:
+  [[[-4,2.05,6.24],[-2.94,1.70,4.77],[-.24,1.15,-.05]],
+   [[2.85,1.74,2.99],[2.41,1.64,2.46],[.12,1.53,.10]],
+   [[.80,1.70,2.22],[.52,1.68,1.91],[.04,1.66,.14]],
+   [[-.64,2.45,5.12],[-1.47,2.9,6.23],[.34,1.32,-.42]]];
+ const [a,b,focus]=shots[i],k=r2Reduced?0:u,c1=a.map((v,j)=>lerp(v,b[j],.32)+(j===1?.045:0)),c2=a.map((v,j)=>lerp(v,b[j],.69)+(j===0?.09:0));
+ const eye=bezierPoint(a,c1,c2,b,k),xyz=[stage.x,stage.y,stage.z];
+ cam.eye=eye.map((v,j)=>v+xyz[j]);cam.target=focus.map((v,j)=>v+xyz[j]);cam.roll=0;motion.fov=kids?.88:.80;
+}
+function memorySet(kids){
+ const key=kids?'lazar':'andrej';if(memoryScenery.has(key))return memoryScenery.get(key);
+ const m=Mesh(),box=(x,y,z,w,h,d,c,mat=0)=>m.box(x,y,z,w,h,d,c,mat);
+ if(kids){
+   box(0,-.13,-.5,22,.26,18,'#b6b6a5',0);
+   for(let k=-8;k<=8;k++){box(k*1.14,.005,-.50,.012,.008,17.8,'#7f8982');box(0,.006,k*1.06,20,.010,.015,'#8c9388');}
+   box(0,1.6,-6.05,18,3.2,.19,'#d7d5bb');box(-4.93,1.6,-1.9,.18,3.2,8.1,'#dae0cd');
+   box(-2.6,1.58,-2.55,5.05,3.16,.12,'#9aa99f');box(3.85,1.58,-2.55,5.45,3.16,.12,'#a0aea0');
+   box(.54,2.77,-2.54,1.36,.78,.13,'#dae1cd');
+   for(const x of [-.10,1.17])box(x,1.18,-2.48,.105,2.36,.19,'#58665c',3);
+   box(.54,2.37,-2.48,1.38,.12,.19,'#58665c',3);
+   for(const x of [-3.48,-1.65,2.52]){
+    box(x,1.95,-5.9,1.34,1.46,.07,'#6f8f97',10);
+    for(const sign of [-1,1]){box(x+sign*.66,1.94,-5.85,.06,1.50,.11,'#e8e5cf');box(x,1.95+sign*.73,-5.85,1.40,.06,.11,'#e8e5cf');}
+    box(x,1.94,-5.82,.045,1.46,.08,'#e8e5cf');box(x,1.19,-5.79,1.52,.09,.29,'#b6afa0');
+   }
+   for(let j=0;j<5;j++)for(const xx of [-2.60,3.85])box(xx,.20+j*.27,-2.474,xx<0?4.98:5.40,.016,.015,'#83988a');
+   for(const x of [-2.9,2.4]){box(x,.83,-5.62,.89,.12,.50,'#e3e5d8');m.sphere(x,.74,-5.59,.32,.16,.17,'#d5d9cd');roundBone(m,[x,.9,-5.72],[x,1.11,-5.72],.022,'#889592');roundBone(m,[x,1.10,-5.72],[x,1.10,-5.59],.022,'#889592');}
+   box(1.52,2.05,-2.46,.42,.24,.03,'#426667');for(const v of [-.10,.10]){m.sphere(1.52+v,2.10,-2.432,.027,.027,.009,'#e6e7d6');box(1.52+v,2.021,-2.43,.05,.08,.012,'#e6e7d6');}
+   box(-1.4,2.14,-2.46,.95,.68,.04,'#aa825c',3);box(-1.4,2.14,-2.425,.79,.53,.03,'#a0bba6');
+   for(const sign of [-1,1]){box(-2.8+sign*.84,.28,.92,.095,.55,.105,'#59615c');box(-2.8+sign*.84,.28,.56,.095,.55,.105,'#59615c');}
+   for(let i=0;i<4;i++)box(-2.8,.56,.55+i*.13,2.0,.09,.11,'#a6845a',3);
+ }else{
+   box(0,-.16,0,47,.31,48,'#343b41',5);
+   for(const sign of [-1,1]){box(sign*5.7,.02,0,1.8,.18,45,'#848681',5.22);box(sign*4.76,.06,0,.17,.25,45,'#908f86',0);}
+   for(let j=-4;j<4;j++){const z=j*5.25,x=7.40;box(x,2.8,z,1.95,5.7,4.98,j%2?'#827768':'#a0876f',1);
+    for(const y of [1.4,3.85]){box(x-1.0,y,z,0.06,1.43,1.25,'#b3a98b');box(x-1.05,y,z,.04,1.23,1.02,j%3?'#6f8690':'#bca16b',j%3?10:11);box(x-1.1,y,z,.05,1.3,.048,'#5f655f');}
+   }
+   for(const x of [-4,4])for(const z of [-9,-1,9]){roundBone(m,[x,0,z],[x,4.22,z],.079,'#586362',.045);roundBone(m,[x,4.18,z],[x*.88,4.49,z],.041,'#66706e');m.sphere(x*.88,4.46,z,.28,.12,.16,'#9d9c88');m.sphere(x*.88,4.39,z,.21,.039,.11,'#e9cd91',11);}
+   for(let j=0;j<8;j++){const x=-5.4,z=-17+j*4.7;roundBone(m,[x,.10,z],[x+.27,3.44,z+.11],.16,'#665c4c',.065);
+    for(const sign of [-1,1]){roundBone(m,[x+.15,1.8,z],[x+sign*.78,3.49,z+sign*.48],.066,'#655b4f',.022);m.sphere(x+sign*.64,3.78,z+sign*.41,1.01,.75,.85,'#434e40',3);}
+   }
+ }
+ memoryScenery.set(key,m.out);return m.out;
+}
+const memoryClothes={
+ lazar:{...KB_MEMORY_ROLE('lazar'),top:'#6c8792',pants:'#414d56',hair:'#533d31',kid:true},
+ lena:{...KB_MEMORY_ROLE('lena'),top:'#d7ac52',pants:'#747077',hair:'#65452f',kid:true,long:true},
+ friend:{...KB_MEMORY_ROLE('friend'),top:'#7c936d',pants:'#4f637a',hair:'#49382f',kid:true,long:true},
+ andrej:{...KB_MEMORY_ROLE('andrej'),top:'#54736f',pants:'#424a4c',hair:'#352c27'},
+ danica:{...KB_MEMORY_ROLE('danica'),top:'#b3a89b',pants:'#424e62',hair:'#453329',long:true}
+};
+function KB_MEMORY_ROLE(name){return {skin:name==='andrej'?'#c8987d':'#d4a58d',eyes:'#474b46',hairStyle:'fringe'};}
+function memoryPerson(dst,stage,name,x,z,heading,walk,phase,gesture=0,tilt=0){
+ const c=memoryClothes[name],m=Mesh(),hip=.89,bob=walk*.026*Math.abs(Math.sin(phase)),scale=c.kid?.77:1;
+ m.sphere(0,1.19+bob,0,.246,.337,.160,c.top);
+ m.sphere(0,.92+bob,-.01,.202,.14,.15,c.pants);
+ for(const s of [-1,1]){
+   const swing=Math.sin(phase+(s<0?Math.PI:0))*walk,k=[s*.111,.49,.125*swing+.068],foot=[s*.112,.11+.080*Math.max(0,-swing),.29*swing];
+   roundBone(m,[s*.114,hip+bob,0],k,.093,c.pants,.082);roundBone(m,k,foot,.078,c.pants,.056);kb11Shoe(m,foot[0],foot[1]-.112,foot[2],'#666c6a','#b6b8ab');
+   const g=s>0?gesture:0,shoulder=[s*.205,1.40+bob,.005],elbow=[s*(.26+.10*g),1.15+.18*g,.025-.09*swing+.045*g],hand=[s*(.25+.11*g),.94+.31*g,.075-.18*swing+.19*g];
+   roundBone(m,shoulder,elbow,.072,c.top,.064);roundBone(m,elbow,hand,.064,c.top,.046);m.sphere(...hand,.049,.063,.043,c.skin);
+ }
+ roundBone(m,[0,1.435,0],[0,1.58,0],.066,c.skin,.066);
+ const head=Mesh();transformMesh(head,kb11Head(null,c,{talk:false},true,false),0,0,0,0);
+ if(c.long){head.sphere(0,.035,-.117,.163,.199,.094,c.hair);
+   for(const j of [-1,1]){head.sphere(j*.148,-.020,-.074,.052,.167,.068,c.hair);if(c.kid){head.sphere(j*.183,-.02,-.09,.056,.071,.058,'#9e6f61');head.sphere(j*.199,-.093,-.092,.053,.102,.060,c.hair);}}}
+ transformMesh(m,head.out,0,1.69+bob,.015,0,tilt*.20,tilt,.99);
+ transformMesh(dst,m.out,stage.x+x,stage.y+(c.kid?.015:0),stage.z+z,heading,0,0,scale);
+}
+function paintMemory(m,stage){
+ const {t,i,u,kids}=memoryBeat(),at=(name,x,z,facing,walk=0,gesture=0,tilt=0)=>memoryPerson(m,stage,name,x,z,facing,walk,t*(walk?6.2:1.65),gesture,tilt);
+ transformMesh(m,memorySet(kids),stage.x,stage.y,stage.z);
+ if(kids){
+   const door=Mesh();door.box(.585,1.13,0,1.15,2.26,.078,'#889891',3);door.box(.58,1.72,.047,.72,.56,.028,'#9eafb0',10);door.box(1.02,1.07,.061,.17,.04,.045,'#5b635e');
+   const close=easeShot(clamp((t-9)/1.70,0,1));transformMesh(m,door.out,stage.x-.06,stage.y,stage.z-2.52,1.42*(1-close));
+   const k=easeShot(clamp(t/8.3,0,1)),moving=t<8.3?.72:0;
+   at('lazar',lerp(-1.6,-.35,k),lerp(1.15,-4.0,k),i<2?2.8:1.36,moving,i===3?.46:0);
+   at('lena',lerp(.82,.47,k),lerp(.14,-3.98,k),i===0?-1.20:i===1?2.9:-1.44,moving,i===0?.82:.14);
+   if(i===2||i===3)at('friend',lerp(2.12,.92,clamp((t-9)/1.9,0,1)), -1.94,-2.80,i===2&&u<.5?.56:0,i===2?.95:.02);
+ }else{
+   const arrival=easeShot(clamp(t/5.1,0,1)),close=easeShot(clamp((t-7.8)/1.85,0,1)),release=easeShot(clamp((t-11.1)/2.3,0,1));
+   const gap=.64-.47*close+.13*release,walk=t<5.1?.65:0,leaving=i===3?u:0;
+   at('andrej',-gap+.71*leaving,.105-1.35*leaving,lerp(1.42,2.82,leaving),leaving*.55,i===2?.66:.13,i===2?.10:0);
+   at('danica',gap+(1-arrival)*2.4+.79*leaving,.17+(1-arrival)*1.18-1.30*leaving,lerp(-1.47,2.89,leaving),walk+.5*leaving,i===2?.70:.17,i===2?-.08:0);
+ }
+}
+const kb12Lines=[
+ {d:6,name:'NARATOR',line:'NORMALAN DAN · NIŠKA TVRĐAVA',shot:'far',title:'NORMALAN DAN'},
+ {d:6,name:'NARATOR',line:'Četiri druga guraju bicikle kroz tvrđavu. Običan dan, bez ikakvih briga.',shot:'mid'},
+ {d:5,name:'Vuk',line:'Evo nas, momci! Tvrđava, sunce, bicikli... ovo je život, bre!',shot:'group',act:'laugh',react:{Andrej:'laugh',Petar:'proud',Lazar:'talk'}},
+ {d:4.6,name:'Andrej',line:'Samo da Lazar opet ne odluta u svoj svet...',shot:'andrej',act:'tease',to:'Lazar',react:{Vuk:'laugh',Petar:'laugh',Lazar:'nervous'}},
+ {d:4.6,name:'Petar',line:'Ma znamo mi gde on luta! Sigurno je kod Lene!',shot:'pera',act:'tease',to:'Lazar',react:{Vuk:'laugh',Andrej:'laugh',Lazar:'nervous'}},
+ {d:4.8,name:'Vuk',line:'Lazare, Lena! Hajde, priznaj, o njoj razmišljaš!',shot:'lazar',act:'tease',to:'Lazar',react:{Andrej:'laugh',Petar:'laugh',Lazar:'nervous'}},
+ {d:'lazar',name:'NARATOR',line:'',shot:'lazarZoom',mem:'lazar',look:'Lazar',react:{Lazar:'think',Andrej:'idle',Petar:'idle',Vuk:'idle'}},
+ {d:5.2,name:'Lazar',line:'Ma ne lupajte... bili smo klinci. To je davno bilo.',shot:'lazar',act:'nervous',react:{Vuk:'laugh',Andrej:'laugh',Petar:'laugh'}},
+ {d:5.6,name:'Vuk',line:'Davno?! I dan-danas pocrveni! A ti, Andrej? Šta je bilo sa Danicom Branković?',shot:'andrejZoom',act:'tease',to:'Andrej',react:{Petar:'laugh',Lazar:'laugh',Andrej:'nervous'}},
+ {d:'andrej',name:'NARATOR',line:'',shot:'andrejZoom',mem:'andrej',look:'Andrej',react:{Andrej:'think',Lazar:'idle',Petar:'idle',Vuk:'idle'}},
+ {d:4.6,name:'Andrej',line:'Aj, bre, dosta... nije za priču pred svima.',shot:'andrej',act:'nervous',react:{Vuk:'laugh',Lazar:'laugh',Petar:'laugh'}},
+ {d:5,name:'Vuk',line:'Dobro, dobro. Onda Pero! Je l’ Sunčica zna gde si danas?',shot:'pera',act:'tease',to:'Petar',react:{Andrej:'laugh',Lazar:'laugh',Petar:'serious'}},
+ {d:4.2,name:'Petar',line:'Vuče, prestani sa tom Sunčicom. Nije smešno.',shot:'pera',act:'serious',to:'Vuk',react:{Vuk:'tease',Andrej:'laugh',Lazar:'serious'}},
+ {d:4.6,name:'Vuk',line:'Ajde, ajde... Sunčica! Pero i Sunčica! Sunčicaaa!',shot:'vuk',act:'laugh',to:'Petar',react:{Andrej:'laugh',Lazar:'serious',Petar:'angry'}},
+ {d:4.6,name:'Petar',line:'DOSTA! Rekao sam ti da prestaneš! Dosta mi je više!',shot:'pera',act:'angry',to:'Vuk',react:{Vuk:'shrug',Andrej:'nervous',Lazar:'serious'}},
+ {d:8.5,name:'NARATOR',line:'Pera naglo hvata bicikl i besan odlazi niz tvrđavu. Telefon mu zvoni, ali se ne javlja.',shot:'exit',exit:true,phone:true,look:'Petar',react:{Vuk:'shrug',Andrej:'nervous',Lazar:'serious'}},
+ {d:5.2,name:'Lazar',line:'Pustite ga sad... Smiriće se. Rekao je da će posle doći u parkić.',shot:'group',act:'serious',react:{Vuk:'serious',Andrej:'serious'}},
+ {d:4.6,name:'Vuk',line:'Dobro... Nisam hteo toliko. Idemo i mi posle.',shot:'vuk',act:'serious',react:{Andrej:'serious',Lazar:'serious'}},
+ {d:5,name:'NARATOR',line:'NEKOLIKO SATI KASNIJE · PARKIĆ NA KALAČ BRDU',shot:'dark',card:'NEKOLIKO SATI KASNIJE|PARKIĆ NA KALAČ BRDU',night:true},
+ {d:6.5,name:'Andrej',line:'Pera se ne pojavljuje... a telefon mi vibrira. Maja zove.',shot:'dark',act:'phone',react:{Lazar:'serious',Vuk:'serious'}}
+];
+let kb12Clock=0;
+const kb12Script=kb12Lines.map(c=>{const d=typeof c.d==='string'?kb12Mem.length(c.d):c.d,o=Object.assign({},c,{at:kb12Clock,until:kb12Clock+d});kb12Clock+=d;return o});
+const kb12StLines=[
+ {d:6,name:'NARATOR',line:'METEO STANICA · KALAČ BRDO · NOĆ',shot:'stFar',title:'PERA JE PRONAĐEN',react:{Petar:'phone'}},
+ {d:5.6,name:'NARATOR',line:'Iza ugašenog radara, kraj bele stanice, neko stoji sasvim sam. U ruci mu svetli telefon.',shot:'stMid',react:{Petar:'phone'}},
+ {d:4.6,name:'Andrej',line:'Pera! Živ si! Svi smo te tražili!',shot:'stAndrej',act:'talk',to:'Petar',react:{Petar:'nervous',Lazar:'calm'}},
+ {d:4.8,name:'Petar',line:'Tiho... Ne prilazite još. Slušajte me.',shot:'stPera',act:'serious',to:'Andrej',react:{Andrej:'nervous',Lazar:'serious'}},
+ {d:5,name:'Lazar',line:'Maja te zove satima, Pero. Zašto se ne javljaš?',shot:'stLazar',act:'serious',to:'Petar',react:{Petar:'nervous',Andrej:'serious'}},
+ {d:5.6,name:'Petar',line:'Bio sam besan na Vuka i nisam hteo ni sa kim. A onda me je pozvao broj koji ne postoji.',shot:'stPeraZoom',act:'talk',to:'Lazar',react:{Lazar:'serious',Andrej:'serious'}},
+ {d:'pera',name:'NARATOR',line:'',shot:'stPeraZoom',mem:'pera',look:'Petar',react:{Petar:'think',Andrej:'idle',Lazar:'idle'}},
+ {d:5.2,name:'Petar',line:'Bio je moj glas, Lazare. Moj. A ja to nisam rekao.',shot:'stPeraZoom',act:'nervous',to:'Lazar',react:{Lazar:'serious',Andrej:'nervous'}},
+ {d:6,name:'NARATOR',line:'Telefon u Perinoj ruci ponovo zvoni. Na ekranu piše: PERA.',shot:'stPhone',phone:{who:'PERA',st:'zove… sa tvog broja',no:'📵 PERA JE OVDE · NIJE ON',final:'poziv sa tvog broja',delay:.8},look:'Petar',react:{Petar:'phone',Lazar:'serious',Andrej:'nervous'}},
+ {d:5,name:'Lazar',line:'Zove sa tvog broja. A ti stojiš ovde, pored mene.',shot:'stLazar',act:'serious',to:'Petar',react:{Andrej:'nervous',Petar:'nervous'}},
+ {d:5,name:'Andrej',line:'Vuku je žao, Pero. I on te je tražio. Ali sad nas čeka ovo na stanici.',shot:'stGroup',act:'calm',to:'Petar',react:{Petar:'serious',Lazar:'serious'}},
+ {d:4.4,name:'Petar',line:'Znam. Nije on loš... samo me je izluđivao. Hajde, zajedno.',shot:'stPera',act:'proud',to:'Andrej',react:{Andrej:'laugh',Lazar:'calm'}},
+ {d:6.4,name:'NARATOR',line:'Na stanici se sam od sebe pali prijemnik. Antena se vrti. Brdo je počelo da peva.',shot:'stStation',look:'Petar',react:{Petar:'serious',Andrej:'serious',Lazar:'serious'}}
+];
+let kb12Clock2=0;
+const kb12StScript=kb12StLines.map(c=>{const d=typeof c.d==='string'?kb12Mem.length(c.d):c.d,o=Object.assign({},c,{at:kb12Clock2,until:kb12Clock2+d});kb12Clock2+=d;return o});
+const kb12Scripts={pera:{script:kb12Script,len:kb12Clock},station:{script:kb12StScript,len:kb12Clock2}};
+const kb12Cfg={
+ pera:{cast:['Andrej','Lazar','Vuk','Petar'],fx:{Andrej:-2.8,Lazar:-.95,Vuk:.95,Petar:2.8},fz:{},GZ:4.5,W:12,bikes:true,top:['KALAČ BRDO · EPIZODA 1 · SEĆANJE','GDE JE PERA?'],
+  startPos:(n,f0)=>[-6.5+f0*.8,-11.5+((n==='Lazar'||n==='Petar')?.3:0)]},
+ station:{cast:['Andrej','Lazar','Petar'],fx:{Andrej:-2.4,Lazar:2.4,Petar:0},fz:{Andrej:.9,Lazar:.9,Petar:0},GZ:-2.0,W:10.5,bikes:false,top:['KALAČ BRDO · MISIJA · METEO STANICA','METEO STANICA'],
+  startPos:(n,f0)=>n==='Andrej'?[-13,1.5]:n==='Lazar'?[13,3.5]:null}
+};
+const kb12Story={
+  active:false,queued:false,callOpen:false,callQueuedAt:0,sceneLength:kb12Clock,t:0,cueIndex:-1,
+  stage:null,still:null,actors:[],cue:null,preview:null,overlay:null,callLayer:null,
+  seenKey:'kb12_pera_tvrdjava_seen_v1',voiceOn:false,speaker:'',firstCamera:true,
+  callStep:-1,callChoice:false,callAnswered:false,previous:null,origin:'manual',
+  cast:['Andrej','Lazar','Vuk','Petar'],fx:{Andrej:-2.8,Lazar:-.95,Vuk:.95,Petar:2.8},GZ:4.5,P:{},exitT0:-1,
+  scene:'pera',cfg:kb12Cfg.pera,onDone:null,
+  script:kb12Script,
+  callLines:[
+   {name:'Maja',line:'Halo, Andreje? Ja sam Maja, Petrova mama. Izvini što zovem ovako kasno.'},
+   {name:'Andrej',line:'Dobro veče, Majo. Je l’ sve u redu?'},
+   {name:'Maja',line:'Petar se nije vratio. Zovem ga već satima, telefon zvoni i zvoni, a on se ne javlja. Pa se uključi govorna pošta.'},
+   {name:'Andrej',line:'Danas smo svi bili kod tvrđave. Rekao je da će kasnije doći u parkić.'},
+   {name:'Maja',line:'Poslala sam mu i poruke. Ništa. Nije on takav, nikad ne ignoriše moj poziv. Molim te, javi mi ako nešto saznaš.'},
+   {name:'Andrej',line:'Hoću, obećavam. Lazar, Vuk i ja ćemo odmah da ga potražimo.'},
+   {name:'Maja',line:'Hvala ti. Čuvajte se i ostanite zajedno.'}
+  ],
+  useScene(name){
+   this.scene=name;this.cfg=kb12Cfg[name];const s=kb12Scripts[name];
+   this.script=s.script;this.sceneLength=s.len;this.cast=this.cfg.cast;this.fx=this.cfg.fx;this.GZ=this.cfg.GZ;
+  },
+  /* Misija: scena kod meteo stanice. cb se poziva kad se scena završi ili preskoči. */
+  missionScene(cb){
+   if(!cine?.flags?.stationScene&&this.start('mission','station',cb)){cine.flags.stationScene=true;return true}
+   cb();return false;
+  },
+
+ setup(){
+  if(this.overlay)return;
+  const css=document.createElement('style');css.id='kb12-para-style';
+  css.textContent=`
+   #kb12Launch{position:absolute!important;top:max(119px,calc(env(safe-area-inset-top) + 110px))!important;left:22px!important;z-index:97!important;
+    border:1px solid #e4c99c!important;background:#15312ce8!important;color:#fff0d6!important;border-radius:7px!important;min-height:38px!important;
+    padding:8px 11px!important;font:800 11px Inter,Arial,sans-serif!important;letter-spacing:.04em!important;box-shadow:0 5px 19px #0008}
+   #kb12Overlay[hidden],#kb12Phone[hidden],#kb12PosterPanel[hidden],#kb12PosterHint[hidden]{display:none!important}
+   #gm.kb12-film-active > :not(#kbGeo3D):not(#kb12Overlay){visibility:hidden!important;pointer-events:none!important}
+   #gm.kb12-film-active #kb12Overlay,#gm.kb12-film-active #kb12Overlay *{visibility:visible!important}
+   #kb12Overlay{position:absolute;inset:0;z-index:180;pointer-events:none;color:#fff;
+    font-family:Inter,Arial,sans-serif;isolation:isolate;overflow:hidden;text-shadow:0 2px 12px #000e}
+   #kb12Overlay:before,#kb12Overlay:after{content:"";position:absolute;left:0;right:0;height:clamp(34px,8vh,80px);background:#070a0a;z-index:2}
+   #kb12Overlay:before{top:0}#kb12Overlay:after{bottom:0}
+   #kb12Top{position:absolute;top:clamp(44px,10vh,95px);left:clamp(16px,4vw,52px);z-index:4}
+   #kb12Top small{display:block;letter-spacing:.2em;font:800 10px Arial,sans-serif;color:#e5bb84;margin-bottom:7px}
+   #kb12Top strong{font:900 clamp(17px,2.7vw,34px) Oswald,Arial,sans-serif;letter-spacing:.06em}
+   #kb12Bottom{position:absolute;left:50%;bottom:calc(clamp(42px,9vh,93px) + env(safe-area-inset-bottom));
+    transform:translateX(-50%);z-index:5;width:min(94vw,900px);text-align:center;background:linear-gradient(90deg,transparent,#081215dc 14%,#081215dc 86%,transparent);padding:12px 16px}
+   #kb12Speaker{display:block;color:#e6be8b;font:900 12px Arial,sans-serif;letter-spacing:.15em;margin-bottom:7px}
+   #kb12Line{font:650 clamp(15px,2.3vw,23px)/1.45 Arial,sans-serif;min-height:1.5em}
+   #kb12Bar{position:absolute;bottom:clamp(37px,8vh,84px);left:0;right:0;height:2px;background:#ffffff3a;z-index:4}
+   #kb12Bar i{display:block;height:100%;width:0;background:#d8a46e}
+   #kb12Skip,#kb12Voice{pointer-events:auto!important;position:absolute!important;right:max(13px,env(safe-area-inset-right))!important;z-index:6!important;
+    border:1px solid #e6d2b1aa!important;background:#0e211feb!important;color:white!important;min-height:42px!important;
+    border-radius:8px!important;padding:9px 12px!important;font:800 11px Arial,sans-serif!important}
+   #kb12Skip{top:clamp(40px,10vh,89px)!important}#kb12Voice{top:clamp(87px,17vh,143px)!important}
+   #kb12Fallback{position:absolute;inset:0;z-index:1;background:linear-gradient(#93c8eb,#e4e3cf);overflow:hidden}
+   #kb12Fallback svg{position:absolute;width:100%;height:100%;object-fit:cover}
+   #kb12FPeople{position:absolute;bottom:23%;left:13%;width:74%;display:flex;justify-content:space-between;transition:transform .8s}
+   #kb12FPeople i{display:block;position:relative;width:20px;height:64px;border-radius:12px 12px 3px 3px;background:#334153;box-shadow:0 13px 3px #1b22262b}
+   #kb12FPeople i:before{content:"";position:absolute;width:20px;height:20px;background:#d5ac8b;border-radius:50%;top:-19px;left:0}
+   #kb12FPeople i:after{content:"◯━━◯";font:bold 18px Arial;letter-spacing:-3px;position:absolute;top:35px;left:-23px;color:#212d32;text-shadow:none}
+   #kb12FPeople i:nth-child(2){background:#252a3c}#kb12FPeople i:nth-child(3){background:#963e46}
+   #kb12FPeople i:nth-child(4){background:#42635c}#kb12FPeople i:nth-child(5){background:#a76a53}
+   #kb12CallAccept[hidden],#kb12CallNext[hidden],#kb12CallChoice[hidden]{display:none!important}
+   #kb12Phone{position:absolute;inset:0;z-index:200;display:grid;place-items:center;background:#071015da;
+    pointer-events:auto;color:#f8f4ec;font:500 15px Arial,sans-serif}
+   #kb12PhoneCard{width:min(92vw,385px);max-height:90vh;overflow:auto;background:linear-gradient(165deg,#152c36,#0c151c);
+    border:1px solid #91b6b4aa;border-radius:25px;padding:24px 22px 19px;text-align:center;box-shadow:0 25px 90px #000c}
+   #kb12PhoneCard .phoneTag{font-size:11px;letter-spacing:.19em;color:#a6c1c7;font-weight:800}
+   #kb12PhoneCard .caller{font-size:clamp(26px,7vw,37px);font-weight:900;margin:14px 0 4px}
+   #kb12PhoneCard .callerInfo{font-size:12px;color:#b4c9cc}
+   #kb12PhoneCard .avatar{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;background:#396a66;
+    font-size:38px;margin:19px auto 14px;box-shadow:0 0 0 7px #62979122}
+   #kb12PhoneCard .dialogue{min-height:90px;padding:13px;margin:20px 0;background:#0a151c;border:1px solid #41646b;
+    border-radius:12px;text-align:left;line-height:1.5}
+   #kb12PhoneCard .dialogue b{display:block;color:#e8c18e;font-size:11px;letter-spacing:.07em;margin-bottom:7px}
+   #kb12PhoneCard button,#kb12PosterPanel button{border:0!important;border-radius:12px!important;min-height:48px!important;
+    padding:11px 16px!important;font:800 13px Arial,sans-serif!important;cursor:pointer!important;color:white!important}
+   #kb12CallAccept{background:#278b64!important;width:100%}
+   #kb12CallNext{background:#326a78!important;width:100%}
+   #kb12CallChoice{display:flex;flex-direction:column;gap:10px}
+   #kb12CallChoice button{background:#315368!important;width:100%}
+   #kb12Phone[data-ringing="true"] #kb12PhoneCard{animation:kb12Buzz .22s ease-in-out 6}
+   @keyframes kb12Buzz{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+   #kb12PosterHint{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);z-index:105;background:#0f2628e8;
+    border:1px solid #e4cca3;padding:10px 14px;color:#fff1d3;font:800 12px Arial,sans-serif;border-radius:8px;cursor:pointer}
+   #kb12PosterPanel{position:absolute;inset:0;z-index:175;display:grid;place-items:center;background:#0b141ad6;pointer-events:auto}
+   #kb12PosterCard{background:#f0e7d1;color:#292822;max-width:320px;width:min(83vw,320px);padding:20px;text-align:center;
+    border:7px solid #bdb19b;box-shadow:0 20px 80px #000d;font:700 14px Arial,sans-serif}
+   #kb12PosterCard strong{font:900 35px Arial;letter-spacing:.04em;color:#a32927;display:block}
+   #kb12PosterCard .picture{width:98px;height:120px;background:#ddd1b5;border:4px solid #bdb09d;
+    margin:16px auto;position:relative;overflow:hidden}
+   #kb12PosterCard .picture:before{content:"";position:absolute;left:32px;top:21px;width:30px;height:35px;border-radius:50%;background:#cda37d;box-shadow:0 35px 0 17px #843c41}
+   #kb12PosterCard .picture:after{content:"";position:absolute;left:29px;top:16px;width:36px;height:14px;border-radius:50%;background:#332a28}
+   #kb12PosterCard button{background:#324e56!important;margin-top:14px!important}
+   @media(max-width:640px){#kb12Launch{left:12px!important;top:max(111px,calc(env(safe-area-inset-top) + 103px))!important;
+    font-size:10px!important}#kb12Top{top:clamp(39px,9vh,75px);left:12px}#kb12Top strong{max-width:57vw;display:block}
+    #kb12Skip{right:8px!important;top:clamp(40px,9vh,70px)!important}#kb12Voice{right:8px!important;top:clamp(87px,17vh,122px)!important}
+    #kb12Bottom{width:99vw;padding:10px;bottom:calc(clamp(35px,8vh,78px) + env(safe-area-inset-bottom))}}
+   @media(prefers-reduced-motion:reduce){#kb12Phone[data-ringing="true"] #kb12PhoneCard{animation:none}}
+  `;
+  document.head.appendChild(css);
+  this.launch=document.createElement('button');this.launch.id='kb12Launch';this.launch.type='button';
+  this.launch.textContent='🎬 GDE JE PERA?';this.launch.setAttribute('aria-label','Pokreni filmsku scenu Gde je Pera');
+  this.launch.onclick=()=>this.start('manual');hud.appendChild(this.launch);
+  this.settingsLaunch=document.createElement('button');this.settingsLaunch.type='button';
+  this.settingsLaunch.textContent='🎬 GDE JE PERA? · TVRĐAVA I MAJIN POZIV';
+  this.settingsLaunch.onclick=()=>this.start('manual');settings.appendChild(this.settingsLaunch);
+  const ov=document.createElement('div');ov.id='kb12Overlay';ov.hidden=true;
+  ov.setAttribute('role','group');ov.setAttribute('aria-label','Filmska scena Gde je Pera');
+  ov.innerHTML=`
+   <div id="kb12Fallback" hidden>
+    <svg viewBox="0 0 1000 570" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+     <defs><pattern id="kb12Stone" width="41" height="22" patternUnits="userSpaceOnUse">
+       <rect width="41" height="22" fill="#aaa496"/><path d="M0 1H41M0 22H41M20 0V11M0 12H41M8 12V22M31 12V22" stroke="#6c6e6c" stroke-width="2"/>
+     </pattern></defs>
+     <rect width="1000" height="570" fill="#a8d1e5"/>
+     <g stroke="#5e6670" stroke-width="3" opacity=".45"><path d="M100 152v-110m110 118V18m710 155V20m-87 125V40m-200 100V8"/><path d="M56 84l88 60M170 40l75 110M700 65l-36 90M860 22l-53 125"/></g>
+     <rect y="389" width="1000" height="181" fill="#9f9888"/>
+     <rect x="-10" y="135" width="1020" height="285" fill="url(#kb12Stone)" stroke="#72736e" stroke-width="4"/>
+     <rect x="140" y="105" width="285" height="315" fill="url(#kb12Stone)" stroke="#6b6b67" stroke-width="5"/>
+     <path d="M215 417V279Q282 169 350 279V417Z" fill="#27353a" stroke="#726a60" stroke-width="19"/>
+     <path d="M510 417V294Q560 221 610 294V417Z" fill="#405158" stroke="#6c685e" stroke-width="14"/>
+     <path d="M665 417V294Q715 221 765 294V417Z" fill="#405158" stroke="#6c685e" stroke-width="14"/>
+     <path d="M824 417V294Q874 221 924 294V417Z" fill="#405158" stroke="#6c685e" stroke-width="14"/>
+     <path d="M130 420H450L410 478H170Z" fill="#c3b7a1" stroke="#898579" stroke-width="6"/>
+     <g stroke="#898575" stroke-width="2"><path d="M143 440H435M154 453H423M165 466H413"/></g>
+     <rect x="-20" y="486" width="1020" height="90" fill="#c0b8a8"/>
+    </svg>
+    <div id="kb12FPeople"><i></i><i></i><i></i><i></i></div>
+   </div>
+   <div id="kb12Top"><small>KALAČ BRDO · EPIZODA 1 · SEĆANJE</small><strong>GDE JE PERA?</strong></div>
+   <button type="button" id="kb12Skip">PRESKOČI · ESC</button>
+   <button type="button" id="kb12Voice" aria-pressed="false">🔇 GLAS: OFF</button>
+   <div id="kb12Bottom" aria-live="polite"><span id="kb12Speaker"></span><div id="kb12Line"></div></div>
+   <div id="kb12Bar"><i></i></div>`;
+  gm.appendChild(ov);this.overlay=ov;kb12Mem.mount(ov);window.__kb14Sound=(v,f,d)=>{try{kb11Cutscene.sound(v,f,d)}catch(_){}};

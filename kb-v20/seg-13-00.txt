@@ -1,0 +1,1000 @@
+  this.overlay.style.setProperty('visibility','visible','important');
+  this.preview=ov.querySelector('#kb12Fallback');
+  this.progress=ov.querySelector('#kb12Bar i');this.name=ov.querySelector('#kb12Speaker');this.line=ov.querySelector('#kb12Line');
+  ov.querySelector('#kb12Skip').onclick=()=>this.finish(false,true);
+  this.voiceOn=!!stateStore.get('kb12_voice',false);
+  this.voiceButton=ov.querySelector('#kb12Voice');this.updateVoice();
+  this.voiceButton.onclick=()=>{
+   if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){tip('Ovaj uređaj ne podržava glas.',3);return}
+   this.voiceOn=!this.voiceOn;stateStore.put('kb12_voice',this.voiceOn);this.updateVoice();
+   if(this.voiceOn&&this.cue)this.speak(this.cue);else try{speechSynthesis.cancel()}catch(_){}
+  };
+  this.callLayer=document.createElement('div');this.callLayer.id='kb12Phone';this.callLayer.hidden=true;
+  this.callLayer.setAttribute('role','dialog');this.callLayer.setAttribute('aria-label','Poziv od Maje');
+  this.callLayer.innerHTML=`<div id="kb12PhoneCard">
+   <span class="phoneTag">📱 DOLAZNI POZIV</span><div class="avatar">M</div>
+   <div class="caller">Maja</div><div class="callerInfo">Petrova mama · Pera joj se ne javlja već satima</div>
+   <div class="dialogue"><b id="kb12CallWho">TELEFON VIBRIRA</b><span id="kb12CallLine">Maja zove. Pera se još nije pojavio, a ne diže ni njen poziv.</span></div>
+   <button type="button" id="kb12CallAccept">📞 JAVI SE</button>
+   <button type="button" id="kb12CallNext" hidden>NASTAVI RAZGOVOR ›</button>
+   <div id="kb12CallChoice" hidden><button type="button" data-reply="tvrdjava">Video sam ga kod tvrđave.</button>
+   <button type="button" data-reply="parkic">Rekao je da dolazi u parkić.</button></div>
+  </div>`;
+  gm.appendChild(this.callLayer);
+  this.callLayer.style.setProperty('visibility','visible','important');
+  this.callLayer.querySelector('#kb12CallAccept').onclick=()=>this.answer();
+  this.callLayer.querySelector('#kb12CallNext').onclick=()=>this.nextCall();
+  for(const b of this.callLayer.querySelectorAll('#kb12CallChoice button'))b.onclick=()=>this.chooseReply(b.dataset.reply);
+  this.posterHint=document.createElement('button');this.posterHint.type='button';this.posterHint.id='kb12PosterHint';
+  this.posterHint.hidden=true;this.posterHint.textContent='🔎 NA BANDERI: TRAŽI SE · PETAR (PERA) · POGLEDAJ PLAKAT';
+  this.posterHint.onclick=()=>this.showPoster();gm.appendChild(this.posterHint);
+  this.posterHint.style.setProperty('visibility','visible','important');
+  this.posterPanel=document.createElement('div');this.posterPanel.id='kb12PosterPanel';this.posterPanel.hidden=true;
+  this.posterPanel.setAttribute('role','dialog');this.posterPanel.setAttribute('aria-label','Plakat Traži se Petar');
+  this.posterPanel.innerHTML=`<div id="kb12PosterCard"><strong>TRAŽI SE</strong><div class="picture"></div>
+   <div style="font-size:20px;font-weight:900">PETAR „PERA“</div>
+   <p>Poslednji put viđen kod Niške tvrđave.<br>Rekao je drugovima da će doći u parkić.</p>
+   <p style="font-size:12px;font-weight:600">Ako imaš informacije, obavesti njegovu porodicu.</p>
+   <button type="button" id="kb12PosterClose">VRATI SE U IGRU</button></div>`;
+  gm.appendChild(this.posterPanel);
+  this.posterPanel.style.setProperty('visibility','visible','important');
+  this.posterPanel.querySelector('#kb12PosterClose').onclick=()=>this.hidePoster();
+ },
+ updateVoice(){if(this.voiceButton){this.voiceButton.textContent=this.voiceOn?'🔊 GLAS: ON':'🔇 GLAS: OFF';this.voiceButton.setAttribute('aria-pressed',String(this.voiceOn))}},
+ speak(c){
+  if(!this.voiceOn||!window.speechSynthesis||!window.SpeechSynthesisUtterance||!c?.line)return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(c.line);u.lang='sr-RS';
+   const voices=speechSynthesis.getVoices();u.voice=voices.find(v=>/^sr([-_]|$)/i.test(v.lang))||voices.find(v=>/^(hr|bs)([-_]|$)/i.test(v.lang))||null;
+   const pitch={Lena:1.34,Danica:1.2,Drugarica:1.3,Maja:1.13,Petar:1.03,Andrej:.96,Vuk:.88,Lazar:1.02};
+   u.pitch=pitch[c.name]||1;u.rate=.98;u.volume=.83;speechSynthesis.speak(u);
+  }catch(_){}
+ },
+  start(source='manual',scene='pera',onDone=null){
+   const stScene=scene==='station';
+   if(!live||directorShot||this.active||kb11Cutscene.active||this.callOpen||(!stScene&&this.posterPanel&&!this.posterPanel.hidden)||football||interior||mapOpen||transition||window.KBStoryExtensions?.modal||(!stScene&&cine?.choice)){
+    if(live&&source==='manual')tip('Scena može da se pokrene dok stojiš u 3D svetu.',3);
+    return false;
+   }
+   if(!stScene){
+    if(VUK.on&&source==='manual'){tip('Završi razgovor i uvodnu misiju sa Vukom, pa pogledaj glavnu scenu.',4);return false}
+    if(this.callQueuedAt){tip('Najpre odgovori na Majin poziv.',3);return false}
+   }
+   if(paused)setPaused(false);
+   if(!this.overlay)this.setup();
+   this.useScene(scene);this.onDone=onDone;
+   this.queued=false;this.origin=source;this.active=true;this.t=0;this.cueIndex=-1;this.firstCamera=true;this.exitT0=-1;
+   this.previous={view,yaw,pitch,eye:cam.eye.slice(),target:cam.target.slice(),roll:cam.roll,dayMode,dayTime,dusk};
+   // The authored gate is at local (-12,-24). Its real entrance is outside the playable DEM.
+   // Stambol Gate, OpenStreetMap way 486708090 / https://www.wikidata.org/wiki/Q61134326
+   const gate=gps(21.89534131,43.32331950);
+   this.stage=stScene?{x:HALF+245,z:HALF+245,y:height(HALF+245,HALF+245)+.1}:{x:gate[0]+12,z:gate[1]+24,y:height(gate[0],gate[1])+.10};
+   this.actors=[
+    {n:'Andrej',i:0,x:0,z:0,yaw:0,phase:0,move:0,jump:0,lean:0,kb11Cine:true,kb11Action:'walk'},
+    {n:'Lazar',i:1,x:0,z:0,yaw:0,phase:.9,move:0,jump:0,lean:0,kb11Cine:true,kb11Action:'walk'},
+    {n:'Petar',i:2,x:0,z:0,yaw:0,phase:1.8,move:0,jump:0,lean:0,kb11Cine:true,kb11Action:'walk'}
+   ];
+   this.P={};this.cast.forEach((n,k)=>{this.P[n]={x:0,z:0,yaw:.38,move:0,phase:k*1.1,act:'walk',head:0,hidden:false,fwd:0}});
+   this.fortress=null;if(stScene)this.buildStation();else this.buildStatic();
+   view=software?2:1;
+   if(stScene){dayMode=3;dayTime=23;dusk=.95}else{dayMode=0;dayTime=15;dusk=.1}
+   clearInput();if(document.pointerLockElement===scene)try{document.exitPointerLock()}catch(_){}
+   kb12Audio.hold();this.overlay.hidden=false;this.preview.hidden=!software||stScene;
+   kb12Mem.reset();this.overlay.classList.remove('kb14-nosub');
+   this.overlay.querySelector('#kb12Top small').textContent=this.cfg.top[0];
+   this.overlay.querySelector('#kb12Top strong').textContent=this.script[0].title||this.cfg.top[1];
+   gm.classList.add('kb12-film-active');this.setCue(true);this.actorTimeline(0);this.camera(1);
+   try{audio?.resume?.().catch(()=>{})}catch(_){}
+   return true;
+  },
+  actorTimeline(dt){
+   const S=this.stage,t=this.t,cue=this.cue||{},cfg=this.cfg,W=cfg.W,GZ=this.GZ,fx=this.fx;
+   const ex=this.script.find(c=>c.exit);if(ex&&t>=ex.at&&this.exitT0<0)this.exitT0=ex.at;
+   const u=clamp(t/W,0,1),e=1-Math.pow(1-u,1.45),arrived=u>=1,spk=cue.name;
+   for(const n of this.cast){
+    const p=this.P[n],f0=fx[n],z0=GZ+(cfg.fz[n]||0);if(p.hidden)continue;
+    const sp=cfg.startPos(n,f0),walking=!!sp&&!arrived;
+    let x=f0,z=z0,ty=0,head=0,act='idle',mv=0;
+    if(sp){x=lerp(sp[0],f0,e);z=lerp(sp[1],z0,e)}
+    if(walking){
+     ty=Math.atan2(f0-sp[0],z0-sp[1])*(this.scene==='pera'?.9:1);act='walk';mv=3.1*(1-.5*u)+.35;
+    }else{
+     let focus=n===spk?cue.to:(cue.look||(fx[spk]!==undefined?spk:null));
+     if(focus===n)focus=null;
+     const full=focus&&fx[focus]!==undefined?Math.atan2(fx[focus]-f0,2.2):0;
+     ty=full*.58;head=(full-ty);
+     act=n===spk?(cue.act||'talk'):((cue.react&&cue.react[n])||'idle');
+    }
+    if(n==='Petar'&&this.exitT0>=0){
+     const k=Math.max(0,t-this.exitT0),go=Math.max(0,k-.9),dist=go<1.6?1.2*go*go:3.07+3.8*(go-1.6),dx=.8,dz=-.6;
+     x=f0+dx*dist;z=GZ+dz*dist;
+     if(k<.9){act='angry';ty=p.yaw}
+     else{act='walk';ty=Math.atan2(dx,dz);mv=5.2;head=0}
+     if(dist>27)p.hidden=true;
+     if(k>.35)p.yaw=angleLerp(p.yaw,Math.atan2(dx,dz),1-Math.exp(-6*dt));
+    }
+    p.x=x;p.z=z;p.move=mv;p.act=act;p.head=head;
+    if(!(n==='Petar'&&this.exitT0>=0&&t-this.exitT0>.35))p.yaw=dt>0?angleLerp(p.yaw,ty,1-Math.exp(-5*dt)):ty;
+    p.phase+=dt*(mv?5.8:1.2);
+    p.fwd=({angry:.13,tease:.07,think:.05,nervous:-.02,laugh:-.04})[act]||0;
+   }
+   for(const a of this.actors){
+    const p=this.P[a.n];a.x=S.x+p.x;a.z=S.z+p.z;a.yaw=p.yaw;a.move=p.move;a.phase=p.phase;a.kb11Action=p.act;
+    a.kb12Head=clamp(p.head/.65,-1.1,1.1);a.kb12Fwd=p.fwd;a.hidden=p.hidden;
+   }
+  },
+  tick(dt){
+   if(!this.active)return;
+   this.t=Math.min(this.sceneLength,this.t+dt);
+   this.setCue(false);this.actorTimeline(dt);kb12Mem.tick(dt,this);
+   if(this.progress)this.progress.style.width=(this.t/this.sceneLength*100).toFixed(2)+'%';
+   if(software&&this.preview&&!this.preview.hidden){
+    const fig=this.preview.querySelector('#kb12FPeople');if(fig)fig.style.transform=`translateY(${(Math.sin(this.t*2)*2).toFixed(1)}px) translateX(${(Math.min(1,this.t/12)*5).toFixed(1)}%)`;
+   }
+   if(this.t>=this.sceneLength)this.finish(false,false);
+  },
+  setCue(force){
+   const i=this.script.findIndex(c=>this.t>=c.at&&this.t<c.until);
+   if(i<0||!force&&i===this.cueIndex)return;
+   this.cueIndex=i;const c=this.cue=this.script[i];this.speaker=c.name;
+   this.name.textContent=c.name==='NARATOR'?'SEĆANJE / SADAŠNJOST':c.name.toUpperCase();
+   this.line.textContent=c.line;
+   this.overlay.classList.toggle('kb14-nosub',!!(c.mem||c.card));
+   if(c.mem)kb12Mem.play(c.mem);else if(kb12Mem.sc)kb12Mem.stop();
+   if(c.exit&&this.exitT0<0)this.exitT0=this.t;
+   if(this.scene==='pera'&&this.script.some((x,j)=>x.night&&j<=i)){dayTime=21.4;dusk=.92}
+   if(this.voiceOn&&c.name!=='NARATOR'&&c.line)this.speak(c);
+   const small=this.overlay.querySelector('#kb12Top small'),strong=this.overlay.querySelector('#kb12Top strong');
+   if(c.title){small.textContent=this.cfg.top[0];strong.textContent=c.title}
+   else if(i>0&&strong.textContent===this.script[0].title)strong.textContent=this.cfg.top[1];
+   if(this.scene==='pera'&&(c.night||this.t>=this.script[this.script.length-2].at))small.textContent='KALAČ BRDO · SADAŠNJOST';
+  },
+  shotFor(cue){
+   const F=this.fx,Z=this.GZ,c=cue||{},u=c.until>c.at?clamp((this.t-c.at)/(c.until-c.at),0,1):0;
+   const on=(n,d,side,ty=1.55,h=1.7)=>{const q=this.P[n];return {eye:[q.x+side,h,q.z+d],target:[q.x+side*.1,ty,q.z],push:.05}};
+   switch(c.shot){
+    case 'far':return {eye:[lerp(-30,-25,u),lerp(9.5,8.4,u),lerp(37,33,u)],target:[-4,2.6,-8]};
+    case 'mid':return {eye:[lerp(-18,-7.5,u),lerp(5,2.5,u),lerp(25,14.5,u)],target:[lerp(-3.5,0,u),lerp(2,1.5,u),lerp(-5,3,u)]};
+    case 'group':return {eye:[.4,2.05,Z+8.6],target:[0,1.45,Z],push:.06};
+    case 'andrej':return on('Andrej',4.6,-.9);
+    case 'lazar':return on('Lazar',4.4,-.8);
+    case 'pera':return on('Petar',4.6,.9);
+    case 'vuk':return on('Vuk',4.5,.7);
+    case 'lazarZoom':return on('Lazar',2.3,-.35,1.6,1.66);
+    case 'andrejZoom':return on('Andrej',2.4,-.4,1.6,1.66);
+    case 'exit':{const p=this.P.Petar,k=clamp((this.t-c.at-1.4)/4.6,0,1),s=k*k*(3-2*k);
+     return {eye:[lerp(1.6,p.x-4.6,s),lerp(2.0,2.9,s),lerp(Z+8.2,p.z+10,s)],target:[lerp(1.0,p.x-.4,s),lerp(1.45,1.3,s),lerp(Z,p.z,s)]}}
+    case 'stFar':return {eye:[lerp(-15,-10,u),lerp(5.8,3.4,u),lerp(14,10.5,u)],target:[0,2.2,-4]};
+    case 'stMid':return {eye:[lerp(-10,-3.6,u),lerp(3.4,2.1,u),lerp(10.5,7.6,u)],target:[lerp(0,.4,u),lerp(2,1.5,u),-2.2]};
+    case 'stGroup':return {eye:[0,2.0,Z+8],target:[0,1.5,Z],push:.06};
+    case 'stAndrej':return on('Andrej',4.0,-.8);
+    case 'stPera':return on('Petar',4.0,.9);
+    case 'stLazar':return on('Lazar',4.0,.9);
+    case 'stPeraZoom':return on('Petar',2.3,.5,1.6,1.62);
+    case 'stPhone':return on('Petar',2.2,-.6,1.45,1.5);
+    case 'stStation':return {eye:[lerp(0,1.2,u),lerp(1.8,2.1,u),lerp(Z+8,Z+3.8,u)],target:[lerp(.3,2.4,u),lerp(1.8,5.7,u),-5.5]};
+    case 'dark':return {eye:[-7.2,1.75,Z+5.2],target:[-1.4,1.5,Z],push:.05};
+   }
+   return {eye:[.4,2.05,Z+8.6],target:[0,1.45,Z]};
+  },
+  camera(dt){
+   if(!this.active||!this.stage)return;
+   if(memoryOnStage()){memoryCamera(this.stage);return;}
+   const sh=this.shotFor(this.cue),S=this.stage,u=this.cue&&this.cue.until>this.cue.at?clamp((this.t-this.cue.at)/(this.cue.until-this.cue.at),0,1):0;
+   let ex=sh.eye,tg=sh.target;
+   if(sh.push&&!reduced){ex=ex.map((v,i)=>lerp(v,tg[i],sh.push*easeShot(u)))}
+   if(!reduced){const arc=bezierPoint([-.075,0,.04],[-.025,.035,0],[.045,.04,-.025],[.085,.01,-.04],easeShot(u));ex=ex.map((v,i)=>v+arc[i]);}
+   const at=[S.x+tg[0],S.y+tg[1],S.z+tg[2]],ey=[S.x+ex[0],S.y+ex[1],S.z+ex[2]];
+   const f=this.firstCamera?1:1-Math.exp(-dt*(reduced?25:3.6));this.firstCamera=false;
+   const float=reduced?0:Math.sin(this.t*.4)*.04;ey[1]+=float;
+   for(let i=0;i<3;i++){cam.eye[i]=lerp(cam.eye[i],ey[i],f);cam.target[i]=lerp(cam.target[i],at[i],f)}
+   cam.roll=lerp(cam.roll,0,f);
+  },
+
+ buildStatic(){
+  const m=Mesh(),S=this.stage,x=S.x,z=S.z,y=S.y;
+  const box=(px,py,pz,w,h,d,c,mat=3)=>m.box(x+px,y+py,z+pz,w,h,d,c,mat);
+  box(0,-.24,0,66,.45,72,'#b9b09e');
+  for(let zz=-30;zz<=30;zz+=6){box(0,-.018,zz,60,.022,.17,'#817969',3)}
+  for(let xx=-28;xx<=28;xx+=6){box(xx,-.014,0,.14,.024,67,'#928b7d',3)}
+  // Monumentalna kapija / bedem inspirisan fotografijom Niške tvrđave.
+  for(let xx=-32;xx<=32;xx+=4){
+   if(xx>-17&&xx<-7)continue;
+   box(xx,4.65,-24,4.07,9.3,2.0,'#9d9c91',3);
+   box(xx,9.55,-24,4.03,.65,2.1,'#777e76',3);
+  }
+  for(let px=-32;px<=32;px+=1.95){
+   if(px>-17&&px<-7)continue;
+   for(let j=0;j<9;j++){
+    const sx=px+(j%2)*.34,cy=.5+j*1.04;
+    box(sx,cy,-22.925,1.89,.08,.08,j%3===0?'#a8a99b':'#7f837c',3);
+    if((Math.round(px*4)+j)%3===0)box(sx-.38,cy+.29,-22.94,.035,.55,.035,'#cac4b5',3);
+   }
+  }
+  // Glavna velika gotička kapija sa zaobljenim lukom (otvor ostaje tamni prolaz).
+  box(-12,2.3,-25.09,8.4,4.7,.23,'#263437');
+  box(-12,6.7,-24.95,9.5,1.05,2.2,'#9d9c91');
+  for(const sg of [-1,1])box(-12+sg*4.8,3.15,-23.8,1.1,6.3,2.7,'#a6a396');
+  for(let k=0;k<=16;k++){
+   const a=Math.PI-k*Math.PI/16,px=-12+4.95*Math.cos(a),py=5.25+3.5*Math.sin(a);
+   m.box(x+px,y+py,z-22.55,.73,.52,.6,k%2?'#beb7a7':'#818579',3);
+  }
+  box(-12,9.95,-24,14,.65,4.1,'#777b75');
+  for(const xx of [-16,-12,-8])box(xx,10.75,-24,.82,1.25,3,'#888c85');
+  for(const xx of [-12]){for(let j=0;j<5;j++)box(xx,-.12+j*.17,-15-j*1.35,13.1,.2,1.1,'#c7bdab');}
+  // Lukovi desno sa staklenim vratima, kao na fotografiji.
+  for(const xx of [0,12,24]){
+   box(xx,2.05,-22.86,6,4.1,.065,'#24383c',4);
+   box(xx,5.18,-22.7,7.3,.75,.4,'#b7b09e',3);
+   for(const sg of [-1,1])box(xx+sg*3.5,2.9,-22.6,.62,5.8,.58,'#948f83',3);
+   for(let k=0;k<=12;k++){
+    const a=Math.PI-k*Math.PI/12,xx2=xx+3.7*Math.cos(a),yy=4.9+1.75*Math.sin(a);
+    m.box(x+xx2,y+yy,z-22.52,.61,.37,.58,k%2?'#a4a393':'#c5bcae',3);
+   }
+   box(xx,2.2,-22.45,.12,4.2,.23,'#6f5039');
+   box(xx,2.05,-22.44,5.8,.09,.23,'#6f5039');
+  }
+  // Stari kameni plato, stepeništa, žardinijere, klupe i svetiljke.
+  for(let step=0;step<5;step++){box(-13,-.02+step*.17,-13-step*1.1,17,.24,1.11,'#c1b7a5')}
+  for(const xx of [-25,25]){
+   box(xx,.25,-11,5,.5,5.4,'#716d62');
+   box(xx,1.15,-11,4.2,1.4,4.6,'#53664c');
+   for(let j=0;j<6;j++)m.sphere(x+xx-1.5+j*.6,y+1.8,z-11+Math.sin(j*3)*.7,.35,.5,.33,j%2?'#355548':'#587353',3);
+  }
+  for(const xx of [-20,20]){
+   box(xx,.52,9,2,.14,.63,'#9a8263');
+   for(const sx of [-.75,.75])box(xx+sx,.27,9,.14,.55,.14,'#493c34');
+   box(xx,2.8,11,.14,5.5,.14,'#2e3837');
+   m.sphere(x+xx,y+5.68,z+11,.28,.36,.28,'#d8c59b',4);
+  }
+  // Parapet od kamena u prvom planu
+  for(const xx of [-29,29]){box(xx,.65,24,4.0,1.3,13,'#928c7e');box(xx,1.34,24,4.2,.16,13.2,'#b7ad9d')}
+  this.still=m.out;
+ },
+  addBike(out,rx,rz,color,phase=0,yaw=0){
+   // oblik bicikla je isti svaki frejm osim pedale: keširamo po boji i 16 uglova pedale
+   const q=Math.round((((phase%6.2832)+6.2832)%6.2832)/(6.2832/16))%16,key=color+'|'+q,C=this._bk||(this._bk={});
+   let data=C[key];if(!data){phase=q*(6.2832/16);
+   const m=Mesh(),x=0,y=0,z=0,r=.39;
+   for(const zz of [-.76,.76]){
+    const cy=y+r+.06;
+    for(let k=0;k<12;k++){const a=k*Math.PI/6,b=(k+1)*Math.PI/6;
+     m.rod([x+Math.sin(a)*r,cy+Math.cos(a)*r,z+zz],[x+Math.sin(b)*r,cy+Math.cos(b)*r,z+zz],.035,'#292f34');
+    }
+    m.rod([x,cy,z+zz],[x,cy+.34,z+zz],.035,'#5e676a');
+   }
+   const A=[x,y+.54,z-.67],B=[x,y+.94,z-.1],C=[x,y+.55,z+.71],D=[x,y+.54,z+.05];
+   for(const [a,b] of [[A,B],[B,C],[C,D],[D,A],[B,D]])m.rod(a,b,.05,color);
+   m.rod([x,y+.94,z-.1],[x,y+1.18,z-.1],.07,'#2d3638');
+   m.rod([x-.32,y+1.18,z-.1],[x+.32,y+1.18,z-.1],.035,'#303a3c');
+   m.rod([x,y+.55,z+.71],[x,y+1.22,z+.66],.055,'#353b3c');
+   m.rod([x-.27,y+1.22,z+.66],[x+.27,y+1.22,z+.66],.037,'#2e3637');
+   m.box(x,y+.95,z-.1,.46,.065,.25,'#26292c');
+   m.rod([x,y+.47,z],[x+.20*Math.cos(phase),y+.47+.20*Math.sin(phase),z+.14],.04,'#434949');
+   data=C[key]=m.out}
+   transformMesh(out,data,this.stage.x+rx,this.stage.y,this.stage.z+rz,yaw,0,0,1);
+  },
+  bikeFor(m,p,color,phase){
+   const c=Math.cos(p.yaw),s=Math.sin(p.yaw);
+   this.addBike(m,p.x+.56*c+.12*s,p.z-.56*s+.12*c,color,phase,p.yaw*.4);
+  },
+  buildStation(){
+   const m=Mesh(),S=this.stage,x=S.x,z=S.z,y=S.y;
+   const box=(px,py,pz,w,h,d,c,mat=3)=>m.box(x+px,y+py,z+pz,w,h,d,c,mat);
+   // tlo: tamna trava, šljunkovita staza do vrata, svetlosni krug ispod lampe
+   box(0,-.24,-6,90,.45,70,'#1f2c25');
+   box(0,-.02,6,3.0,.04,24,'#585349');
+   box(0,-.015,-1.2,7.6,.045,4.2,'#6b6454');
+   box(0,-.01,-2.2,4.4,.05,2.8,'#8d8466');
+   for(let k=0;k<26;k++){const q=Math.sin(k*91.7)*43758.5;const rx=((q-Math.floor(q))-.5)*2.6,rz=2+k*.9;box(rx,.0,rz,.3,.03,.22,'#6f6a5c')}
+   // trava / žbunje po ivicama
+   for(let k=0;k<34;k++){const a=k*2.399,rr=7+((k*37)%19),bx=Math.cos(a)*rr*1.5,bz=-6-Math.abs(Math.sin(a))*rr;
+    if(Math.abs(bx)<6&&bz>-10)continue;
+    m.sphere(x+bx,y+.35,z+bz,.9+(k%3)*.25,.55+(k%4)*.1,.9+(k%2)*.3,k%2?'#25392b':'#2e4531')}
+   // zgrada stanice
+   box(0,1.6,-6,7,3.2,5,'#cfd5cf');
+   box(0,.18,-3.45,7.3,.36,.28,'#8e948f');
+   box(0,3.3,-3.4,7.4,.22,.35,'#8d9693');
+   m.roof(x,z-6,7,5,y+3.2,.75,'#4b575c',false);
+   // vrata + lampa
+   box(0,1.08,-3.47,1.3,2.15,.1,'#5c747b');
+   box(0,1.08,-3.405,1.0,1.85,.04,'#486066');
+   box(.45,1.05,-3.37,.07,.22,.06,'#b6b8a8');
+   for(const st of [0,1])box(0,.08+st*.14,-3.0-st*.45,2.1,.14,.5,'#a6a69a');
+   box(0,2.42,-3.3,.5,.12,.34,'#3b4243');
+   m.sphere(x,y+2.3,z-3.28,.17,.14,.17,'#fff0c4',4);
+   // prozori (dinamički paljeni u paint-u) – ovde samo okviri
+   for(const wx of [-2.2,2.2]){box(wx,1.85,-3.49,1.5,1.12,.06,'#8f9a96');}
+   // metalni sanduk / klima + Stivensonov zaklon
+   box(-5.3,1.05,-1.5,1.0,.7,.75,'#d9dcd2');
+   for(let k=0;k<5;k++)box(-5.3,.82+k*.1,-1.12,.92,.04,.03,'#9aa097');
+   for(const sx of [-.4,.4])for(const sz of [-.3,.3])box(-5.3+sx,.35,-1.5+sz,.07,.7,.07,'#777f7a');
+   box(-5.3,1.42,-1.5,1.1,.06,.85,'#f2f2ea');
+   // kiša-mera i drveni stub sa pločom
+   box(5.3,.65,-1.8,.1,1.3,.1,'#6a5a46');
+   box(5.3,1.45,-1.8,.7,.3,.08,'#8b8f86');
+   // ograda od stubova
+   for(let k=-6;k<=6;k++){const fx=k*2;if(Math.abs(fx)<6)continue;box(fx,.55,-14,.12,1.1,.12,'#4c4137');}
+   for(const hy of [.45,.85])box(0,hy,-14,26,.05,.05,'#6a6054');
+   // jarbol na krovu (antena kao radar – obrće se u paint-u)
+   box(2.4,5.35,-5.5,.16,3.3,.16,'#aab0ad');
+   m.rod([x+2.4,y+3.7,z-5.5],[x+1.2,y+3.95,z-6.7],.035,'#8d9693');
+   m.rod([x+2.4,y+3.7,z-5.5],[x+3.6,y+3.95,z-6.7],.035,'#8d9693');
+   m.rod([x+2.4,y+3.7,z-5.5],[x+3.6,y+3.95,z-4.3],.035,'#8d9693');
+   box(2.4,6.0,-5.5,1.0,.09,.55,'#ede3c1');
+   m.sphere(x+2.4,y+7.1,z-5.5,.14,.14,.14,'#d8493c',4);
+   // Perin bicikl naslonjen kraj zida, Pera ga je ostavio
+   this.addBike(m,-4.2,-3.0,'#c0a15f',0,Math.PI/2);
+   // borovi u pozadini
+   for(const [px,pz,sc] of [[-12,-10,6.2],[-8.5,-16,7],[-16,-6,5.6],[11,-9,6.6],[8,-16,7.4],[16,-4,5.8],[-3,-19,7.2],[3,-21,6.4],[-20,-12,6.5],[20,-13,6.9]])m.pine(x+px,z+pz,sc);
+   this.still=m.out;
+  },
+  stationDyn(m){
+   const S=this.stage,x=S.x,y=S.y,z=S.z,last=this.script[this.script.length-1],on=this.t>=last.at,k=on?this.t-last.at:0;
+   const flick=.5+.5*Math.sin(this.t*23)*Math.sin(this.t*7.3+1);
+   // prozori: ugašeni dok se ne upali sami od sebe
+   for(const wx of [-2.2,2.2]){
+    const lit=on&&k>.7,c=lit?(flick>.45?'#9be7b8':'#4f9a72'):'#12191c';
+    m.box(x+wx,y+1.85,z-3.43,1.3,.94,.04,c,lit?4:3);
+    if(lit){m.box(x+wx,y+.02,z-2.6,1.3,.02,1.6,flick>.45?'#2f5a47':'#27493a',3)}
+   }
+   // radar-antena
+   const ang=.4+(on?k*k*1.3+k*3.2:0),cx=x+2.4,cy=y+6.55,cz=z-5.5,l=1.3;
+   const dx=Math.cos(ang)*l,dz=Math.sin(ang)*l;
+   m.box(cx,cy,cz,.16,.09,.16,'#cfc9b3');m.rod([cx-dx,cy,cz-dz],[cx+dx,cy,cz+dz],.07,'#e8e3cf');
+   m.box(cx+dx,cy+.22,cz+dz,.08,.45,.08,'#e8e3cf');
+   m.box(cx-dx,cy+.22,cz-dz,.08,.45,.08,'#e8e3cf');
+   // crvena lampica trepće ubrzano kad se upali
+   const blink=on?Math.sin(this.t*14)>0:Math.sin(this.t*2.4)>.82;
+   if(blink)m.sphere(x+2.4,y+7.35,z-5.5,.3,.3,.3,'#ff5a4a',4);
+   // baklja koja gori kraj staze
+   const fl=.8+.2*Math.sin(this.t*17)+.1*Math.sin(this.t*31);
+   m.box(x-3.6,y+.25,z+.4,.07,.5,.07,'#7a2a22');
+   m.sphere(x-3.6,y+.58,z+.4,.11*fl,.2*fl,.11*fl,'#ff7a3a',4);
+   m.sphere(x-3.6,y+.7,z+.4,.06*fl,.14*fl,.06*fl,'#ffd27a',4);
+   m.box(x-3.6,y+.012,z+.4,2.4*fl,.02,2.0*fl,'#4a2d22',3);
+  },
+  paint(m){
+   if(!this.active||!this.stage)return;
+   const st=this.scene==='station';
+   if(!st&&memoryOnStage()){paintMemory(m,this.stage);return;}
+   for(let i=0;i<this.still.length;i+=7)m.out.push(this.still[i],this.still[i+1],this.still[i+2],this.still[i+3],this.still[i+4],this.still[i+5],this.still[i+6]);
+   if(st)this.stationDyn(m);
+   const cols={Andrej:'#bc5550',Lazar:'#6285a0',Vuk:'#5b9585',Petar:'#c0a15f'};
+   for(const a of this.actors){
+    if(a.hidden||!this.P[a.n])continue;
+    const tmp=Mesh();kb11Model(tmp,a,a.i,false);
+    const correction=this.stage.y-height(a.x,a.z);
+    for(let i=0;i<tmp.out.length;i+=7)m.out.push(tmp.out[i],tmp.out[i+1]+correction,tmp.out[i+2],tmp.out[i+3],tmp.out[i+4],tmp.out[i+5],tmp.out[i+6]);
+    if(this.cfg.bikes)this.bikeFor(m,this.P[a.n],cols[a.n],a.phase);
+   }
+   // Vuk koristi postojeći kostur (VUK), ostali koriste kb11Model.
+   const pv=this.P.Vuk;
+   if(pv&&!pv.hidden){
+    const V=VUK,prev={x:V.x,z:V.z,yaw:V.yaw,move:V.move,phase:V.phase,mode:V.mode,wR:V.wR,wL:V.wL,lt:V.lt},vi0=m.out.length;
+    try{V.x=this.stage.x+pv.x;V.z=this.stage.z+pv.z;V.yaw=pv.yaw;V.move=pv.move;V.phase=pv.phase;vukHuman(m)}
+    finally{Object.assign(V,prev)}
+    // vukHuman crta na height(V.x,V.z); scena stoji na stage.y, pa Vuka (i njegovu senku) pomeramo isto kao ostale likove
+    {const vc=this.stage.y-height(this.stage.x+pv.x,this.stage.z+pv.z);if(vc)for(let i=vi0+1;i<m.out.length;i+=7)m.out[i]+=vc}
+    if(this.cfg.bikes)this.bikeFor(m,pv,cols.Vuk,pv.phase);
+   }
+  },
+
+ finish(abort=false,skipped=false){
+  if(!this.active)return false;
+  this.active=false;this.queued=false;
+  if(this.previous){
+   view=this.previous.view;yaw=this.previous.yaw;pitch=this.previous.pitch;
+   cam.eye=this.previous.eye.slice();cam.target=this.previous.target.slice();cam.roll=this.previous.roll;
+   dayMode=this.previous.dayMode;dayTime=this.previous.dayTime;dusk=this.previous.dusk;
+  }
+  this.previous=null;this.cue=null;this.speaker='';this.still=null;kb12Mem.reset();this.overlay.classList.remove('kb14-nosub');
+  try{window.speechSynthesis?.cancel()}catch(_){}
+  this.overlay.hidden=true;gm.classList.remove('kb12-film-active');clearInput();
+  if(this.scene==='station'){const cb=this.onDone;this.onDone=null;kb12Mem.reset();kb12Audio.release();this.useScene('pera');if(!abort&&cb)setTimeout(cb,350);return true}
+  if(abort){this.callQueuedAt=0;this.callOpen=false;this.callLayer.hidden=true;kb12Audio.release();return true}
+  stateStore.put(this.seenKey,true);
+  if(story.on&&!VUK.on&&missionScene?.yard){
+   const p=missionScene.yard;
+   for(let i=0;i<2;i++){const q=clearSpot({x:p.x+(i===0?-1.1:1.1),z:p.z+.7},.5);
+    Object.assign(actors[i],{x:q.x,z:q.z,move:0,vx:0,vz:0,path:[],trail:[]})}
+   active=0;yaw=actors[0].yaw;pitch=-.08;settleActors();setStoryTarget();snapCamera();
+   tip('MISIJA: GDE JE PERA? · u parkiću je pronađen plakat.',5);
+  }else tip('Scena Gde je Pera? završena · pokušaj režim PRIČA za celu misiju.',4);
+  this.callQueuedAt=time+1.35;
+  return true;
+ },
+ worldTick(){
+  if(!live||this.active||kb11Cutscene.active)return;
+  if(this.callQueuedAt&&time>=this.callQueuedAt&&!this.callOpen&&!mapOpen&&!paused){
+   this.callQueuedAt=0;this.openCall();
+  }
+  if(!this.posterHint||!this.posterPanel)return;
+  if(this.posterPanel.hidden===false){this.posterHint.hidden=true;return}
+  const loc=missionScene?.yard,p=actors[active];
+  this.posterHint.hidden=!(story.on&&!VUK.on&&!cine?.peraFound&&loc&&hyp(p.x-(loc.x+4.1),p.z-(loc.z-2.5))<15&&!this.callOpen);
+ },
+ openCall(){
+  if(this.callOpen||!this.callLayer)return;
+  this.callOpen=true;this.callStep=-1;this.callAnswered=false;this.callChoice=false;
+  this.callLayer.hidden=false;this.callLayer.dataset.ringing='true';
+  this.callLayer.querySelector('#kb12CallAccept').hidden=false;
+  this.callLayer.querySelector('#kb12CallNext').hidden=true;
+  this.callLayer.querySelector('#kb12CallChoice').hidden=true;
+  this.callLayer.querySelector('#kb12CallWho').textContent='DOLAZNI POZIV';
+  this.callLayer.querySelector('#kb12CallLine').textContent='📱 Maja · Petrova mama · zvala je Peru, a on se ne javlja';
+  if(this.posterHint)this.posterHint.hidden=true;
+  clearInput();if(document.pointerLockElement===scene)try{document.exitPointerLock()}catch(_){}
+  try{navigator.vibrate?.([150,80,150,80,200])}catch(_){}
+  try{kb11Cutscene.sound(.16,480,.07)}catch(_){}
+ },
+ answer(){
+  if(!this.callOpen)return;
+  this.callAnswered=true;this.callLayer.dataset.ringing='false';
+  this.callLayer.querySelector('#kb12CallAccept').hidden=true;
+  this.callLayer.querySelector('#kb12CallNext').hidden=false;
+  this.callStep=0;this.setCallLine();
+ },
+ nextCall(){
+  if(!this.callOpen||!this.callAnswered)return;
+  if(this.callStep===2&&!this.callChoice){this.callChoice=true;
+   this.callLayer.querySelector('#kb12CallNext').hidden=true;
+   this.callLayer.querySelector('#kb12CallChoice').hidden=false;return;
+  }
+  this.callStep++;
+  if(this.callStep>=this.callLines.length){this.endCall();return}
+  this.setCallLine();
+ },
+ chooseReply(type){
+  if(!this.callOpen)return;
+  this.callChoice=false;
+  this.callLayer.querySelector('#kb12CallChoice').hidden=true;
+  this.callLayer.querySelector('#kb12CallNext').hidden=false;
+  this.callStep=3;
+  this.callLines[3].line=type==='tvrdjava'
+   ?'Poslednji put sam ga video kod tvrđave. Malo smo ga zezali pa se naljutio i otišao. Rekao je da dolazi u parkić.'
+   :'Posle tvrđave rekao je da će doći u parkić. Od tada se nije javio.';
+  this.setCallLine();
+ },
+ setCallLine(){
+  const c=this.callLines[this.callStep];if(!c)return;
+  this.callLayer.querySelector('#kb12CallWho').textContent=c.name.toUpperCase();
+  this.callLayer.querySelector('#kb12CallLine').textContent=c.line;
+  this.callLayer.querySelector('#kb12CallNext').textContent=this.callStep===this.callLines.length-1?'ZAVRŠI POZIV':'NASTAVI RAZGOVOR ›';
+  this.speak(c);
+ },
+ endCall(){
+  this.callOpen=false;this.callAnswered=false;this.callChoice=false;this.callStep=-1;
+  this.callLayer.hidden=true;clearInput();
+  try{window.speechSynthesis?.cancel()}catch(_){}
+  kb12Audio.release();
+  archive('kb12_maja_poziv','Poziv od Maje','Maja, Petrova majka, zove ga satima, ali se Pera ne javlja i ne odgovara na poruke. Poslednji put je viđen kod Niške tvrđave, gde se posvađao sa drugovima i otišao besan. Rekao je da će doći u parkić.');
+  archive('kb12_trazi_se','Plakat: TRAŽI SE PETAR','Na banderi kraj parkića zalepljen je plakat sa Perinom slikom. Andrej, Lazar i Vuk pokušavaju da rekonstruišu njegov put.');
+  tip('NOVI TRAGOVI: MAJIN POZIV + PLAKAT NA BANDERI · pogledaj kod parkića.',6);
+ },
+ showPoster(){
+  if(this.callOpen||this.active||!this.posterPanel)return;
+  this.posterPanel.hidden=false;this.posterHint.hidden=true;clearInput();
+  if(document.pointerLockElement===scene)try{document.exitPointerLock()}catch(_){}
+ },
+ hidePoster(){if(this.posterPanel){this.posterPanel.hidden=true;clearInput()}},
+ paintPoster(m){
+  if(!story.on||VUK.on||cine?.peraFound||!missionScene?.yard)return;
+  const P=missionScene.yard,x=P.x+4.1,z=P.z-2.5,y=height(x,z);
+  m.box(x,y+2.35,z,.18,4.7,.18,'#464a48',3);
+  m.box(x,y+2.75,z+.15,1.15,1.65,.1,'#f2edda',3);
+  m.box(x,y+3.36,z+.217,.9,.18,.027,'#9c2927',3);
+  m.box(x,y+3.14,z+.223,.74,.07,.019,'#414447',3);
+  m.sphere(x,y+2.91,z+.234,.16,.17,.025,'#c69570',3);
+  m.sphere(x,y+2.99,z+.243,.17,.08,.03,'#382b2c',3);
+  m.box(x,y+2.66,z+.237,.52,.19,.02,'#9d4544',3);
+  for(let i=0;i<3;i++)m.box(x,y+2.48-i*.09,z+.224,.71-i*.08,.025,.02,'#575858',3);
+ },
+ key(k){
+  if(this.active){if(['escape','enter',' ','backspace','p'].includes(k))this.finish(false,true);return true}
+  if(this.callOpen){if(k==='enter'||k==='e'||k===' '){if(!this.callAnswered)this.answer();else if(!this.callChoice)this.nextCall();return true}
+   if(k==='escape'||k==='p'){this.endCall();return true}return true}
+  if(this.posterPanel&&!this.posterPanel.hidden){if(k==='escape'||k==='enter'||k==='e')this.hidePoster();return true}
+  return false;
+ }
+};
+window.KBMissingPera=Object.freeze({
+ start:()=>kb12Story.start('manual'),skip:()=>kb12Story.finish(false,true),
+ get active(){return kb12Story.active},get callOpen(){return kb12Story.callOpen},
+ answer:()=>kb12Story.answer(),next:()=>kb12Story.nextCall(),
+ showPoster:()=>kb12Story.showPoster(),
+ validateGeometry:()=>{
+  if(!kb12Story.active)return {active:false};
+  const mesh=Mesh();kb12Story.paint(mesh);
+  return {active:true,vertices:mesh.out.length/7,valid:mesh.out.length%7===0&&mesh.out.every(Number.isFinite)};
+ },
+ get cue(){return kb12Story.cue?.line||null},
+ get time(){return kb12Story.t}
+});
+kb12Story.setup();
+
+function cameraArm(pivot,offset){
+ const length=Math.hypot(...offset),count=Math.ceil(length/.14);
+ for(let j=1;j<=count;j++){const t=j/count,x=pivot[0]+offset[0]*t,y=pivot[1]+offset[1]*t,z=pivot[2]+offset[2]*t;
+   if(!interior&&y<height(x,z)+.19||collide(x,z,.17))return Math.max(.045,length*(j-1)/count-.06);}
+ return length;
+}
+function updateCamera(dt){if(directorShot){cameraShot();return;}if(kb12Story.active){motion.fov=1.10;kb12Story.camera(dt);return;}if(kb11Cutscene.active){motion.fov=1.04;kb11Cutscene.camera(dt);return;}const p=football?football.players[football.selected]:actors[active],raw=football?fieldY:interior?0:height(p.x,p.z);
+ const dtSafe=clamp(dt,.001,.12),rm=r2Reduced||reduced;
+ let floor=raw;
+ if(!football&&!interior&&!ride.kind){
+   if(!motion.contact||hyp(p.x-motion.contact.x,p.z-motion.contact.z)>.16){const rd=nearestRoad(p.x,p.z);
+     const raised=rd.road&&!/path|track|footway|steps/.test(rd.road.type);
+     motion.contact={x:p.x,z:p.z,dy:raised?(rd.d<rd.road.width*.5?.08:rd.d<rd.road.width*.5+.94?.19:0):0};}
+   floor+=motion.contact.dy;
+ }
+ if(motion.ground==null||Math.abs(floor-motion.ground)>1.3)motion.ground=floor;
+ motion.ground=lerp(motion.ground,floor,1-Math.exp(-dtSafe*18));
+ const h=motion.ground,base=h+(p.jump||0),stance=football||ride.kind?0:motion.stance;
+ const dyaw=motion.lastYaw==null?0:Math.atan2(Math.sin(yaw-motion.lastYaw),Math.cos(yaw-motion.lastYaw));motion.lastYaw=yaw;
+ motion.turn=lerp(motion.turn,clamp(dyaw/dtSafe,-4,4),1-Math.exp(-dtSafe*8));
+ const gait=rm||football||ride.kind||p.jump>.01?0:clamp((p.move||0)/5,0,1)*(1-stance*.55);
+ const bob=Math.cos((p.phase||0)*2)*gait*.026,side=Math.sin(p.phase||0)*gait*.016,
+  dip=rm?0:motion.landing,breath=rm||football?0:Math.sin(time*(2.1+(1-(p.stamina??100)/100)*1.7))*(.002+.004*(1-(p.stamina??100)/100));
+ const first=[p.x+Math.cos(yaw)*side,base+(ride.kind?1.56:1.70)-.58*stance+bob+breath-dip,p.z-Math.sin(yaw)*side];
+ let eye=first,target=[first[0]+Math.sin(yaw)*Math.cos(pitch),first[1]+Math.sin(pitch),first[2]+Math.cos(yaw)*Math.cos(pitch)];
+ const fov=(aim||aimHeld)&&!football?.94:1.22+(rm?0:.08727*motion.sprint);
+ motion.fov=lerp(motion.fov,fov,1-Math.exp(-dtSafe*8));
+ let pivot=null;
+ if(football){const back=8.6;eye=[p.x-Math.sin(yaw)*back,fieldY+7.2,p.z-Math.cos(yaw)*back];target=[p.x+Math.sin(yaw)*4,fieldY+.7,p.z+Math.cos(yaw)*4];}
+ else if(view&&!interior){pivot=[p.x,base+1.45-.42*stance,p.z];
+   const back=(ride.kind?5.6:(aim||aimHeld)?2.85:4.6),shoulder=(aim||aimHeld)?.52:.40;
+   const offset=[-Math.sin(yaw)*back*Math.cos(pitch)+Math.cos(yaw)*shoulder,.92-Math.sin(pitch)*2.3,-Math.cos(yaw)*back*Math.cos(pitch)-Math.sin(yaw)*shoulder];
+   const len=Math.hypot(...offset),clear=cameraArm(pivot,offset);motion.arm=clear<motion.arm?clear:lerp(motion.arm,clear,1-Math.exp(-dtSafe*6.4));
+   eye=pivot.map((v,i)=>v+offset[i]*motion.arm/len);target=[p.x+Math.sin(yaw)*1.72,pivot[1]+Math.sin(pitch)*1.74,p.z+Math.cos(yaw)*1.72];}
+ if(transition){const tr=transition;tr.t=tr.started!==undefined?(performance.now()-tr.started)/1000:tr.t+dt;const u=clamp(tr.t/tr.duration,0,1),s=u*u*(3-2*u),lift=reduced?0:Math.min(75,24+hyp(tr.to[0]-tr.from[0],tr.to[2]-tr.from[2])*.33);eye=tr.from.map((v,i)=>lerp(v,tr.to[i],s));eye[1]+=Math.sin(Math.PI*s)*lift;target=[eye[0]+Math.sin(yaw)*(1-Math.sin(Math.PI*s)),lerp(eye[1]+Math.sin(pitch),base+1.2,Math.sin(Math.PI*s)),eye[2]+Math.cos(yaw)*(1-Math.sin(Math.PI*s))];cam.eye=eye;cam.target=target;if(u>=1){transition=null;$('betaTransition').classList.remove('on');saveGame();}}else{const smooth=1-Math.exp(-dt*(football?6:18));cam.eye=cam.eye.map((v,i)=>lerp(v,eye[i],smooth));cam.target=cam.target.map((v,i)=>lerp(v,target[i],smooth));}if(pivot&&!transition){const off=cam.eye.map((v,i)=>v-pivot[i]),len=Math.hypot(...off);
+   if(len>.05){const safe=cameraArm(pivot,off);if(safe<len)cam.eye=pivot.map((v,i)=>v+off[i]*safe/len);}}
+ cam.roll=lerp(cam.roll,rm?0:ride.kind&&!view?ride.lean*.25:!view?clamp(-motion.turn*.009,-.035,.035):0,1-Math.exp(-dtSafe*8));
+}
+function tick(dt){if(directorShot){directorShot.t+=dt;time+=dt;advanceDialogue();if(directorShot.t>=directorShot.duration)endShot();return;}if(kb12Story.active){time+=dt;kb12Story.tick(dt);return;}if(kb12Story.callOpen){time+=dt;return;}if(kb11Cutscene.active){time+=dt;kb11Cutscene.tick(dt);return;}
+ kb12Story.worldTick();
+ if(kb12Story.queued&&!transition&&!paused&&!mapOpen&&!dialogueQueue.length&&time>subtitleUntil&&!cine?.choice&&!window.KBStoryExtensions?.active){
+  if(kb12Story.start('story'))return;
+ }
+ if(kb11Cutscene.queued&&!transition&&!paused&&!mapOpen&&!dialogueQueue.length&&time>subtitleUntil&&!cine?.choice&&!window.KBStoryExtensions?.active){
+   if(kb11Cutscene.start('vuk-mission'))return;
+ }
+ window.KBMissionPace?.tick(dt);if(window.KBStoryExtensions?.tick(dt))return;window.KBMissionDirector?.instance.tick(dt,{engine:'3d',paused:mapOpen});if(time>=kbA1BetaAt){kbA1BetaAt=time+.5;kbA1BetaObserve();}time+=dt;r2PadTick(dt);r2NpcTick(dt);vukTick(dt);if(part2)part2.tick(dt);hurt=Math.max(0,hurt-dt);repelCooldown=Math.max(0,repelCooldown-dt);repelPulse=Math.max(0,repelPulse-dt);flash=Math.max(0,flash-dt*4.5);clockEnvironment(dt);if(!mapOpen){if(football)updateFootball(dt);else{if(!transition)movePlayer(dt);if(!interior){updateCrew(dt);updateDogs(dt);}tickStoryPatrol(dt);updateStory(dt);}updateCineEffects(dt);}if(waypoint&&!story.on&&distance(actors[active],waypoint)<5){waypoint=null;route=[];tip('Stigao si na označeno mesto.',3)}routeTime+=dt;if(routeTime>3){routeTime=0;if(waypoint)routeToSilent(waypoint)}if(!window.KBStoryExtensions?.active)updateKomisija(dt);autosave+=dt;if(autosave>12){autosave=0;saveGame()}if(window.KBMP?.on){const a=actors[active];window.KBMP.tick(dt,{x:(a.x+HALF)/860*6400,y:(a.z+HALF)/860*4600,dx:Math.sin(yaw)<0?-1:1,m:a.move>0.1?1:0,run:a.move>5?1:0,f:0,md:1,sc:ride.kind?1:0})}}
+let skyProgram=null,skyBuffer=null,skyLoc={};
+function initSky(){if(software){skyProgram={};return}skyProgram=gl.createProgram();gl.attachShader(skyProgram,shader(gl.VERTEX_SHADER,'attribute vec2 a;varying vec2 uv;void main(){uv=a;gl_Position=vec4(a,1.,1.);}'));gl.attachShader(skyProgram,shader(gl.FRAGMENT_SHADER,`precision mediump float;varying vec2 uv;uniform float night;uniform float yaw;uniform float pitch;uniform float aspect;uniform float day;float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}void main(){vec3 r=normalize(vec3(uv.x*aspect*.72,uv.y*.72,1.));vec3 q=vec3(r.x,r.y*cos(pitch)+r.z*sin(pitch),-r.y*sin(pitch)+r.z*cos(pitch));r=vec3(q.x*cos(yaw)+q.z*sin(yaw),q.y,-q.x*sin(yaw)+q.z*cos(yaw));vec3 horizon=mix(vec3(.64,.75,.72),vec3(.065,.105,.155),night);vec3 zenith=mix(vec3(.25,.49,.64),vec3(.012,.028,.062),night);vec3 color=mix(horizon,zenith,pow(max(0.,r.y),.55));float a=(day-6.)/24.*6.283185;vec3 sun=normalize(vec3(cos(a)*.7,sin(a),cos(a)*.7));float dotSun=dot(r,sun);color+=vec3(1.,.62,.24)*pow(max(0.,dotSun),28.)*(1.-night)*.25;color+=vec3(1.,.9,.63)*smoothstep(.9991,.9995,dotSun)*(1.-night)*1.4;color+=vec3(.7,.78,.78)*smoothstep(.999,.9994,dot(r,-sun))*night*.65;vec2 stars=floor(r.xz/max(.1,r.y+.5)*280.);float star=step(.997,hash(stars))*night*night*smoothstep(.1,.5,r.y);color+=star*.42;gl_FragColor=vec4(color,1.);}`));gl.linkProgram(skyProgram);if(!gl.getProgramParameter(skyProgram,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(skyProgram));for(const n of ['night','yaw','pitch','aspect','day'])skyLoc[n]=gl.getUniformLocation(skyProgram,n);skyBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,skyBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);skyLoc.a=gl.getAttribLocation(skyProgram,'a');}
+function renderSky(aspect){if(software){softSky();return}gl.disable(gl.DEPTH_TEST);gl.useProgram(skyProgram);gl.bindBuffer(gl.ARRAY_BUFFER,skyBuffer);for(const attr of attrs)gl.disableVertexAttribArray(attr);gl.enableVertexAttribArray(skyLoc.a);gl.vertexAttribPointer(skyLoc.a,2,gl.FLOAT,false,0,0);gl.uniform1f(skyLoc.night,dusk);gl.uniform1f(skyLoc.yaw,yaw);gl.uniform1f(skyLoc.pitch,pitch);gl.uniform1f(skyLoc.aspect,aspect);gl.uniform1f(skyLoc.day,dayMode===0?dayTime:dayMode===1?12:dayMode===2?18:23);gl.drawArrays(gl.TRIANGLES,0,6);gl.enable(gl.DEPTH_TEST);gl.useProgram(program)}
+let hudNext=0,mapNext=0,lightNext=0;const lightArray=new Float32Array(18);
+/* ===== KBR2 integracija (ubačeno u kb-real-world-runtime pre render()) ===== */
+const r2S={};
+function r2on(){return !!(r2&&r2.ready)}
+function r2init(){
+  r2=null;bake=true;
+  if(software||typeof gl.createVertexArray!=='function'||!window.KBR2||/[?&]r2=0/.test(location.search))return;
+  try{const o=window.KBR2.create(gl);if(o&&o.ready){r2=o;bake=false;r2Terr=true;fieldY=rawHeight(FIELD.x,FIELD.z)}}
+  catch(e){console.warn('KBR2 nije pokrenut, koristi se WebGL1 putanja:',e);r2=null;bake=true}
+}
+function r2Fail(e){
+  console.error('KBR2 prekinut, prelazak na WebGL1 putanju:',e);
+  try{r2.dispose()}catch(_){}
+  r2=null;bake=true;r2Terr=false;r2Zone=null;r2Cache=null;fieldY=rawHeight(FIELD.x,FIELD.z);
+  try{renderWorld(true);if(interior)uploadInterior()}catch(err){console.error('KBR2 povratak:',err)}
+}
+const r2Reduced=(()=>{try{return !!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)}catch(e){return false}})();
+const r2Adv={t0:0,last:0,low:0,high:0,rec:-1};
+/* automatsko spuštanje grafike na slabom uređaju + preporuka da se podigne kad ima rezerve (ne radi u automatizovanom testu) */
+/* v17: nema automatskog menjanja grafike. Nivo i rezoluciju bira samo igrač. */
+function r2Advise(ts){}
+let lightCache=[],lightCacheAt=-1,lastLightEye=null,localLampGrid=null;
+function streetEmitters(eye){
+ const cell=48;
+ if(!localLampGrid||localLampGrid.poles!==poles||localLampGrid.zone!==r2Zone||localLampGrid.elevation!==elevation||localLampGrid.fieldY!==fieldY){
+   const cells=new Map();
+   const put=(p,led)=>{const key=Math.floor(p[0]/cell)+','+Math.floor(p[2]/cell);let list=cells.get(key);if(!list){list=[];cells.set(key,list);}list.push({p,led});};
+   poles.forEach((l,i)=>put([l.x+.68,height(l.x,l.z)+7.44,l.z],i%5===1||i%7===4));
+   for(const sx of [-1,1])for(const sz of [-1,1])put([FIELD.x+sx*29,fieldY+11.7,FIELD.z+sz*20],true);
+   localLampGrid={poles,zone:r2Zone,elevation,fieldY,cells};
+ }
+ const cx=Math.floor(eye[0]/cell),cz=Math.floor(eye[2]/cell),list=[];
+ for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const block=localLampGrid.cells.get((cx+dx)+','+(cz+dz));if(block)for(const lamp of block)list.push(lamp);}
+ const distance=l=>(l.p[0]-eye[0])**2+(l.p[2]-eye[2])**2;
+ list.sort((a,b)=>distance(a)-distance(b));return list.slice(0,18);
+}
+const wetWindows=new Float32Array(8);
+function gatherLights(S,eye,signal){
+ if(!S.lights){S.lights=new Float32Array(36);S.lightRGB=new Float32Array(36);S.lobes=new Float32Array(48);}
+ const spots=[];
+ const add=(p,rgb,dir=[0,-1,0],cone=-.32,intensity=1)=>spots.push({p,rgb,dir,cone,intensity});
+ S.windows=wetWindows;if(S.cineSet||interior||S.quality<3||S.rain<.03||S.dusk<.08)wetWindows.fill(0);
+ if(memoryOnStage()){
+    const a=kb12Story.stage,dark=kb12Mem.kind==='andrej';
+    add([a.x+(dark?-4:1.8),a.y+(dark?4.5:2.88),a.z-1.2],dark?[1,.61,.30]:[1,.91,.77],[0,-1,0],-.30,dark?.55:.19);
+    add([a.x+3,a.y+2.45,a.z+2.44],dark?[.46,.65,1]:[.73,.86,1],[-.5,-.25,-.83],-.38,dark?.12:.10);
+ }else if(kb11Cutscene.active&&kb11Cutscene.stage){
+    const b=kb11Cutscene.stage;for(const x of [-5,0,5])add([b.x+x,b.y+3.45,b.z-1.20],[1,.76,.42],[0,-1,0],-.32,.34);
+    const f=cam.target;add([f[0]+.70,f[1]+.80,f[2]+1.55],[.83,.72,.61],[0,-1,0],-1,.105);
+ }else if(interior){add([0,4.25,0],[1,.67,.39],[0,-1,0],-.92,.46);add([-4,2.7,-6.42],[.62,.76,1],[0,-.15,.98],-.7,.23);
+   if(interior.church)add([-2.3,1.6,-4.2],[1,.49,.14],[0,1,0],-1,.49+.055*Math.sin(time*8.4));}
+ else{
+   const shot=!!(directorShot||kb11Cutscene.active||kb12Story.active);
+   if(shot){const f=cam.target,dx=eye[0]-f[0],dz=eye[2]-f[2],ll=hyp(dx,dz)||1;add([f[0]+dx/ll*1.55+.6,f[1]+1.4,f[2]+dz/ll*1.55],[.96,.79,.61],[0,-1,0],-1,.12);}
+   const patrol=worldEvent?.type==='patrol'&&worldEvent.state!=='approach'?worldEvent.car:storyPatrol;
+   if(patrol){const {x,z}=patrol,y=height(x,z),a=patrol.yaw||0,dx=Math.sin(a),dz=Math.cos(a),f=Math.sin(time*7.4);
+     for(const side of [-1,1])add([x+dx*2.08+dz*side*.58,y+.69,z+dz*2.08-dx*side*.58],[.96,.92,.79],[dx*.997,-.072,dz*.997],.82,1.48);
+     add([x,y+1.76,z],f>0?[.10,.25,1]:[1,.085,.055],[Math.sin(time*4),-.13,Math.cos(time*4)],.04,2.6);}
+   if(!lastLightEye||time<lightCacheAt||time-lightCacheAt>.5||hyp(eye[0]-lastLightEye[0],eye[2]-lastLightEye[1])>3){
+     wetWindows.fill(0);
+     const emitterList=[];
+     if(S.quality>=3)for(const collider of nearbyColliders(eye[0],eye[2],34)){
+       for(const lamp of collider.house?.windowEmitters||[])emitterList.push({lamp,d:(lamp[0]-eye[0])**2+(lamp[2]-eye[2])**2});}
+     emitterList.sort((a,b)=>a.d-b.d);for(let j=0;j<Math.min(2,emitterList.length);j++)wetWindows.set(emitterList[j].lamp,j*4);
+     lightCacheAt=time;lastLightEye=[eye[0],eye[2]];lightCache=streetEmitters(eye);}
+   for(const f of storyLightList())add([f.x,f.y-2.9,f.z],[1,.39,.11],[0,1,0],-1,1.4);
+   if(story.on&&story.chapter===1&&!cine?.flags.power&&task()?.type==='wire'){const b=missionScene.poles[2].pole;
+     add([b.x+.27,height(b.x,b.z)+1.59,b.z+.21],[.55,.79,1],[0,0,1],-1,sparkStrength(time)*1.2);}
+   for(const l of lightCache)add(l.p,l.led?[1,.86,.69]:[1,.57,.22],[0,-1,0],-.24,S.dusk);
+ }
+ spots.sort((a,b)=>{const score=o=>((o.p[0]-eye[0])**2+(o.p[1]-eye[1])**2+(o.p[2]-eye[2])**2)/(o.intensity+.03);return score(a)-score(b);});
+ S.lights.fill(1e4);S.lightRGB.fill(0);S.lobes.fill(0);
+ for(let i=0;i<Math.min(12,spots.length);i++){const l=spots[i];S.lights.set(l.p,i*3);S.lightRGB.set(l.rgb.map(v=>v*l.intensity),i*3);S.lobes.set([...l.dir,l.cone],i*4);}
+ lightArray.set(S.lights.subarray(0,18));
+}
+function r2Pass(dt,ts,W,H){
+  const S=r2S,p=actors[active],eye=cam.eye;r2Advise(ts);S.wind=.22+rain*1.1+(weather===2?.5:0);S.reduced=r2Reduced;
+  r2Dyn=null;r2Collect=true;try{paintDynamic()}finally{r2Collect=false}
+  S.W=W;S.H=H;S.dt=dt;S.fov=motion.fov;S.near=.075;S.far=720;
+  S.eye=eye;S.target=cam.target;S.roll=cam.roll;
+  S.hour=dayMode===0?dayTime:dayMode===1?12:dayMode===2?18:23;
+  S.cineSet=kb11Cutscene.active||kb12Story.active;S.grass=S.cineSet?null:nearGrass(p);S.dusk=dusk;S.season=season;S.memoryRain=memoryOnStage()&&kb12Mem.kind==='andrej';S.rain=S.memoryRain?.81:interior||S.cineSet?0:rain;if(memoryOnStage()){S.hour=S.memoryRain?19.8:11.5;S.dusk=S.memoryRain?.69:.08;}S.time=time;S.flash=flash;S.quality=quality;
+  S.torch=lampEffective()?(.12+.88*dusk)*(active===0?1.28:active===2?.85:1)*lampLevel():0;
+  S.torchPos=motion.lens?.pos||[p.x,(interior?0:height(p.x,p.z))+1.55,p.z];
+  S.torchDir=motion.lens?.dir||[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)];
+  if(kb11Cutscene.active||kb12Story.active||directorShot)S.torch=0;
+  S.beam=active===0?[.95,.994]:active===2?[.85,.973]:[.91,.985];
+  const signal=story.on&&story.chapter===1?missionScene.poles[Math.min(story.step,2)].pole:null;
+  S.morse=signal&&!cine.flags.power?morsePulse():1;
+  S.signal=signal?[signal.x,height(signal.x,signal.z)+7.4,signal.z]:null;
+  gatherLights(S,eye,signal);
+  S.fogEnd=[125,185,250,320,360][quality]*(1-S.rain*.18);
+  S.groundY=interior?0:kb11Cutscene.active?kb11Cutscene.stage.y:kb12Story.active?kb12Story.stage.y:football?fieldY:height(p.x,p.z);S.interior=!!interior;
+  const near=dogs.reduce((n,d)=>Math.min(n,distance(p,d)),cine?.shadow?distance(p,cine.shadow):1e5);
+  S.danger=Math.max(patrolExposure,clamp(1-near/15,0,1));scene.dataset.threat=String(Math.round(S.danger*100));
+  S.hurt=hurt;S.dyn=r2Dyn;
+  r2.frame(S);
+  scene.dataset.r2=r2.stats.draws+'/'+Math.round(r2.stats.tris);
+}
+
+/* ----- dinamička rezolucija po stvarnom FPS-u (ne radi u automatizovanom testu) ----- */
+const r2Rs={t:0,lo:0,hi:0};
+function r2Res(ts){}
+/* ----- javni API: promena nivoa grafike i učitavanje snimka (koristi Beta-UI sloj) ----- */
+function r2SetRes(v){r6.scale=clamp(+v||1,.5,1);stateStore.put('kb_beta_res',r6.scale)}
+function r2SetQuality(n){quality=clamp(n|0,0,4);stateStore.put('kb_beta_quality',quality);try{if(gl)renderWorld()}catch(e){console.error(e)}updateHUD()}
+function r2LoadSaved(mode){
+  if(!live){start(mode==='story'?'continue':'free');return true}
+  if(mode==='story')startStory(true);else freeRoam(true);
+  return true;
+}
+function r2UiHook(w){try{const u=window.KBBeta2UI,f=u&&u[w==='start'?'onStart':'onStop'];if(f)f()}catch(e){console.warn('KBBeta2UI',e)}}
+/* ----- gamepad: levi štap kretanje, desni pogled, dugmad šalju iste tastere kao tastatura ----- */
+const padSt={conn:false,prev:{},keys:new Map(),hurtOn:false};
+const PAD_KEYS={0:'e',1:' ',2:'l',3:'v',4:'c',5:'shift',6:'q',8:'m',9:'p',10:'z',11:'r',12:'g',13:'j'};
+function padKey(k,down,src){
+  const s=padSt.keys.get(k)||new Set();
+  if(down){const was=s.size;s.add(src);padSt.keys.set(k,s);if(was)return}
+  else{if(!s.delete(src)||s.size)return}
+  try{window.dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{key:k,bubbles:true,cancelable:true}))}catch(e){}
+}
+function padRelease(){for(const [k,s] of [...padSt.keys]){for(const src of [...s])padKey(k,false,src)}padSt.prev={};padAx.x=padAx.z=0}
+function r2PadTick(dt){
+  if(!navigator.getGamepads)return;
+  let gp=null;try{for(const g of navigator.getGamepads()){if(g&&g.connected){gp=g;break}}}catch(e){return}
+  if(!gp){if(padSt.conn){padSt.conn=false;padRelease()}padAx.x=padAx.z=0;return}
+  if(!padSt.conn){padSt.conn=true;tip('Gamepad povezan · levi štap kretanje · desni štap pogled · A radnja · B skok · RB trk',5)}
+  const dz=v=>Math.abs(v)<.2?0:(v-Math.sign(v)*.2)/.8,ax=gp.axes||[];
+  const lx=dz(ax[0]||0),lz=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
+  if(paused||mapOpen){padAx.x=padAx.z=0}else{
+    padAx.x=lx;padAx.z=lz;
+    if(rx||ry){yaw+=rx*Math.abs(rx)*2.9*dt*((aim||aimHeld)?.55:1);pitch=clamp(pitch-ry*Math.abs(ry)*2.0*dt,-1.2,1.2)}}
+  const b=gp.buttons||[],now={};
+  for(let i=0;i<b.length;i++)now[i]=!!(b[i]&&(b[i].pressed||b[i].value>.6));
+  for(let i=0;i<b.length;i++){
+    const d=now[i],was=!!padSt.prev[i];if(d===was)continue;
+    if(PAD_KEYS[i]!==undefined)padKey(PAD_KEYS[i],d,'b'+i);
+    else if(i===7){if(football)padKey(' ',d,'b7');else if(d)shootLight()}
+    else if(d&&(i===14||i===15))switchActor((active+(i===15?1:2))%3);
+  }
+  padSt.prev=now;
+  if(hurt>.8&&!padSt.hurtOn){padSt.hurtOn=true;try{gp.vibrationActuator&&gp.vibrationActuator.playEffect('dual-rumble',{duration:160,strongMagnitude:.7,weakMagnitude:.4})}catch(e){}}else if(hurt<.2)padSt.hurtOn=false;
+}
+window.addEventListener('gamepaddisconnected',()=>{if(padSt.conn){padSt.conn=false;padRelease()}});
+window.addEventListener('blur',()=>{if(padSt.conn)padRelease()});
+
+/* ----- alat za testiranje (samo uz ?kbdbg=1): teleport, sat, godišnje doba, kiša ----- */
+if(/[?&]kbdbg=1/.test(location.search)){window.KB_DBG={
+  tp(x,z,yw,pt){const p=actors[active];p.x=x;p.z=z;if(yw!=null)yaw=yw;if(pt!=null)pitch=pt;try{snapCamera()}catch(e){}},
+  look(yw,pt){yaw=yw;pitch=pt},
+  day(mode,hour){dayMode=mode;if(hour!=null)dayTime=hour},
+  season(s){season=s;renderWorld(true)},
+  rain(v){rain=v;weather=v>.5?2:v>0?1:0},
+  q(n){quality=n;try{renderWorld(true)}catch(e){console.error(e)}},
+  get st(){const p=actors[active];return {x:p.x,z:p.z,y:height(p.x,p.z),yaw,pitch,hour:dayTime,dusk,rain,season,quality,r2:r2on(),sign:r2SignInfo,ms:r2Cache&&r2Cache.ms,stats:r2on()?{...r2.stats}:null}},
+  tpTree(i,dist){const t=trees[i];if(!t)return false;const a=r2Hash('dbg'+i,1)*6.28,x=t.x+Math.cos(a)*dist,z=t.z+Math.sin(a)*dist,p=actors[active];p.x=x;p.z=z;yaw=Math.atan2(t.x-x,t.z-z);pitch=.1;try{snapCamera()}catch(e){}return {x,z,tree:{x:t.x,z:t.z,h:t.h,pine:t.pine}}},
+  trees(){return trees.length},
+  houses(){return houses.length},
+  spec(i){const h=houses[i];return h&&houseSpec(h)},
+  find(name){return roads.filter(r=>r.name===name).map(r=>r.p[0])},
+  col(x,z,r){return collide(x,z,r||.38)}
+}}
+
+/* ===== KBR2 svet: teren (bikubični DEM + detalj + mape), zgrade (fasadni šejder, krovovi), tablice ulica ===== */
+/* Sve je deterministično: spratnost i izgled zgrade zavise samo od source_id (nikad od Math.random). */
+let r2Cache=null,r2GroundArr=null,r2TerrFor=null,r2SignInfo=null;   // mape terena pokrivaju 1800 m x 1800 m (R2S, -900..900)
+function r2TN(){return [512,512,768,1024,1024][clamp(quality|0,0,4)]}
+function r2Step(){return [10,7,5.5,4.1,3.3][clamp(quality|0,0,4)]}
+function r2Hash(s,salt){let x=(2166136261^(salt|0))>>>0;for(let i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,16777619)>>>0}x^=x>>>15;x=Math.imul(x,2246822507)>>>0;x^=x>>>13;x=Math.imul(x,3266489909)>>>0;x^=x>>>16;return (x>>>0)/4294967296}
+function r2Area(p){let a=0;for(let i=0,n=p.length;i<n;i++){const q=p[(i+1)%n];a+=p[i][0]*q[1]-q[0]*p[i][1]}return Math.abs(a)/2}
+/* ---------- visina: Catmull-Rom nad DEM-om + sitni detalj (utišan oko puteva i kuća) ---------- */
+function r2Cr(p0,p1,p2,p3,t){return p1+.5*t*(p2-p0+t*(2*p0-5*p1+4*p2-p3+t*(3*(p1-p2)+p3-p0)))}
+function r2Cubic(h,i,j,fx,fz){const a=[];for(let k=-1;k<=2;k++)a.push(r2Cr(h(i-1,j+k),h(i,j+k),h(i+1,j+k),h(i+2,j+k),fx));return r2Cr(a[0],a[1],a[2],a[3],fz)}
+function r2Vn(x,z){const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz,sx=fx*fx*(3-2*fx),sz=fz*fz*(3-2*fz);
+  const h=(a,b)=>{let n=(Math.imul(a,374761393)+Math.imul(b,668265263))|0;n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296};
+  return lerp(lerp(h(ix,iz),h(ix+1,iz),sx),lerp(h(ix,iz+1),h(ix+1,iz+1),sx),sz)}
+function r2ZoneAt(x,z){if(!r2Zone)return 1;const N=r2ZoneN,k=N/R2S,u=(x+R2S/2)*k-.5,v=(z+R2S/2)*k-.5,i=Math.max(0,Math.min(N-2,Math.floor(u))),j=Math.max(0,Math.min(N-2,Math.floor(v))),fx=Math.max(0,Math.min(1,u-i)),fz=Math.max(0,Math.min(1,v-j));
+  const g=(a,b)=>r2Zone[b*N+a];return 1-lerp(lerp(g(i,j),g(i+1,j),fx),lerp(g(i,j+1),g(i+1,j+1),fx),fz)/255}
+function r2Detail(x,z){const f=r2ZoneAt(x,z);if(f<=.001)return 0;return ((r2Vn(x/42,z/42)-.5)*1.5+(r2Vn(x/17,z/17)-.5)*.62+(r2Vn(x/6.3,z/6.3)-.5)*.24)*f}
+
+/* ---------- maske terena (šuma/trava/zona puteva) preko Canvas 2D ---------- */
+function r2MasksBuild(N){
+  const cv=document.createElement('canvas');cv.width=cv.height=N;const g=cv.getContext('2d',{willReadFrequently:true});
+  g.fillStyle='#000';g.fillRect(0,0,N,N);g.globalCompositeOperation='lighter';
+  const k=N/R2S,P=p=>[(p[0]+R2S/2)*k,(p[1]+R2S/2)*k];
+  const fillRings=(list,color)=>{g.fillStyle=color;for(const rings of list){g.beginPath();for(const r of rings){r.forEach((p,i)=>{const q=P(p);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])});g.closePath()}g.fill('evenodd')}};
+  fillRings(woods,'#f00');fillRings(greens,'#0f0');fillRings([[PARK.poly]],'#0f0');
+  g.strokeStyle='#00f';g.lineCap='round';g.lineJoin='round';
+  for(const road of roads){g.lineWidth=Math.max(2,(road.width+5)*k);g.beginPath();road.p.forEach((p,i)=>{const q=P(p);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])});g.stroke()}
+  g.fillStyle='#00f';g.strokeStyle='#00f';g.lineWidth=Math.max(2,3*k);
+  for(const h of houses){g.beginPath();h.poly.forEach((p,i)=>{const q=P(p);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])});g.closePath();g.fill();g.stroke()}
+  const img=g.getImageData(0,0,N,N).data,mask=new Uint8Array(img.buffer.slice(0)),zone=new Uint8Array(N*N);
+  for(let i=0;i<N*N;i++)zone[i]=mask[i*4+2];
+  return {mask,zone};
+}
+/* ---------- mape normala (glatko osvetljenje terena) ---------- */
+function r2MaskEnsure(){const N=r2TN();if(!r2Cache||r2Cache.N!==N){const mk=r2MasksBuild(N);r2Zone=mk.zone;r2ZoneN=N;r2Cache={N,mask:mk.mask,nrm:null,ms:0};r2TerrFor=null}}
+function r2MaskAt(x,z){if(!r2Cache)return 0;const N=r2Cache.N,i=Math.max(0,Math.min(N-1,Math.floor((x+R2S/2)*N/R2S))),j=Math.max(0,Math.min(N-1,Math.floor((z+R2S/2)*N/R2S)));return r2Cache.mask[(j*N+i)*4]}
+function r2TerrainUpload(){
+  if(!r2||!r2.setTerrain)return;
+  r2MaskEnsure();
+  const N=r2Cache.N;
+  if(!r2Cache.nrm){
+    const t0=performance.now(),d=R2S/N,x0=-R2S/2,W=N+3,Hh=new Float32Array(W*W);
+    for(let j=-1;j<=N+1;j++)for(let i=-1;i<=N+1;i++)Hh[(j+1)*W+i+1]=height(x0+(i+.5)*d,x0+(j+.5)*d);
+    const nrm=new Uint8Array(N*N*4);
+    for(let j=0;j<N;j++)for(let i=0;i<N;i++){const gx=(Hh[(j+1)*W+i+2]-Hh[(j+1)*W+i])/(2*d),gz=(Hh[(j+2)*W+i+1]-Hh[j*W+i+1])/(2*d),l=Math.hypot(gx,1,gz),o=(j*N+i)*4;
+      nrm[o]=Math.round((-gx/l*.5+.5)*255);nrm[o+1]=Math.round((-gz/l*.5+.5)*255);nrm[o+2]=128;nrm[o+3]=255}
+    r2Cache.nrm=nrm;r2Cache.ms=Math.round(performance.now()-t0);r2TerrFor=null;
+  }
+  if(r2TerrFor!==r2){r2.setTerrain({x0:-R2S/2,z0:-R2S/2,size:R2S,w:N,h:N,nrm:r2Cache.nrm,mask:r2Cache.mask});r2TerrFor=r2}
+}
+/* ---------- mreža terena: gusta, sa glatkim normalama iz mape ---------- */
+function r2GroundBuild(){
+  r2MaskEnsure();
+  const step=r2Step(),n=Math.ceil(HALF*2/step),st=HALF*2/n,hh=new Float32Array((n+1)*(n+1));
+  for(let j=0;j<=n;j++)for(let i=0;i<=n;i++)hh[j*(n+1)+i]=height(-HALF+i*st,-HALF+j*st)-.12;
+  const out=new Float32Array(n*n*42);let o=0;
+  const put=(x,y,z)=>{out[o++]=x;out[o++]=y;out[o++]=z;out[o++]=.5;out[o++]=.5;out[o++]=.5;out[o++]=6};
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){
+    const x0=-HALF+i*st,x1=x0+st,z0=-HALF+j*st,z1=z0+st,a=hh[j*(n+1)+i],b=hh[j*(n+1)+i+1],c=hh[(j+1)*(n+1)+i+1],d=hh[(j+1)*(n+1)+i];
+    if((i+j)&1){put(x0,a,z0);put(x1,b,z0);put(x1,c,z1);put(x0,a,z0);put(x1,c,z1);put(x0,d,z1)}
+    else{put(x0,a,z0);put(x1,b,z0);put(x0,d,z1);put(x1,b,z0);put(x1,c,z1);put(x0,d,z1)}}
+  r2GroundArr=out;
+}
+
+/* ---------- zgrade: deterministična procena spratnosti/izgleda iz source_id ---------- */
+const R2_WALLS=['#e6dcc6','#d9cbb0','#efe9da','#d8c3a5','#cdbb9f','#e2c9a8','#d8ab92','#d2a9a2','#bcc6b2','#c9cec6','#e6d9a9','#bfab92','#ede7d8','#dfd2bf'];
+const R2_ROOFS=['#a4553e','#8c4938','#af583e','#94543c','#824b3d','#6e4a3e','#5c5f62','#7b6a5a','#9a4d3a','#7a3f33'];
+function houseSpec(h){
+  if(h.spec)return h.spec;
+  const id=String(h.sourceId||('c'+Math.round(h.c[0]*10)+','+Math.round(h.c[1]*10))),u1=r2Hash(id,11),u2=r2Hash(id,29),u3=r2Hash(id,47),u4=r2Hash(id,71),area=r2Area(h.poly),kind=h.kind||'yes';
+  let F,est=true;
+  if(h.lv>0){F=clamp(Math.round(h.lv),1,12);est=false}
+  else if(h.height>0){F=clamp(Math.round((h.height-.5)/2.85),1,12);est=false}
+  else if(kind==='apartments'){F=(area>500?5:area>250?4:3)+(u1<.3?1:0)}
+  else if(/school|college|university|public|hospital|civic|government/.test(kind)){F=area>700?3:2}
+  else if(/commercial|retail|industrial|warehouse|office|supermarket/.test(kind)){F=area>700?2:(u1<.5?1:2)}
+  else if(kind==='dormitory'){F=4}
+  else if(area<30){F=1}
+  else if(area<70){F=u1<.7?1:2}
+  else if(area<140){F=u1<.15?1:u1<.8?2:3}
+  else if(area<260){F=u1<.1?1:u1<.55?2:u1<.9?3:4}
+  else{F=3+(u1<.3?1:0)}
+  const big=/apartments|school|college|university|public|commercial|retail|industrial|warehouse|dormitory|office/.test(kind);
+  let flat=h.roof==='flat'?true:h.roof&&h.roof!=='flat'?false:(big?u2<.8:(area>300?u2<.6:u2<.07));
+  const hip=h.roof==='hipped'||h.roof==='pyramidal'||(!h.roof&&u3<.34);
+  const brick=!big&&u3>.82,wall=brick?'#a8705a':R2_WALLS[Math.floor(u4*R2_WALLS.length)%R2_WALLS.length],roof=flat?'#5f615c':R2_ROOFS[Math.floor(r2Hash(id,83)*R2_ROOFS.length)%R2_ROOFS.length];
+  return h.spec={floors:F,flat,hip,brick,wall,roof,seed:Math.floor(r2Hash(id,97)*256),est,area,chimney:!flat&&area>38&&r2Hash(id,59)<.55,u:u1};
+}
+function r2Star(P,c){let sg=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],cr=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);if(Math.abs(cr)<1e-6)continue;const s=cr>0?1:-1;if(!sg)sg=s;else if(s!==sg)return false}return true}
+function r2Out(P,c,ov){return P.map(p=>{const dx=p[0]-c[0],dz=p[1]-c[1],l=Math.hypot(dx,dz)||1;return [p[0]+dx/l*ov,p[1]+dz/l*ov]})}
+function windowSeed(sd,fi,col){
+ const f=Math.fround,fract=v=>v-Math.floor(v);
+ const x=fract(f(f(f(sd*3.7)+fi*17)*f(.1031))),y=fract(f(f(f(col*7.3)+3)*f(.1031)));
+ const d=f(f(f(x*f(y+33.33))+f(y*f(x+33.33)))+f(x*f(x+33.33)));
+ return fract(f(f(f(x+d)+f(y+d))*f(x+d)));
+}
+function addHouseR2(m,h,i){
+ h.windowEmitters=[];
+  const sp=houseSpec(h),poly=h.poly,rings=h.rings,P=poly.slice(0,-1),n=P.length;
+  const base=Math.max(...poly.map(p=>height(p[0],p[1]))),F=sp.floors,wallH=F*2.85+(sp.flat?.6:.28),eave=base+wallH;
+  const dead=h.hero==='abandoned';let wall=h.laza?'#9cc7b3':h.hero==='secret'?'#d7a0ac':dead?'#aaa38d':sp.wall;const roofC=h.laza?'#36574a':h.hero==='secret'?'#7a3f33':dead?'#5b4a40':sp.roof;
+  const tW=sp.brick&&!h.hero?1.22:.8;
+  // ulazna fasada: ivica spoljnog prstena najbliža putu
+  let doorEdge=-1;if(F>=1&&sp.area>26){const r=nearestRoad(h.c[0],h.c[1]);if(r.p){let best=1e9;for(let k=0;k<n;k++){const a=P[k],b=P[(k+1)%n],L=hyp(b[0]-a[0],b[1]-a[1]);if(L<3.2)continue;const d=hyp((a[0]+b[0])/2-r.p[0],(a[1]+b[1])/2-r.p[1]);if(d<best){best=d;doorEdge=k}}}}
+  rings.forEach((ring,ri)=>{for(let k=1;k<ring.length;k++){
+    const a=ring[k-1],b=ring[k],L=hyp(b[0]-a[0],b[1]-a[1]);if(L<.2)continue;
+    const pieces=Math.max(1,Math.ceil(L/30));
+    for(let q=0;q<pieces;q++){
+      const t0=q/pieces,t1=(q+1)/pieces,ax=a[0]+(b[0]-a[0])*t0,az=a[1]+(b[1]-a[1])*t0,bx=a[0]+(b[0]-a[0])*t1,bz=a[1]+(b[1]-a[1])*t1,l=L/pieces,ya=height(ax,az)-.3,yb=height(bx,bz)-.3;
+      const door=(ri===0&&k-1===doorEdge&&q===(pieces>>1)&&l>=3)?1:0;
+      m.fq([ax,ya,az],[bx,yb,bz],[bx,eave,bz],[ax,eave,az],wall,tW,[[0,ya-base],[l,yb-base],[l,eave-base],[0,eave-base]],[Math.min(255,Math.round(l*4)),F|(dead?16:0),sp.seed,door]);
+      if(quality>=3&&!dead&&ri===0&&q===0&&l>3&&h.windowEmitters.length<7){
+        const len=Math.round(l*4)*.25,cols=Math.max(1,Math.floor((len-1.1)/2.6+.5)),floor=F>1?1:0;
+        let col=(sp.seed+k)%cols;for(let j=0;j<cols;j++,col=(col+1)%cols){
+          if(windowSeed(sp.seed,floor,col)>=.52||(!floor&&door&&col===Math.floor(cols*.5)))continue;
+          const u=(col+.5)/cols,px=lerp(ax,bx,u),pz=lerp(az,bz,u);
+          h.windowEmitters.push([px,base+floor*2.85+1.5,pz,sp.seed<96?1.0:.77]);break;}
+      }
+      // P7: tanke olucne linije na kućama u kvalitetima VISOKO+; čisti vizuelni detalj.
+      // Geografski obris, visina, kolizija, ulaz i sačuvana stanja ostaju isti.
+      if(quality>=2&&ri===0&&sp.area<260&&l>=4){
+        m.rod([ax,eave-.09,az],[bx,eave-.09,bz],.052,'#716c62',0);
+      }
+      // P8 Ultra: zasebne vertikalne olucne cevi i ulazne nadstresnice.
+      // Postavljaju se na ogranicen podskup manjih kuca, bez novih sudaraca.
+      if(quality>=3&&ri===0&&sp.area>32&&sp.area<340&&l>3.8){
+        const ah=r2Hash(String(h.sourceId||h.c),123);
+        const tx=(bx-ax)/l,tz=(bz-az)/l;
+        let nx=-tz,nz=tx;
+        const ox=(ax+bx)*.5-h.c[0],oz=(az+bz)*.5-h.c[1];
+        if(nx*ox+nz*oz<0){nx=-nx;nz=-nz}
+        if(door&&!dead){
+          const mid=l*(Math.floor(Math.max(1,Math.floor((l-1.1)/2.6+.5))*.5)+.5)/Math.max(1,Math.floor((l-1.1)/2.6+.5));
+          const P=(u,v,dy)=>[ax+tx*(mid+u)+nx*v,base+dy,az+tz*(mid+u)+nz*v];
+          for(let step=0;step<3;step++){const v=.30+step*.25,h=.27-step*.085;
+            m.quad(P(-.72,v-.25,h),P(.72,v-.25,h),P(.72,v,h),P(-.72,v,h),'#aba79c',0);
+            m.quad(P(-.72,v,h),P(.72,v,h),P(.72,v,h-.09),P(-.72,v,h-.09),'#89877f',0);}
+          if(ah<.31&&l>5){const u=-Math.min(l*.27,1.9),v=.18,y=2.46;
+            m.quad(P(u-.38,v,y-.25),P(u+.38,v,y-.25),P(u+.38,v,y+.25),P(u-.38,v,y+.25),'#dad7c9',0);
+            for(let g=0;g<5;g++)m.rod(P(u-.30,v+.02,y-.15+g*.063),P(u+.30,v+.02,y-.15+g*.063),.014,'#69716b');
+            roundBone(m,P(u+.38,v,y-.1),P(u+.44,.04,y-.48),.024,'#acaaa0',.022,0,5);}
+        }
+        // Oluci i vertikalne cevi (55% kuca na Ultra / Ultra Max)
+        if(ah<.56&&q===0&&k%2===1){
+          const gx=ax+nx*.095,gz=az+nz*.095;
+          m.rod([gx,ya+.08,gz],[gx,eave-.15,gz],.046,'#7e827c',0);
+          m.rod([gx,ya+.10,gz],[gx+nx*.22,ya+.08,gz+nz*.22],.036,'#7e827c',0);
+        }
+        // Ulazna nadstresnica i prag na ulaznoj fasadi
+        if(door&&l>=3.4&&ah<.68){
+          const cx=(ax+bx)*.5,cz=(az+bz)*.5,ww=.98;
+          const x0=cx-tx*ww,z0=cz-tz*ww,x1=cx+tx*ww,z1=cz+tz*ww;
+          const y0=base+2.34,y1=y0-.11;
+          m.quad([x0,y0,z0],[x1,y0,z1],[x1+nx*.78,y1,z1+nz*.78],[x0+nx*.78,y1,z0+nz*.78],'#4d555a',0);
+          m.rod([x0+nx*.78,y1,z0+nz*.78],[x1+nx*.78,y1,z1+nz*.78],.032,'#9ea4a0',0);
+          m.rod([x0,y0-.38,z0],[x0+nx*.68,y1,z0+nz*.68],.022,'#444a4d',0);
+          m.rod([x1,y0-.38,z1],[x1+nx*.68,y1,z1+nz*.68],.022,'#444a4d',0);
+        }
+        // Srpski spratni balkoni/terase (samo sprat >= 1, visina >= 2.85m, bez uticaja na kolizije)
+        if(F>=2&&l>=4.6&&!dead&&((door&&ah<.58)||(ah<.32&&k===1))){
+          const cx=(ax+bx)*.5,cz=(az+bz)*.5,bw=Math.min(2.1,l*.30),bd=.82;
+          const x0=cx-tx*bw,z0=cz-tz*bw,x1=cx+tx*bw,z1=cz+tz*bw;
+          const fx0=x0+nx*bd,fz0=z0+nz*bd,fx1=x1+nx*bd,fz1=z1+nz*bd;
+          const maxB=quality>=4?Math.min(F,3):2;
+          for(let bf=1;bf<maxB;bf++){
+            const by=base+bf*2.85-.04,bt=by-.14,ry=by+.96;
+            // Betonska ploca balkona
+            m.quad([x0,by,z0],[x1,by,z1],[fx1,by,fz1],[fx0,by,fz0],'#c5c0b5',1);
+            m.quad([x1,bt,z1],[x0,bt,z0],[fx0,bt,fz0],[fx1,bt,fz1],'#969187',1);
+            m.quad([fx0,bt,fz0],[fx1,bt,fz1],[fx1,by,fz1],[fx0,by,fz0],'#b0aba0',1);
+            m.quad([x0,bt,z0],[fx0,bt,fz0],[fx0,by,fz0],[x0,by,z0],'#a5a095',1);
+            m.quad([fx1,bt,fz1],[x1,bt,z1],[x1,by,z1],[fx1,by,fz1],'#a5a095',1);
+            // Rukohvat i stubici ograde
+            const railCol=sp.seed<128?'#363c3e':'#5e432c';
+            m.rod([fx0,ry,fz0],[fx1,ry,fz1],.028,railCol,0);
+            m.rod([x0,ry,z0],[fx0,ry,fz0],.025,railCol,0);
+            m.rod([x1,ry,z1],[fx1,ry,fz1],.025,railCol,0);
+            m.rod([fx0,by+.48,fz0],[fx1,by+.48,fz1],.018,railCol,0);
+            for(let bp=0;bp<=4;bp++){const t=bp/4,px=lerp(fx0,fx1,t),pz=lerp(fz0,fz1,t);m.rod([px,by,pz],[px,ry,pz],.020,railCol,0)}
+          }
+        }
+      }
+    }}});
+  // krov
+  const c=centroid(poly),flatRoof=()=>{const flat=[],holes=[];rings.forEach((r,k)=>{if(k)holes.push(flat.length/2);for(const p of r.slice(0,-1))flat.push(p[0],p[1])});const ix=earcut(flat,holes,2);for(let j=0;j<ix.length;j+=3){const p=ix.slice(j,j+3).map(k=>[flat[k*2],eave+.04,flat[k*2+1]]);m.tri(p[0],p[1],p[2],roofC,1)}
+    // ivični venac i mali tehnički aneks
+    if(sp.area>120&&sp.u<.5){const hw=Math.min(2.4,Math.sqrt(sp.area)*.12);m.box(c[0],eave+1.1,c[1],hw,2.2,hw,'#b9b3a6',1)}};
+  let ridge=null;
+  if(sp.flat||rings.length>1){flatRoof()}
+  else if(n===4){
+    let p=P.slice(),ab=hyp(p[1][0]-p[0][0],p[1][1]-p[0][1]),bc=hyp(p[2][0]-p[1][0],p[2][1]-p[1][1]);if(ab>bc){p=[p[1],p[2],p[3],p[0]];const t=ab;ab=bc;bc=t}
+    const mid=(u,v)=>[(u[0]+v[0])/2,(u[1]+v[1])/2];
+    let r0=mid(p[0],p[1]),r1=mid(p[2],p[3]);const Rl=hyp(r1[0]-r0[0],r1[1]-r0[1])||1,R=[(r1[0]-r0[0])/Rl,(r1[1]-r0[1])/Rl],Sl=hyp(p[1][0]-p[0][0],p[1][1]-p[0][1])||1,S=[(p[1][0]-p[0][0])/Sl,(p[1][1]-p[0][1])/Sl],ov=.38;
+    const th=Math.tan((26+r2Hash(String(h.sourceId||h.c),5)*10)*Math.PI/180),rise=clamp(ab*.5*th,.9,3.4),ye=eave-.04,yr=eave+rise;
+    const A0=[p[0][0]-S[0]*ov-R[0]*ov,ye,p[0][1]-S[1]*ov-R[1]*ov],A1=[p[1][0]+S[0]*ov-R[0]*ov,ye,p[1][1]+S[1]*ov-R[1]*ov],A2=[p[2][0]+S[0]*ov+R[0]*ov,ye,p[2][1]+S[1]*ov+R[1]*ov],A3=[p[3][0]-S[0]*ov+R[0]*ov,ye,p[3][1]-S[1]*ov+R[1]*ov];
+    if(sp.hip){const ins=Math.min(ab*.46,Rl*.42),h0=[r0[0]+R[0]*ins,yr,r0[1]+R[1]*ins],h1=[r1[0]-R[0]*ins,yr,r1[1]-R[1]*ins];
+      m.tri(A0,A1,h0,roofC,2);m.tri(A2,A3,h1,roofC,2);m.quad(A1,A2,h1,h0,roofC,2);m.quad(A3,A0,h0,h1,roofC,2);m.rod(h0,h1,.05,'#6d3b2f',2);ridge=[h0,h1]}
+    else{const q0=[r0[0]-R[0]*ov,yr,r0[1]-R[1]*ov],q1=[r1[0]+R[0]*ov,yr,r1[1]+R[1]*ov];
+      m.quad(A0,q0,q1,A3,roofC,2);m.quad(q0,A1,A2,q1,roofC,2);
+      const g0=[r0[0],yr,r0[1]],g1=[r1[0],yr,r1[1]],B0=[p[0][0],eave,p[0][1]],B1=[p[1][0],eave,p[1][1]],B2=[p[2][0],eave,p[2][1]],B3=[p[3][0],eave,p[3][1]];
+      m.tri(B0,B1,g0,wall,1);m.tri(B2,B3,g1,wall,1);m.rod(q0,q1,.05,'#6d3b2f',2);ridge=[g0,g1]}
+  }
+  else if(n>=5&&r2Star(P,c)){const ext=polyBounds(poly),sz=Math.min(ext[2]-ext[0],ext[3]-ext[1]),rise=clamp(sz*.22,.8,2.6),E=r2Out(P,c,.3),apex=[c[0],eave+rise,c[1]];
+    for(let k=0;k<n;k++){const a=E[k],b=E[(k+1)%n];m.tri([a[0],eave-.04,a[1]],[b[0],eave-.04,b[1]],apex,roofC,2)}ridge=[apex,apex]}
+  else flatRoof();
+  if(quality>=2&&ridge&&sp.seed%9===0){
+    const [x,y,z]=ridge[0];roundBone(m,[x,y,z],[x,y+1.65,z],.029,'#707b79',.018,0,6);
+    for(let j=0;j<4;j++)roundBone(m,[x-.34+j*.05,y+1.50,z+j*.15],[x+.34-j*.05,y+1.50,z+j*.15],.015,'#999e93',.012,0,4);
+    roundBone(m,[x,y+1.5,z-.11],[x,y+1.5,z+.65],.016,'#979d99',.016,0,5);}
+  if(sp.chimney&&ridge){const t=.3,x=lerp(ridge[0][0],ridge[1][0],t)+.5,z=lerp(ridge[0][2],ridge[1][2],t),y=ridge[0][1];m.box(x,y+.35,z,.55,1.5,.55,'#8a4b3a',1);m.box(x,y+1.12,z,.78,.1,.78,'#6a6a68',0)}
+  if(h.door){const p=h.door,y=height(p.x,p.z);m.box(p.x,y+1.05,p.z,1.2,2.1,.12,'#5c4734',3)}
+}
+/* ---------- tablice sa imenima ulica (atlas 2048x1024, ćelija 256x64) ---------- */
+function r2Signs(m){
+  if(!r2||!r2.setSigns)return;
+  const names=[],idx=new Map();
+  for(const r of roads){if(!r.name||/^(Zemljana staza|Sporedna ulica|Staza parkića)/.test(r.name)||/path|foot|track|steps|cycle|pedestrian/.test(r.type))continue;if(!idx.has(r.name)&&names.length<128){idx.set(r.name,names.length);names.push(r.name)}}
+  if(!names.length)return;
+  const cv=document.createElement('canvas');cv.width=2048;cv.height=1024;const g=cv.getContext('2d');
+  names.forEach((nm,k)=>{const cx=(k%8)*256,cy=((k/8)|0)*64;g.fillStyle='#17487f';g.fillRect(cx,cy,256,64);g.strokeStyle='#f3f6fa';g.lineWidth=3;g.strokeRect(cx+3,cy+3,250,58);g.fillStyle='#f3f6fa';g.textAlign='center';g.textBaseline='middle';
+    let fs=34;g.font='bold '+fs+'px "Segoe UI",Arial,sans-serif';while(g.measureText(nm).width>226&&fs>13){fs-=2;g.font='bold '+fs+'px "Segoe UI",Arial,sans-serif'}g.fillText(nm,cx+128,cy+34)});
+  r2.setSigns(cv);
+  const placed=[];let count=0;
+  for(const road of roads){const k=idx.get(road.name);if(k==null||road.p.length<2)continue;
+    const a=road.p[0],b=road.p[1],dx=b[0]-a[0],dz=b[1]-a[1],L=hyp(dx,dz);if(L<.5)continue;
+    const tx=dx/L,tz=dz/L,off=road.width/2+1.05,px=a[0]+tx*Math.min(12,L*.5)-tz*off,pz=a[1]+tz*Math.min(12,L*.5)+tx*off;
+    if(Math.abs(px)>HALF-6||Math.abs(pz)>HALF-6||buildingAt(px,pz,.7)||placed.some(q=>q.k===k&&hyp(q.x-px,q.z-pz)<75))continue;
+    placed.push({k,x:px,z:pz});count++;
+    const Y=height(px,pz),ex=-tz,ez=tx,cx=(k%8)*256,cy=((k/8)|0)*64,yb=Y+2.05,yt=Y+2.58,hw=.52,u0=cx+4,u1=cx+252,v0=cy+4,v1=cy+60;
+    m.box(px,Y+1.35,pz,.075,2.7,.075,'#6f7576',0);
+    for(const h of [yb-.016,yt+.016])roundBone(m,[px-ex*hw,h,pz-ez*hw],[px+ex*hw,h,pz+ez*hw],.023,'#89949a',.023,0,5);
+    for(const side of [-1,1])roundBone(m,[px+side*ex*hw,yb,pz+side*ez*hw],[px+side*ex*hw,yt,pz+side*ez*hw],.021,'#89949a',.021,0,5);
+    for(const s of [1,-1]){const o=s*.014,ox=tx*o,oz=tz*o,L0=[px-ex*hw+ox,yb,pz-ez*hw+oz],R0=[px+ex*hw+ox,yb,pz+ez*hw+oz],R1=[px+ex*hw+ox,yt,pz+ez*hw+oz],L1=[px-ex*hw+ox,yt,pz-ez*hw+oz];
+      if(s>0)m.fq(L0,R0,R1,L1,'#ffffff',8,[[u0,v1],[u1,v1],[u1,v0],[u0,v0]],[0,0,0,0]);else m.fq(R0,L0,L1,R1,'#ffffff',8,[[u0,v1],[u1,v1],[u1,v0],[u0,v0]],[0,0,0,0])}
+  }
+  r2SignInfo={count,names:names.length};
+}
+
+/* ---------- vegetacija: stabla iz podataka + dopune (žbunje, voćke) — dopune NISU iz mape i nemaju koliziju ---------- */
+let r2BushSpots=[];
+let grassPatchKey='',grassPatch=null;
+function nearGrass(p){
+  if(interior||quality<2||season===3||!r2Cache)return null;
+  const cx=Math.floor(p.x/8),cz=Math.floor(p.z/8),key=cx+','+cz+','+quality+','+season;
+  if(key===grassPatchKey)return grassPatch;
+  const step=[0,0,2.5,2.05,1.75][quality],reach=[0,0,42,49,56][quality],points=[];
+  for(let iz=Math.floor((cz*8-reach)/step);iz<=Math.ceil((cz*8+reach+8)/step);iz++)
+    for(let ix=Math.floor((cx*8-reach)/step);ix<=Math.ceil((cx*8+reach+8)/step);ix++){
+      const h='grass'+ix+','+iz,x=(ix+.15+.7*r2Hash(h,0))*step,z=(iz+.15+.7*r2Hash(h,1))*step;
+      if(Math.abs(x)>HALF-2||Math.abs(z)>HALF-2||Math.abs(x-FIELD.x)<FIELD.w/2+6.7&&Math.abs(z-FIELD.z)<FIELD.d/2+6.7)continue;
+      if(r2ZoneAt(x,z)<.91)continue;
+      let excluded=false;
+      if(pointInside(x,z,PARK.poly))for(const path of PARK.paths)for(let j=1;j<path.length;j++)if(segDist(x,z,path[j-1],path[j])<1.65)excluded=true;
+      if(excluded)continue;
+      points.push(x,height(x,z)-.07,z,.66+.62*r2Hash(h,2),r2Hash(h,3)*TAU,r2Hash(h,4),r2Hash(h,5),5);
+    }
+  grassPatchKey=key;grassPatch=new Float32Array(points);return grassPatch;
+}
+function r2VegBuild(){
+  const q=clamp(quality|0,0,4),dens=[.5,.75,1,1.3,1.6][q],out=[];r2BushSpots=[];
+  const put=(x,z,sc,kind,key)=>{out.push(x,height(x,z),z,sc,r2Hash(key,3)*6.283,r2Hash(key,5),r2Hash(key,7),kind)};
+  trees.forEach((t,i)=>{const kind=(t.pine&&!t.park)?0:((r2Hash('sp'+i,19)<.28)?3:(r2Hash('sp'+i,20)<.42?4:1));put(t.x,t.z,t.park?7.8:t.h,kind,'t'+i)});
+  const free=(x,z,pad)=>{if(Math.abs(x)>HALF-3||Math.abs(z)>HALF-3)return false;if(buildingAt(x,z,pad))return false;const r=nearestRoad(x,z);if(r.d<(r.road?r.road.width/2:3)+1.1)return false;if(hyp(x-FIELD.x,z-FIELD.z)<40&&Math.abs(x-FIELD.x)<36&&Math.abs(z-FIELD.z)<27)return false;return true};
+  // podrast po šumama: mreža 20 m sa deterministički pomerenim tačkama
+  for(let gx=-HALF;gx<HALF;gx+=20)for(let gz=-HALF;gz<HALF;gz+=20){const k='u'+gx+','+gz,x=gx+r2Hash(k,1)*20,z=gz+r2Hash(k,2)*20;
+    if(r2MaskAt(x,z)>140&&r2Hash(k,4)<.62*dens&&free(x,z,1.4)){put(x,z,1.0+r2Hash(k,6)*1.3,2,k);if(r2Hash(k,8)<.12)r2BushSpots.push({x,z})}}
+  // dvorišta: žbunje i voćke oko kuća
+  houses.forEach((h,i)=>{const sp=houseSpec(h),k='g'+(h.sourceId||i);if(sp.floors>3||sp.area<30||sp.area>400||r2Hash(k,1)>.5*dens)return;
+    const rad=Math.sqrt(sp.area)*.5+2.5,n=1+(r2Hash(k,2)<.5?1:0);
+    for(let j=0;j<n;j++){const a=r2Hash(k+j,3)*6.283,d=rad+r2Hash(k+j,4)*3.5,x=h.c[0]+Math.cos(a)*d,z=h.c[1]+Math.sin(a)*d;if(!free(x,z,1.2))continue;
+      if(j===0&&r2Hash(k,5)<.35)put(x,z,3.2+r2Hash(k,6)*1.6,1,k+'f');else put(x,z,.9+r2Hash(k+j,7)*1.1,2,k+j)}});
+  return new Float32Array(out);
+}
+

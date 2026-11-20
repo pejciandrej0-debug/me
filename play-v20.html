@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="index, follow"><title>Kalač Brdo v20 — Noćna Tajna | Igraj online</title>
+<meta name="description" content="Kalač Brdo, verzija 20 — igraj odmah u pregledaču, bez instalacije.">
+<style>html,body{min-height:100%;margin:0;background:#08171b;color:#e2eccc;font-family:system-ui,Arial,sans-serif}main{min-height:100vh;display:grid;place-content:center;text-align:center;padding:25px}h1{font-size:clamp(30px,6vw,62px);margin:0 0 15px}p{color:#b4c2b9}progress{width:min(450px,85vw);accent-color:#d9e88e}a{color:#d9e88e}</style>
+</head><body>
+<main id="progress"><h1>KALAČ BRDO</h1><p>Učitavanje najnovije verzije v20…</p><progress id="p" max="35" value="0"></progress><p id="status">Pripremamo noć...</p></main>
+<script>
+(async function(){
+const files=["kb-v20/seg-00-00.txt","kb-v20/seg-00-01.txt","kb-v20/seg-00-02.txt","kb-v20/seg-00-03.txt","kb-v20/seg-01-00.txt","kb-v20/seg-02-00.txt","kb-v20/seg-03-00.txt","kb-v20/seg-03-01.txt","kb-v20/seg-04-00.txt","kb-v20/seg-04-01.txt","kb-v20/seg-04-02.txt","kb-v20/seg-04-03.txt","kb-v20/seg-04-04.txt","kb-v20/seg-04-05.txt","kb-v20/seg-04-06.txt","kb-v20/seg-04-07.txt","kb-v20/seg-04-08.txt","kb-v20/seg-04-09.txt","kb-v20/seg-04-10.txt","kb-v20/seg-04-11.txt","kb-v20/seg-05-00.txt","kb-v20/seg-06-00.txt","kb-v20/seg-07-00.txt","kb-v20/seg-07-01.txt","kb-v20/seg-08-00.txt","kb-v20/seg-09-00.txt","kb-v20/seg-10-00.txt","kb-v20/seg-11-00.txt","kb-v20/seg-12-00.txt","kb-v20/seg-13-00.txt","kb-v20/seg-14-00.txt","kb-v20/seg-15-00.txt","kb-v20/seg-16-00.txt","kb-v20/seg-17-00.txt","kb-v20/seg-17-01.txt"], progress=document.getElementById("p"),status=document.getElementById("status");
+let done=0;
+try{
+ const parts=await Promise.all(files.map(async f=>{const r=await fetch("./"+f,{cache:"no-store"});if(!r.ok)throw Error(f+": HTTP "+r.status);const s=await r.text();progress.value=++done;status.textContent="Učitano "+done+"/"+files.length;return s;}));
+ const markup=parts.join("");
+ if(!markup.startsWith("<!DOCTYPE html>")||!markup.includes("</html>"))throw Error("Nepotpuna igra");
+ document.open();document.write(markup);document.close();
+}catch(e){console.error("Kalač Brdo v20 loader:",e);status.innerHTML="Greška pri učitavanju. <a href='?reload="+Date.now()+"'>Pokušaj ponovo</a> ili <a href='./Kalac_Brdo_v18_LAMPA_TELEFON_STANICA.html'>igraj staru verziju v18</a>.";}}
+)();
+</script></body></html>

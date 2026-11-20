@@ -1,0 +1,1000 @@
+ transformMesh(m,carShell(car.paint,false),car.x,Y,car.z,car.yaw,car.lean||0,car.tilt||0);
+ transformMesh(m,b.out,car.x,Y,car.z,car.yaw,car.lean||0,car.tilt||0);
+}
+function brawlerModel(m,f,e){
+ const b=Mesh(),t=time+f.seed*3,fight=f.mode==='fight'||f.mode==='search',run=f.mode==='chase',walk=f.mode==='walk'||f.mode==='back'||run;
+ const stride=walk?Math.sin(t*(run?11:7.5))*(run?.5:.34):0,bob=fight?Math.abs(Math.sin(t*3))*.03:Math.abs(stride)*.05;
+ const hip=.92;
+ for(const sd of [-1,1]){
+  const lz=walk?stride*sd:(fight?(sd>0?.22:-.18):0),lift=walk?Math.max(0,-stride*sd)*.12:0,kneeZ=lz*.55+.05;
+  roundBone(b,[sd*.12,hip+bob,0],[sd*.13,.5+lift*.5,kneeZ],.095,f.pants,.075,0,6);
+  roundBone(b,[sd*.13,.5+lift*.5,kneeZ],[sd*.13,.08+lift,lz],.075,f.pants,.06,0,6);
+  b.box(sd*.13,.04+lift,lz+.07,.12,.08,.26,'#171515');
+ }
+ roundBone(b,[0,hip+bob,0],[0,1.5+bob,.02],.19,f.shirt,.25,0,8);
+ roundBone(b,[0,1.5+bob,.02],[0,1.58+bob,.02],.06,f.skin,.06,0,5);
+ b.sphere(0,1.68+bob,0,.115,.14,.115,f.skin);
+ b.sphere(0,1.74+bob,-.025,.12,.09,.12,f.hair);
+ const g=crashWrap((f.gaze||f.yaw)-f.yaw),gx=Math.sin(g),gz=Math.cos(g);
+ for(const sd of [-1,1])b.box(gx*.105+gz*.045*sd,1.70+bob,gz*.105-gx*.045*sd,.032,.026,.026,'#0b0b0b');
+ b.box(gx*.125,1.665+bob,gz*.125,.03,.04,.03,'#b98a6c');
+ const sh=1.43+bob,punchArm=f.arm?1:-1;
+ for(const sd of [-1,1]){
+  let el,fist;
+  if(fight){
+   if(f.p1>0&&sd===punchArm){el=[sd*.25,1.32,.2+.3*f.p1];fist=[sd*.1,1.47,.34+.55*f.p1];}
+   else if(f.mode==='search'){el=[sd*.4,1.22,.18];fist=[sd*.5,1.2,.38];}
+   else{el=[sd*.30,1.22,.14];fist=[sd*.16,1.45,.34];}
+  }else if(run){el=[sd*.3,1.2,stride*-sd*.5];fist=[sd*.3,1.0,-stride*sd*.9+.1];}
+  else{el=[sd*.3,1.15,stride*-sd*.3];fist=[sd*.3,.88,-stride*sd*.5];}
+  roundBone(b,[sd*.27,sh,0],[el[0],el[1]+bob,el[2]],.065,f.shirt,.055,0,6);
+  roundBone(b,[el[0],el[1]+bob,el[2]],[fist[0],fist[1]+bob,fist[2]],.055,f.skin,.05,0,6);
+  b.sphere(fist[0],fist[1]+bob,fist[2],.062,.062,.062,f.skin);
+ }
+ const tilt=fight?(f.hit*.22-f.p1*.12):run?-.14:0,Y=height(f.x,f.z);
+ transformMesh(m,b.out,f.x,Y,f.z,f.yaw,0,tilt);
+}
+function paintCrash(m){
+ const e=worldEvent;if(!e||e.type!=='crash'||story.on)return;
+ if(e.state==='approach'&&e.t<1.4)return;
+ for(const c of [e.carA,e.carB])crashCarModel(m,c);
+ if(e.state!=='approach'){
+  const blink=Math.sin(time*9)>0;
+  for(const c of [e.carA,e.carB]){
+   if(e.state==='end'&&e.endT>3.2)continue;
+   const Y=height(c.x,c.z);
+   for(const [lx,lz] of [[-.8,2.0],[.8,2.0],[-.8,-2.0],[.8,-2.0]]){const q=crashLoc(c,lx,lz);m.box(q.x,Y+.78,q.z,.18,.11,.07,blink?'#ffa21f':'#5a3a10',blink?11:0);}
+   if(time-e.smokeFrom<28){const h=crashLoc(c,0,1.7);for(let j=0;j<5;j++){const u=((time-e.smokeFrom)*.45+j*.2)%1,r=.14+u*.3;m.sphere(h.x+Math.sin(j*2.1+time*.6)*.4*u,Y+1.0+u*2.4,h.z+Math.cos(j*1.7)*.35*u,r,r*.8,r,u<.5?'#7b807f':'#9aa0a0');}}
+  }
+ }
+ if(e.showBag&&!e.item){
+  const x=e.bag.x,z=e.bag.z,Y=height(x,z);
+  m.box(x,Y+.17,z,.72,.3,.34,'#a3282e',3);m.box(x,Y+.17,z+.001,.74,.06,.36,'#e8e0c9',3);
+  roundBone(m,[x-.3,Y+.3,z],[x,Y+.52,z],.02,'#2a2220',.02,0,4);roundBone(m,[x,Y+.52,z],[x+.3,Y+.3,z],.02,'#2a2220',.02,0,4);
+  if(e.state==='fight'&&distance(actors[active],e.bag)<45)ring(m,x,Y+.08,z,1.1+Math.sin(time*3)*.12,'#f0c581',.035);
+ }
+ for(const f of e.fighters)if(!f.gone)brawlerModel(m,f,e);
+}
+function paintCrashPlan(c,s){
+ const e=worldEvent;if(!e||e.type!=='crash'||story.on)return;
+ if(e.state==='approach'&&e.t<1.4)return;
+ for(const car of [e.carA,e.carB]){const q=planProject(car.x,car.z);c.save();c.translate(...q);c.scale(1,.78);c.rotate(-car.yaw);
+  c.fillStyle='#06121a77';c.beginPath();c.ellipse(s*.2,s*.2,s,s*2.4,0,0,TAU);c.fill();
+  c.fillStyle=car.paint;c.beginPath();c.roundRect(-s*.85,-s*2,s*1.7,s*4,s*.25);c.fill();
+  c.fillStyle='#10202a';c.fillRect(-s*.67,-s*.9,s*1.34,s*.55);c.fillRect(-s*.67,s*.8,s*1.34,s*.4);c.restore();}
+ for(const f of e.fighters){if(f.gone)continue;const q=planProject(f.x,f.z);
+  if(e.state==='fight'||e.state==='caught'){const g=f.gaze||f.yaw,R=(e.alarm?30:23)*s*.55,a1=planProject(f.x+Math.sin(g-.78)*(e.alarm?30:23),f.z+Math.cos(g-.78)*(e.alarm?30:23)),a2=planProject(f.x+Math.sin(g+.78)*(e.alarm?30:23),f.z+Math.cos(g+.78)*(e.alarm?30:23));
+   c.fillStyle=f.sees?'#e8503a33':'#f0c58118';c.beginPath();c.moveTo(...q);c.lineTo(...a1);c.lineTo(...a2);c.closePath();c.fill();}
+  c.fillStyle=f.shirt;c.beginPath();c.ellipse(q[0],q[1]-s*.5,s*.28,s*.5,0,0,TAU);c.fill();c.fillStyle=f.skin;c.beginPath();c.arc(q[0],q[1]-s*1.15,s*.22,0,TAU);c.fill();}
+ if(e.showBag&&!e.item){const q=planProject(e.bag.x,e.bag.z),pulse=1+Math.sin(time*3)*.12;c.fillStyle='#a3282e';c.fillRect(q[0]-s*.35,q[1]-s*.28,s*.7,s*.36);c.strokeStyle='#f0c581';c.lineWidth=1.6;c.beginPath();c.ellipse(q[0],q[1],s*1.1*pulse,s*.86*pulse,0,0,TAU);c.stroke();}
+}
+function accordionNote(dist){if(part2){part2.audio.accordion(dist);return;}if(!audio||audio.state!=='running')return;const melody=[293.66,349.23,440,392,349.23,329.63,293.66,261.63],note=melody[Math.floor(time/.36)%melody.length],v=clamp(1-dist/65,0,.8)*.013;try{for(const [harm,gain]of [[1,1],[2,.28],[3,.13]]){const o=audio.createOscillator(),g=audio.createGain(),pan=audio.createStereoPanner?.();o.type='sawtooth';o.frequency.value=note*harm;const t=audio.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*gain,t+.08);g.gain.exponentialRampToValueAtTime(.0001,t+.34);o.connect(g);if(pan){pan.pan.value=clamp(Math.sin(Math.atan2(LOC[3].x-actors[active].x,LOC[3].z-actors[active].z)-yaw),-1,1);g.connect(pan);pan.connect(audio.destination);}else g.connect(audio.destination);o.start(t);o.stop(t+.36);}}catch(_){}}
+const carBodies=new Map(),parkedCells=new Map();let parkedCars=[];
+function parkedCell(x,z){return (Math.floor(x/12)+128)*256+Math.floor(z/12)+128;}
+function registerParkedCar(c){
+ c.cs=Math.cos(c.yaw);c.sn=Math.sin(c.yaw);
+ for(const dx of [-12,0,12])for(const dz of [-12,0,12]){
+   const k=parkedCell(c.x+dx,c.z+dz);let list=parkedCells.get(k);if(!list){list=[];parkedCells.set(k,list);}list.push(c);
+ }
+}
+function parkedCarCollision(x,z,r){
+ if(!r2||!parkedCars.length)return false;
+ const nearby=r>5?parkedCars:parkedCells.get(parkedCell(x,z));if(!nearby)return false;
+ for(const c of nearby){const dx=x-c.x,dz=z-c.z;
+   const side=Math.max(0,Math.abs(dx*c.cs-dz*c.sn)-.87),front=Math.max(0,Math.abs(dx*c.sn+dz*c.cs)-2.0);
+   if(side*side+front*front<=r*r)return true;}
+ return false;
+}
+function carShell(paint,patrol){
+  const key=paint+(patrol?'p':'');if(carBodies.has(key))return carBodies.get(key);
+  const b=Mesh(),rings=[[-2.03,.61,.39,.62],[-1.79,.86,.32,.84],[-1.1,.90,.31,.92],[.85,.89,.32,.90],[1.66,.85,.34,.77],[2.02,.67,.42,.62]];
+  const cross=([z,w,low,top])=>[[-w*.86,low,z],[-w,low+.12,z],[-w,top-.12,z],[-w*.84,top,z],[w*.84,top,z],[w,top-.12,z],[w,low+.12,z],[w*.86,low,z]];
+  let front=cross(rings[0]);for(const part of rings.slice(1)){const next=cross(part);for(let k=0;k<8;k++)b.quad(front[k],next[k],next[(k+1)%8],front[(k+1)%8],k===7?'#2d3030':paint);front=next;}
+  for(const ix of [0,rings.length-1]){const poly=cross(rings[ix]);for(let k=1;k<7;k++)b.tri(poly[0],poly[k],poly[k+1],paint);}
+  const base=[[-.80,.84,-1.40],[-.80,.84,1.03],[.80,.84,1.03],[.80,.84,-1.40]],roof=[[-.61,1.44,-.86],[-.61,1.45,.29],[.61,1.45,.29],[.61,1.44,-.86]];
+  b.quad(...roof,paint);for(let i=0;i<4;i++){const j=(i+1)%4;b.quad(base[i],base[j],roof[j],roof[i],'#526a70',10);
+    roundBone(b,base[i],roof[i],.043,paint,.038,0,5);roundBone(b,roof[i],roof[j],.039,paint,.039,0,5);}
+  for(const t of [-1,1]){
+    roundBone(b,[t*.80,.86,-.40],[t*.61,1.43,-.42],.040,'#252c2e',.037,0,5);
+    b.box(t*.82,.77,.18,.04,.045,.17,'#929995');b.sphere(t*.92,1.00,.60,.14,.074,.11,paint);
+    b.box(t*.57,.61,2.019,.35,.13,.05,patrol?'#f5e6c6':'#bbcdce',patrol?11:10);
+    b.box(t*.58,.62,-2.035,.31,.11,.055,'#bc3235',patrol?11:0);
+  }
+  for(const z of [-2.03,2.025]){b.box(0,.42,z,1.38,.12,.11,'#414748');b.box(0,.56,z*1.018,.42,.1,.015,'#c0c1ae');}
+  for(let j=0;j<5;j++)b.box(-.24+j*.12,.68,2.025,.070,.096,.018,'#303637');
+  if(patrol){b.box(0,1.49,-.29,1.0,.08,.23,'#323b40');}
+  carBodies.set(key,b.out);return b.out;
+}
+function carWheel(b,x,z,phase){
+ const side=Math.sign(x),y=.34;
+ roundBone(b,[x-.105,y,z],[x+.105,y,z],.315,'#232724',.315,0,12);
+ const xx=x+side*.112;
+ roundBone(b,[xx,y,z],[xx+side*.012,y,z],.186,'#79817e',.186,0,12);
+ for(let j=0;j<5;j++){const a=phase+j*TAU/5;b.tri([xx+side*.016,y,z],[xx+side*.016,y+.154*Math.cos(a),z+.154*Math.sin(a)],[xx+side*.016,y+.142*Math.cos(a+.44),z+.142*Math.sin(a+.44)],'#333a3d');}
+}
+function patrolCarModel(m,car,staticOnly=false){
+ const isPatrol=car.kind!=='car'&&!car.parked,paint=car.paint||(isPatrol?'#304354':'#627477'),b=Mesh();
+ let spin=0;if(isPatrol){if(Number.isFinite(car.lastWheelX))car.spin=(car.spin||0)+Math.min(2,hyp(car.x-car.lastWheelX,car.z-car.lastWheelZ))/.315;car.lastWheelX=car.x;car.lastWheelZ=car.z;spin=car.spin||0;}
+ for(const side of [-1,1])for(const axle of [-1.23,1.19])carWheel(b,side*.81,axle,spin);
+ if(isPatrol){const flash=Math.sin(time*7.4);b.box(-.27,1.58,-.29,.38,.13,.22,flash>0?'#709eff':'#253951',flash>0?11:0);b.box(.27,1.58,-.29,.38,.13,.22,flash<0?'#ff5446':'#613638',flash<0?11:0);}
+ const Y=height(car.x,car.z)+.077,angle=car.yaw||0;transformMesh(m,carShell(paint,isPatrol),car.x,Y,car.z,angle);transformMesh(m,b.out,car.x,Y,car.z,angle);
+ if(isPatrol&&!staticOnly){castActorShadow(m,car,Y,1.55);const beams=Mesh();for(const side of [-1,1])for(let j=0;j<8;j++){const a=j*TAU/8,aa=(j+1)*TAU/8,P=k=>[side*.58+Math.cos(k)*1.25,.61+Math.sin(k)*.41,13];beams.tri([side*.58,.61,2.04],P(a),P(aa),'#c8c8a6',7.022);}transformMesh(m,beams.out,car.x,Y,car.z,angle);}
+}
+function buildParkedCars(m){
+ parkedCars=[];parkedCells.clear();for(let i=0;i<roadSegments.length&&parkedCars.length<24;i++){const e=roadSegments[i],w=e.road.width,dx=e.b[0]-e.a[0],dz=e.b[1]-e.a[1],l=hyp(dx,dz);
+ if(w<4.6||l<9||r2Hash('parking'+i,7)>.23)continue;
+ const side=i%2?1:-1,off=side*(w/2+2.65),x=(e.a[0]+e.b[0])/2+dz/l*off,z=(e.a[1]+e.b[1])/2-dx/l*off;
+ if(Math.abs(x)>HALF-6||Math.abs(z)>HALF-6||pointInside(x,z,PARK.poly)||Math.abs(x-FIELD.x)<FIELD.w/2+9&&Math.abs(z-FIELD.z)<FIELD.d/2+9||LOC.some(o=>hyp(o.x-x,o.z-z)<10)||parkedCars.some(c=>hyp(c.x-x,c.z-z)<23))continue;
+ const car={x,z,yaw:Math.atan2(dx,dz)+(side>0?0:Math.PI),parked:true,paint:['#6c746a','#884f48','#b9b7ab','#4a6476'][i%4]};
+ const entry=houses.some(h=>h.door&&hyp(h.door.x-x,h.door.z-z)<5);if(entry)continue;
+ if([-2.2,0,2.2].some(v=>[-1,0,1].some(u=>{const xx=x+u*dz/l+v*dx/l,zz=z-u*dx/l+v*dz/l,r=nearestRoad(xx,zz);return collide(xx,zz,.3)||r.d<(r.road?.width||4)*.5+1.0;})))continue;
+ parkedCars.push(car);registerParkedCar(car);patrolCarModel(m,car,true);}
+}
+function updateEventUI(){const el=$('cineEvent'),e=worldEvent;if(!e||story.on||football){el.hidden=true;return;}el.hidden=false;el.querySelector('b').textContent=e.title;el.querySelector('p').textContent=e.line;const small=el.querySelector('small');if(e.type==='crash')small.textContent=crashSmall(e);else if(e.type==='patrol')small.textContent=e.state==='approach'?'Kreni do parkića · M: putanja':e.hidden?'U ZAKLONU · lampa ugašena':'SUMNJA '+Math.round(e.seen)+'% · L ugasi lampu · Z čučni';else if(e.type==='accordion')small.textContent=e.recording?'ČIST SNIMAK '+Math.floor(e.record)+' / 10 s':cine?.recording?'SNIMAČ AKTIVAN · E kod ograde':'B: snimač · E kod ograde';else small.textContent=e.state==='approach'?'Ekipa čeka na terenu · E: putanja':'E: prihvati 3 na 3 · '+Math.max(0,Math.ceil(e.until-time))+' s';}
+
+/* Rekviziti priče ostaju odvojeni od provjerene geometrije ulica i kuća. */
+function missionCollision(x,z,r){if(parkedCarCollision(x,z,r))return true;if(part2&&part2.coverCollision(x,z,r))return true;if(crashCollision(x,z,r))return true;if(!story.on||!cine||!missionScene)return false;const s=missionScene;if(story.chapter===2){const a=s.pads[0];for(const sign of [-1,1])if(Math.abs(x-a.x-sign*5)<.55+r&&Math.abs(z-a.z-2)<.35+r)return true;}if(story.chapter===1&&!cine.flags.gateOpen&&story.step>=3&&Math.abs(x-s.gate.x)<1.8+r&&Math.abs(z-s.gate.z)<.18+r)return true;return false;}
+function morsePulse(){const beat=time%8,short=[0,.42,.84,4.8,5.22,5.64],long=[1.6,2.6,3.6];return short.some(t=>beat>=t&&beat<t+.18)||long.some(t=>beat>=t&&beat<t+.65)?1:.08;}
+function storyLightList(){const a=[];if(cine)for(const f of cine.flares)if(f.until>time)a.push({x:f.x,z:f.z,y:height(f.x,f.z)+3.8,flare:true});return a;}
+function paintEvidence(m,t){
+ const x=t.x,z=t.z,y=height(x,z)+.12;
+ if(['message','bench','playback','whistle'].includes(t.type)){
+   m.quad([x-.18,y,z-.13],[x+.17,y+.01,z-.12],[x+.15,y+.018,z+.13],[x-.18,y,z+.14],'#d4c6a1');
+   for(let j=0;j<3;j++)m.rod([x-.13,y+.018,z-.06+j*.042],[x+.095-j*.025,y+.022,z-.06+j*.042],.006,'#5a5550');
+ }else if(['morse','trace','wire','lamp'].includes(t.type)){
+   const pp=t.pole||(t.type==='wire'?missionScene.poles[2].pole:t),Y=height(pp.x,pp.z);
+   for(let j=0;j<8;j++){const at=k=>[pp.x+.36+Math.sin(k*.58)*.20,Y+.14+Math.sin(k*.4)*.18,pp.z+.13+k*.23];roundBone(m,at(j),at(j+1),.019,'#343b38',.019,0,4);}
+   if(t.type==='wire'&&!cine.flags.power){const intensity=sparkStrength(time);
+    if(intensity>.08){for(let j=0;j<5;j++){const u=(time*6+j*.17)%1,a=2.4*j;
+      m.rod([pp.x+.30,Y+1.50,pp.z+.14],[pp.x+.30+Math.cos(a)*u*.34,Y+1.50+.23*u-.46*u*u,pp.z+.16+Math.sin(a)*.22],.010,'#cfedff',11);}}}
+ }else if(t.type==='gate'||t.type==='rescue'||t.type==='station'){const near=nearestRoad(x,z),pt=near.p;if(!pt)return;
+   for(let j=0;j<6;j++)for(const side of [-1,1]){const xx=pt[0]+side*.64,zz=pt[1]+(j-3)*.38;
+     m.rod([xx-.05,height(xx-.05,zz)+.098,zz],[xx+.05,height(xx+.05,zz+.13)+.098,zz+.13],.041,'#383a35');}}
+ else if(t.type==='escape'){roundBone(m,[x,y,z],[x+.05,y+.32,z],.046,'#9a523c',.036,0,7);
+   const f=.04*Math.sin(time*9);m.tri([x-.065,y+.29,z],[x+.083,y+.29,z],[x+f,y+.61,z+.034],'#f5b25d',11);}
+}
+function paintCinematicObjects(m){if(interior)return;if(part2)part2.paintCovers(m);if(!missionScene)buildMissionScene();const s=missionScene,p=actors[active];
+ if(storyPatrol&&story.on)patrolCarModel(m,storyPatrol);
+ const goal=task();if(story.on&&goal&&!VUK.on&&distance(p,goal)<75)paintEvidence(m,goal);
+ if(story.on&&story.chapter===0){const b=s.bench,Y=height(b.x,b.z);parkBench(m,b.x,Y,b.z);const phone=s.phone,y=height(phone.x,phone.z)+.18;m.box(phone.x,y,phone.z,.24,.04,.45,'#182d32');m.box(phone.x,y+.03,phone.z,.19,.008,.34,Math.sin(time*13)>.1?'#72beff':'#2a548b',4);m.rod([phone.x-.07,y+.04,phone.z-.12],[phone.x+.05,y+.04,phone.z+.09],.007,'#153e3c');m.rod([phone.x+.05,y+.04,phone.z+.09],[phone.x-.06,y+.04,phone.z+.14],.006,'#153e3c');if(task()?.type==='scan')ring(m,phone.x,y+.06,phone.z,1.15+Math.sin(time*3)*.08,'#8ee9d9',.035);}
+ if(story.on&&story.chapter===1){for(let i=0;i<s.poles.length;i++){const point=s.poles[i],pp=point.pole,y=height(pp.x,pp.z),pulse=morsePulse();m.box(pp.x+.28,y+1.35,pp.z,.48,.68,.23,'#405661');m.box(pp.x+.28,y+1.35,pp.z+.13,.35,.48,.025,'#79908b');m.box(pp.x+.29,y+1.5,pp.z+.15,.15,.04,.025,cine.flags.power?'#b0e7b4':pulse>.3?'#f9dfaa':'#293f40',cine.flags.power||pulse>.3?4:0);if(distance(p,pp)<30&&!cine.flags.power)m.box(pp.x+.65,y+7.42,pp.z,.75,.16,.4,pulse>.3?'#fff4c9':'#243137',pulse>.3?4:0);}
+ if(!cine.flags.power)for(const sign of [-1,1]){const watch=clearSpot({x:s.repair.x+sign*12,z:s.repair.z+10},.5);dogModel(m,{...watch,state:'chase',phase:0,move:0,yaw:Math.atan2(p.x-watch.x,p.z-watch.z)},false);}
+ const g=s.gate,Y=height(g.x,g.z),open=cine.flags.gateOpen;for(const sign of [-1,1]){m.box(g.x+sign*1.85,Y+.9,g.z,.15,1.8,.17,'#71604a',3);const leaf=Mesh();for(let i=0;i<6;i++)leaf.box(sign*(.12+i*.30),.83,0,.27,1.55,.13,'#876746',3);leaf.box(sign*.9,.4,.08,1.7,.11,.10,'#544634');leaf.box(sign*.9,1.2,.08,1.7,.11,.10,'#544634');transformMesh(m,leaf.out,g.x,Y,g.z,open?sign*1.3:0);}}
+ if(story.on&&story.chapter===2){for(let i=0;i<3;i++){const a=s.pads[i],Y=height(a.x,a.z),on=stationConditions()[i],col=on?'#a2e8bc':CREW_ROLES[i].accent;ring(m,a.x,Y+.15,a.z,i===0?6:i===2?4:2.5,col,.035);m.box(a.x+.7,Y+.5,a.z,.6,1,.45,'#43545a');m.box(a.x+.7,Y+1.02,a.z,.47,.08,.34,on?'#8ed6bb':'#af9d70',4);for(let j=0;j<3;j++)m.box(a.x+.52+j*.16,Y+1.08,a.z+.1,.05,.025,.025,'#d6ead5',4);}
+ const a=s.pads[0];for(const sign of [-1,1]){const x=a.x+sign*5,z=a.z+2,Y=height(x,z);m.box(x,Y+.6,z,1.1,1.2,.7,'#636a60',1);m.box(x,Y+1.21,z,1.2,.09,.78,'#8d998d');}
+ const sh=cine.shadow;if(sh&&distance(p,sh)<90){const b=Mesh();b.sphere(0,1.2,0,.32,.9,.23,'#121c28');b.sphere(0,2.18,0,.22,.30,.19,'#0b1520');for(const sign of [-1,1]){roundBone(b,[sign*.25,1.95,0],[sign*.37,.55,Math.sin(time*3)*.15],.055,'#121b28',.032);roundBone(b,[sign*.15,.55,0],[sign*.21,.05,Math.sin(time*3+sign)*.25],.06,'#101c28',.035);b.box(sign*.075,2.22,.18,.045,.025,.016,'#e89d7e',4);}transformMesh(m,b.out,sh.x,height(sh.x,sh.z),sh.z,sh.yaw||0);}}
+ if(cine){for(const f of cine.flares){const age=time-f.born,u=clamp(age/.65,0,1),x=lerp(f.fromX??f.x,f.x,u),z=lerp(f.fromZ??f.z,f.z,u),Y=height(x,z)+(u<1?1.1+Math.sin(u*Math.PI)*2:.15),flicker=1+Math.sin(time*22)*.11;m.box(x,Y,z,.08,.21,.08,'#9a6147');m.sphere(x,Y+.18,z,.13*flicker,.32*flicker,.13,'#e8aa55');m.box(x,Y+.14,z,.12,.20,.12,'#ffe7a0',4);if(u===1){ring(m,x,Y-.02,z,12.8,'#bd9d65',.018);for(let j=0;j<10;j++){const t=(time*1.5+j*.23)%2,ang=j*2.4;m.box(x+Math.sin(ang)*t*.3,Y+.35+t,z+Math.cos(ang)*t*.3,.028,.035,.028,'#eac17b',4);}}}
+ if(cine.rock){const r=cine.rock;m.sphere(r.x,height(r.x,r.z)+.17,r.z,.15,.12,.13,'#a0a290');}}
+ if(worldEvent?.type==='patrol'&&worldEvent.state!=='approach')patrolCarModel(m,worldEvent.car);
+ if(worldEvent?.type==='crash')paintCrash(m);
+ if((worldEvent?.type==='patrol'||distance(p,PARK_POS)<90)&&s.bushes)for(const b of s.bushes){const Y=height(b.x,b.z);m.sphere(b.x,Y+.58,b.z,1.5,.8,1.2,'#37563b');m.sphere(b.x-.6,Y+.7,b.z-.2,1,.7,1,'#426a43');}
+ if(football?.street)buildStreetPitch(m);
+}
+function buildStreetPitch(m){const f=football,F=f.field,Y=f.ground+.17;for(const sign of [-1,1]){const x=F.x+sign*F.w/2;for(const side of [-1,1])m.box(x,Y+.85,F.z+side*2,.09,1.7,.09,'#e7dbc0');m.box(x,Y+1.7,F.z,.09,.09,4.1,'#e7dbc0');for(let i=-4;i<=4;i++)m.rod([x,Y+1.7,F.z+i*.5],[x+sign*1.3,Y+.04,F.z+i*.5],.009,'#bfcbb8');}for(const sign of [-1,1]){roadStrip(m,[F.x-F.w/2,F.z+sign*F.d/2],[F.x+F.w/2,F.z+sign*F.d/2],.08,'#ede4c2',.18,0);}ring(m,F.x,Y,F.z,2.2,'#e7dfc2',.035);}
+
+/* Jedinstven interfejs za opremu, odluke, žice, dosijee i portrete. */
+let journalOpen=false,lastPortrait=-1,wireSource=null;
+const crewBar=hud.querySelector('.kb-story-crew');hud.appendChild(crewBar);
+for(const b of crewBar.querySelectorAll('[data-crew]')){const i=+b.dataset.crew;b.innerHTML=`<canvas width="144" height="216" data-portrait="${i}" aria-hidden="true"></canvas><span><b>${CREW_ROLES[i].name}</b><small>${i+1} · ${CREW_ROLES[i].role}</small><em data-crew-state="${i}">SPREMAN</em></span>`;}
+$('betaTask').insertAdjacentHTML('afterend','<div id="cineMissionStatus" aria-live="off"><span id="cineStatusLabel"></span><div><i id="cineStatusFill"></i></div><small id="cineStatusDetail"></small></div>');
+const equipment=document.createElement('div');equipment.id='cineEquipment';equipment.innerHTML='<button type="button" id="cineAbility">OPREMA · G</button><button type="button" id="cineRecorder" aria-pressed="false">SNIMAČ · B</button><button type="button" id="cineJournalButton">DOSIJEI · J</button>';toolbar.prepend(equipment);
+const cinemaUI=document.createElement('div');cinemaUI.id='cineLayer';cinemaUI.innerHTML=`
+ <div id="cineOpening" aria-hidden="true"><span>TRI DRUGARA: JEDNA TAJNA</span><b></b><small>NIŠ · KALAČ BRDO</small></div>
+ <aside id="cineDecision" hidden aria-label="Odluka u priči"><small>VAŠ IZBOR MENJA ZAPIS</small><b></b><div></div></aside>
+ <aside id="cineEvent" hidden role="status"><small>DOGAĐAJ U KRAJU</small><b></b><p></p><small></small><button type="button" id="cineDismissEvent">PRESKOČI ×</button></aside>
+ <div id="cineWire" hidden><div class="cine-dialog cine-wire-dialog" role="dialog" aria-modal="true" aria-labelledby="cineWireTitle"><header><div><small>LAZAR / STARI ORMARIĆ · IGRAČKA SLAGALICA</small><h2 id="cineWireTitle">Tri kontakta. Jedan napon.</h2></div><button type="button" id="cineWireClose" aria-label="Zatvori slagalicu">×</button></header><p>Izaberi oznaku levo, pa odgovarajući simbol desno. Simboli su pouzdaniji od boje. Pogrešan par troši 6 sekundi.</p><div class="cine-wire-meta"><b id="cineWireTime">45 s</b><span id="cineWireHint"></span></div><div id="cineWireBoard"><canvas id="cineWireCanvas" width="560" height="230" aria-hidden="true"></canvas><div id="cineWireSources"></div><div id="cineWireTargets"></div></div><div class="cine-wire-bottom"><span id="cineWireResult" role="status">Odaberi prvi kontakt.</span><button type="button" id="cineWireReset">ODVEŽI SPOJEVE</button></div><small>Esc zatvara ormarić. Napon i dalje opada; E kod ormarića nastavlja rad.</small></div></div>
+ <aside id="cineTune" hidden aria-label="Usklađivanje frekvencije"><small>LAZAR / PRIJEMNIK</small><b id="cineTuneTarget"></b><p>Očitaj traženu frekvenciju na instrumentu, pa izaberi kanal.</p><div>${['91,3','93,7','96,4'].map((f,i)=>`<button type="button" data-tune="${i}">${i+1} · ${f} MHz</button>`).join('')}</div><button type="button" id="cineTuneClose">NAZAD · ESC</button></aside>
+ <div id="cineJournal" hidden><div class="cine-dialog cine-journal-dialog" role="dialog" aria-modal="true" aria-labelledby="cineJournalTitle"><header><div><small>KALAČ BRDO / TERENSKI ZAPISI</small><h2 id="cineJournalTitle">Ekipa i dosijei</h2></div><button type="button" id="cineJournalClose">NASTAVI ×</button></header><div class="cine-crew-cards">${CREW_ROLES.map((r,i)=>`<article><div class="cine-portrait-wrap"><canvas width="288" height="432" data-large-portrait="${i}" aria-label="${r.name}, ${r.gear}"></canvas><small>0${i+1} / ${r.role}</small></div><h3>${r.name}</h3><b>${r.gear}</b><p>${r.description}</p><button type="button" data-select-actor="${i}">PREUZMI · ${i+1}</button></article>`).join('')}</div><section class="cine-mission-list"><h3>Tri drugara: jedna tajna</h3><p>Nova priča počinje u dvorištu. Izbor ispod pokreće izabranu misiju od početka i zamenjuje njenu kontrolnu tačku.</p><div>${['Sastanak u trouglastom parkiću','Napon u Durmitorskoj','Frekvencija sa Uklete meteo stanice'].map((n,i)=>`<button type="button" data-replay="${i}"><small>MISIJA 0${i+1}</small><b>${n}</b></button>`).join('')}</div></section><section id="cineDossierSection"><h3>Prikupljeni dosijei</h3><div id="cineDossierList"></div></section><section class="cine-world-list"><h3>Događaji u slobodnoj igri</h3><p>Pojavljuju se dok istražuješ kraj. Ovde možeš odabrati događaj za narednu šetnju.</p><div><button type="button" data-event="derby">NOĆNI DERBI · 3 NA 3</button><button type="button" data-event="patrol">ČUDNA PATROLA</button><button type="button" data-event="accordion">HARMONIKE IZA OGRADE</button><button type="button" data-event="crash">SUDAR NA ULICI · NINDŽA</button></div></section></div></div>`;
+ gm.appendChild(cinemaUI);
+$('cineAbility').onclick=crewAbility;$('cineRecorder').onclick=toggleRecorder;$('cineJournalButton').onclick=()=>openJournal();$('cineJournalClose').onclick=closeJournal;$('cineDismissEvent').onclick=()=>resolveEvent(false,'Nastavljaš slobodnu šetnju.');
+const journalMenu=document.createElement('button');journalMenu.type='button';journalMenu.id='cineMenuJournal';journalMenu.textContent='EKIPA / DOSIJEI / IZBOR MISIJE';journalMenu.onclick=openJournal;settings.appendChild(journalMenu);const ref=GEO.meta.missionRoute;if(ref){const p=document.createElement('p');p.textContent='Provera referentne pešačke veze preko Durmitorske: '+ref.distance_m+' m, približno. Izvor: OpenStreetMap / Valhalla / TerraLab. Podaci nisu za navigaciju, merenje parcela ili pravne granice. ';for(const d of ref.downloads||[]){const a=document.createElement('a');a.href=d.url;a.textContent=d.label;a.target='_blank';a.rel='noopener';p.appendChild(a);p.appendChild(document.createTextNode(' · '));}hud.querySelector('.beta-sources').appendChild(p);}const soundMenu=document.createElement('button');soundMenu.id='cineSoundMenu';soundMenu.type='button';soundMenu.textContent='ZVUK: UKLJUČEN';soundMenu.onclick=()=>{$('kb5')?.querySelector('[data-a="m"]')?.click();updateCineUI();};settings.appendChild(soundMenu);const fullMenu=document.createElement('button');fullMenu.type='button';fullMenu.textContent='PREKO CELOG EKRANA';fullMenu.onclick=()=>{$('kb5')?.querySelector('[data-a="f"]')?.click();};settings.appendChild(fullMenu);
+for(const b of cinemaUI.querySelectorAll('[data-replay]'))b.onclick=()=>{journalOpen=false;$('cineJournal').hidden=true;beginMission(+b.dataset.replay);};
+for(const b of cinemaUI.querySelectorAll('[data-event]'))b.onclick=()=>{closeJournal();if(story.on){saveGame();freeRoam(false);}worldEvent=null;triggerWorld(b.dataset.event);};
+for(const b of cinemaUI.querySelectorAll('[data-select-actor]'))b.onclick=()=>{const i=+b.dataset.selectActor;if(story.on&&i===2&&!cine?.peraFound){tip('Pera je nestao. Pronađi ga iza kapije u drugoj misiji.',4);return;}closeJournal();switchActor(i);};
+$('cineWireClose').onclick=()=>closeWire();$('cineWireReset').onclick=()=>{if(!cine?.wire)return;cine.wire.links={};wireSource=null;renderWire();};$('cineTuneClose').onclick=closeTuner;
+for(const b of cinemaUI.querySelectorAll('[data-tune]'))b.onclick=()=>tuneReceiver(+b.dataset.tune);
+function closeCinePanels(){if(part2)part2.closeTuner();journalOpen=false;for(const id of ['cineJournal','cineWire','cineTune','cineDecision'])if($(id))$(id).hidden=true;if(cine){cine.wire=null;cine.tuning=false;cine.choice=null;}wireSource=null;}
+function openJournal(){if(!live||transition)return;journalOpen=true;paused=true;$('betaPause').hidden=true;clearInput();if(document.pointerLockElement===scene)document.exitPointerLock();$('cineJournal').hidden=false;renderDossiers();updateCineUI();$('cineJournalClose').focus({preventScroll:true});}
+function closeJournal(){journalOpen=false;$('cineJournal').hidden=true;paused=false;clearInput();last=performance.now();accumulator=0;scene.focus({preventScroll:true});updateHUD();}
+function renderDossiers(){const list=$('cineDossierList');list.replaceChildren();if(!dossiers.length){const p=document.createElement('p');p.textContent='Još nema zapisa. Razbijeni telefon, morze i neobični zvuci otključavaju dosijee.';list.appendChild(p);}for(const d of dossiers){const a=document.createElement('article'),h=document.createElement('h4'),p=document.createElement('p');h.textContent=d.title;p.textContent=d.body;a.append(h,p);list.appendChild(a);}}
+function renderDecision(){const el=$('cineDecision'),ch=cine?.choice;if(!ch){el.hidden=true;return;}el.hidden=false;el.querySelector('b').textContent=ch.title;const wrap=el.querySelector('div');wrap.replaceChildren();ch.options.forEach((o,i)=>{const b=document.createElement('button');b.type='button';const title=document.createElement('b'),small=document.createElement('small');title.textContent=(i+1)+' · '+o.label;small.textContent=o.detail;b.append(title,small);b.onclick=()=>chooseDecision(i);wrap.appendChild(b);});}
+function openWire(){if(active!==1||task()?.type!=='wire')return;const links=cine.savedWire||{};if(!cine.wire||cine.wire.remaining<=0)cine.wire={remaining:45,links:{...links},mapping:[2,0,1],open:true};else cine.wire.open=true;cine.wireExpired=false;wireSource=null;clearInput();if(document.pointerLockElement===scene)document.exitPointerLock();$('cineWire').hidden=false;renderWire();$('cineWireSources').querySelector('button')?.focus({preventScroll:true});}
+function closeWire(){if(cine?.wire){cine.savedWire={...cine.wire.links};cine.wire.open=false;}$('cineWire').hidden=true;wireSource=null;clearInput();scene.focus({preventScroll:true});}
+function chooseWire(side,n){const w=cine?.wire;if(!w)return;if(side==='source'){if(w.links[n]!==undefined)return;wireSource=n;$('cineWireResult').textContent='Odabran kontakt '+['A · △','B · ○','C · □'][n]+'. Sada izaberi simbol desno.';}else if(wireSource!==null){const src=wireSource;wireSource=null;if(w.mapping[src]===n&&!Object.values(w.links).includes(n)){w.links[src]=n;sound('clue',.4);$('cineWireResult').textContent='Stabilan spoj. '+Object.keys(w.links).length+' / 3';if(Object.keys(w.links).length===3){cine.savedWire={...w.links};closeWire();sound('clue');cine.flags.power=true;archive('osigurac','Napon u Durmitorskoj','Tri kontakta vratila su rasvetu. Iza drvenih kapija začuo se Perin pravi glas.');conversation([['Lazar','Ima napona. Čekaj… kapija iza kuće ima isti osigurač.'],['Andrej','Ovaj put otvaramo zajedno.']]);finishTask();return;}}else {w.remaining=Math.max(0,w.remaining-6);sound('bump');$('cineWireResult').textContent='Pogrešan par: izgubljeno 6 s. Sledi simbol, ne boju.';hurt=.3;}}renderWire();}
+function renderWire(){const w=cine?.wire;if(!w)return;const symbols=['△','○','□'],names=['A','B','C'],cols=['#86d8e1','#e7bc78','#a4d5a2'];for(const [side,id]of [['source','cineWireSources'],['target','cineWireTargets']]){const wrap=$(id);wrap.replaceChildren();for(let i=0;i<3;i++){const b=document.createElement('button');b.type='button';b.style.setProperty('--wire',cols[i]);b.textContent=side==='source'?names[i]+' · '+symbols[i]:'K'+(i+1)+' · '+symbols[w.mapping.indexOf(i)];const done=side==='source'?w.links[i]!==undefined:Object.values(w.links).includes(i);b.disabled=done;b.classList.toggle('chosen',side==='source'&&wireSource===i);b.classList.toggle('connected',done);b.setAttribute('aria-label',(side==='source'?'Kontakt ':'Ležište ')+b.textContent+(done?', povezan':''));b.onclick=()=>chooseWire(side,i);wrap.appendChild(b);}}
+ const canvas=$('cineWireCanvas'),c=canvas.getContext('2d'),W=canvas.width,H=canvas.height;c.clearRect(0,0,W,H);c.strokeStyle='#b5c5b51a';c.lineWidth=1;for(let i=0;i<16;i++){c.beginPath();c.moveTo(i*W/16,0);c.lineTo(i*W/16,H);c.stroke();}for(const [src,dst]of Object.entries(w.links)){const s=+src,y1=38+s*76,y2=38+dst*76;c.strokeStyle=cols[s];c.shadowBlur=8;c.shadowColor=cols[s];c.lineWidth=5;c.beginPath();c.moveTo(115,y1);c.bezierCurveTo(240,y1,320,y2,445,y2);c.stroke();}c.shadowBlur=0;
+}
+function openTuner(){if(part2){part2.openTuner();return;}if(!cine?.stationArmed)return;cine.tuning=true;clearInput();if(document.pointerLockElement===scene)document.exitPointerLock();$('cineTune').hidden=false;$('cineTuneTarget').textContent='INSTRUMENT TRAŽI '+['91,3','93,7','96,4'][cine.requiredTune]+' MHz';$('cineTune').querySelector('button')?.focus({preventScroll:true});}
+function closeTuner(){if(part2)part2.closeTuner();if(cine)cine.tuning=false;$('cineTune').hidden=true;clearInput();scene.focus({preventScroll:true});}
+function tuneReceiver(n){if(part2)return;if(!cine?.tuning)return;cine.tune=n;cine.scanner=true;if(n===cine.requiredTune){sound('clue');cine.signal=Math.max(cine.signal,.6);tip('FREKVENCIJA USKLAĐENA · Lazar zadržava očitavanje dok menjaš lik.',4);closeTuner();}else{sound('interference');cine.signal=Math.max(0,cine.signal-.18);$('cineTuneTarget').textContent='POGREŠAN KANAL · TRAŽI '+['91,3','93,7','96,4'][cine.requiredTune]+' MHz';}}
+function cinemaKey(e,k){if(part2&&part2.tunerKey(e,k))return true;const modal=journalOpen?$('cineJournal'):cine?.wire?.open?$('cineWire'):null;
+ if(modal){if(k==='escape'){e.preventDefault();e.stopImmediatePropagation();journalOpen?closeJournal():closeWire();return true;}if(['pagedown','pageup','home','end'].includes(k)){e.stopImmediatePropagation();return true;}if(k==='tab'){const fs=[...modal.querySelectorAll('button:not(:disabled),[tabindex="0"]')].filter(x=>x.getClientRects().length);if(!fs.length)return true;const first=fs[0],lastEl=fs[fs.length-1];if(e.shiftKey&&(document.activeElement===first||!modal.contains(document.activeElement))){e.preventDefault();lastEl.focus();}else if(!e.shiftKey&&(document.activeElement===lastEl||!modal.contains(document.activeElement))){e.preventDefault();first.focus();}e.stopImmediatePropagation();return true;}if(['enter',' '].includes(k)&&e.target.closest?.('button')){e.stopImmediatePropagation();return true;}e.preventDefault();e.stopImmediatePropagation();return true;}
+ if(cine?.tuning){if(k==='escape'){e.preventDefault();e.stopImmediatePropagation();closeTuner();return true;}if(['1','2','3'].includes(k)){e.preventDefault();e.stopImmediatePropagation();tuneReceiver(+k-1);return true;}}
+ if(cine?.choice&&['1','2'].includes(k)){e.preventDefault();e.stopImmediatePropagation();chooseDecision(+k-1);return true;}return false;
+}
+function updateCineUI(){if(!live)return;const type=task()?.type,cond=type==='resonance'?stationConditions():null,bar=$('cineMissionStatus'),label=$('cineStatusLabel'),detail=$('cineStatusDetail'),fill=$('cineStatusFill');gm.classList.toggle('cine-story',story.on);gm.classList.toggle('cine-wire-open',!!cine?.wire?.open);gm.classList.toggle('cine-journal-open',journalOpen);gm.classList.toggle('cine-decision-open',!!cine?.choice);
+ let f=0,txt='',sub='';if(story.on&&cine){if(type==='scan'){f=cine.scan/cine.scanGoal;txt='SKENER '+Math.floor(cine.scan)+' / '+cine.scanGoal+' s';const threat=dogs.some(d=>d.mission&&d.fear<=0&&distance(d,actors[1])<5);sub=!cine.scanArmed?'2 · Lazar + E pokreće rad':threat?'ČOPOR PREKIDA SIGNAL · Andrej: G / Space':'Lazar očitava · Andrej drži prilaz';}else if(type==='escape'||(type==='stealth'||type==='wire')&&patrolExposure>.20){f=patrolExposure;txt=patrolExposure>.45?'PATROLA TE VIDI':'ZAKLON';sub=type==='escape'?'Prati baklju · E kod izlaza':'Z / Ctrl · čučanj     L · lampa';}else if(type==='morse'&&cine.morse>0){f=1-cine.morse/8;txt='MORZE · · · — — — · · ·';sub='Očitavanje '+Math.ceil(8-cine.morse)+' / 8 s';}else if(type==='wire'){f=cine.wire?Object.keys(cine.wire.links).length/3:0;txt='NAPON / '+(cine.wire?Math.ceil(cine.wire.remaining)+' s':'ORMARIĆ');sub=cine.wireExpired?'Napon je pao · E ponovi pokušaj':'Tri simbola · pogrešan spoj troši vreme';}else if(type==='gate'&&cine.gateMode){f=cine.gateProgress/7;txt=cine.gateMode==='quiet'?'TIHI MEHANIZAM':'BRZI PROLAZ';sub=cine.gateMode==='quiet'?'Lazar: E i ostani uz kapiju':'Andrej: G / Space kod kapije';}else if(type==='resonance'){f=cine.sync/(cine.flags.trustPera?48:58);txt='SINHRONIZACIJA '+Math.floor(f*100)+'%';sub=cond.map((ok,i)=>(ok?'● ':'○ ')+['Andrej','Lazar','Pera'][i]).join('   ');}else {txt=VUK.on?'PRVA MISIJA':'FAZA '+(story.step+1)+' / '+CHAPTERS[story.chapter].tasks.length;sub=VUK.on?'Lole Stojanovića':CREW_ROLES[active].gear;f=VUK.on?(VUK.branch?.6:.15):(story.step+.15)/CHAPTERS[story.chapter].tasks.length;}bar.hidden=false;label.textContent=txt;detail.textContent=sub;fill.style.width=clamp(f,0,1)*100+'%';}else bar.hidden=true;
+ for(const b of crewBar.querySelectorAll('[data-crew]')){const i=+b.dataset.crew,locked=story.on&&i===2&&!cine?.peraFound;b.disabled=!!transition||!!interior||locked;b.classList.toggle('missing',locked);b.classList.toggle('selected',i===active);const text=b.querySelector('[data-crew-state]');text.textContent=locked?'NESTAO':cond?(cond[i]?'TAČKA AKTIVNA':'POTREBNA AKCIJA'):i===active?'IGRAŠ TI':story.on?'PRATI / ČUVA':'EKIPA';}
+ $('cineAbility').textContent=CREW_ROLES[active].ability+(active===2?' · '+(cine?.flareStock??3)+'/3':'')+' · G';$('cineAbility').hidden=!!football||!!interior;$('cineRecorder').hidden=!!football;$('cineRecorder').textContent=cine?.recording?'● SNIMA · B':'SNIMAČ · B';$('cineRecorder').classList.toggle('recording',!!cine?.recording);$('cineRecorder').setAttribute('aria-pressed',String(!!cine?.recording));$('cineJournalButton').hidden=!!football;
+ const opening=$('cineOpening'),show=!!cine&&time<cine.barsUntil&&!journalOpen&&!paused;opening.classList.toggle('show',show);opening.querySelector('b').textContent=story.on?(VUK.on?'PRVA MISIJA · VUK I LEON':CHAPTERS[story.chapter]?.name||''):story.completed?'ZAPIS JE SAČUVAN':'';
+ if(cine?.wire){$('cineWireTime').textContent=Math.ceil(cine.wire.remaining)+' s';$('cineWireTime').classList.toggle('urgent',cine.wire.remaining<12);$('cineWireHint').textContent=cine.flags.fullVoice?'TRAG IZ PORUKE: △ → K3 · ○ → K1 · □ → K2':'Prati simbol na svakom kontaktu i ležištu.';}
+ if(cine?.tuning&&!part2)$('cineTuneTarget').textContent='INSTRUMENT TRAŽI '+['91,3','93,7','96,4'][cine.requiredTune]+' MHz';
+ if(time-lastPortrait>.14||journalOpen){lastPortrait=time;for(const cv of crewBar.querySelectorAll('[data-portrait]'))paintCrewPortrait(cv,+cv.dataset.portrait);if(journalOpen)for(const cv of cinemaUI.querySelectorAll('[data-large-portrait]'))paintCrewPortrait(cv,+cv.dataset.largePortrait,true);}
+ if($('cineSoundMenu'))$('cineSoundMenu').textContent=stateStore.get('kb5_mute')===1?'ZVUK: ISKLJUČEN':'ZVUK: UKLJUČEN';updateEventUI();scene.dataset.mission=story.on?String(story.chapter+1):'';scene.dataset.phase=type||'';scene.dataset.character=actors[active].n;scene.dataset.scan=String(Math.floor(cine?.scan||0));scene.dataset.sync=String(Math.floor(cine?.sync||0));scene.dataset.flareStock=String(cine?.flareStock??3);scene.dataset.dossiers=String(dossiers.length);scene.dataset.event=worldEvent?.type||'';
+}
+
+function loadOSM(){const data={type:'FeatureCollection',name:'Kalač Brdo · izvori mape',licence:'ODbL 1.0',attribution:GEO.meta.attribution,properties:GEO.meta,features:[...GEO.geojson.features,...GEO.land,...GEO.power]},blob=new Blob([JSON.stringify(data)],{type:'application/geo+json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Kalac_Brdo_mapa.geojson';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);tip('GeoJSON sadrži geometriju i podatke o izvorima.',4);}
+function loadElevation(){return Promise.resolve();}
+
+// Menus, chat focus, pointer loss and tab changes all release held controls.
+function setBig(on){if(football&&on){tip('Mapa je dostupna posle izlaska iz fudbala.',2);return}mapOpen=!!on;gm.classList.toggle('beta-map-open',mapOpen);mm.classList.toggle('big',mapOpen);window.MMBIG=mapOpen?1:0;clearInput();if(mapOpen){mapZoom=1;mapPanX=mapPanY=0;if(document.pointerLockElement===scene)document.exitPointerLock()}const bar=$('mmx');if(bar)bar.hidden=!mapOpen;drawMap()}
+const mapBar=document.createElement('div');mapBar.id='mmx';mapBar.hidden=true;mapBar.innerHTML='<label class="map-place-picker">LOKACIJA<select id="kbMapPlace" aria-label="Prikaži lokaciju na karti"><option value="">Izaberi mesto…</option><option value="park">Parkić u Njegoševoj</option><option value="tami">TAMI Residence</option><option value="mama">MAMABABA Bar &amp; Lounge</option><option value="origin">Polazna koordinata</option><option value="field">Fudbalski teren</option><option value="station">Meteo stanica · priča</option></select></label><button type="button" data-a="out" aria-label="Umanji mapu">−</button><button type="button" data-a="in" aria-label="Uvećaj mapu">＋</button><button type="button" data-a="me">MOJA POZICIJA</button><button type="button" data-a="x">NASTAVI ×</button>';gm.appendChild(mapBar);
+$('kbMapPlace').onchange=e=>{const key=e.target.value;if(!key)return;const l=({park:LANDMARKS[0],tami:LANDMARKS[1],mama:LANDMARKS[2],origin:LANDMARKS[3],field:{n:'Fudbalski teren',x:FIELD.x,z:FIELD.z},station:LOC[8]})[key];if(!l)return;mapFocus=l.n;mapZoom=key==='park'?9:5;const s=Math.min(mm.width,mm.height)/(2*HALF)*mapZoom;mapPanX=-l.x*s;mapPanY=-l.z*s;if(!story.on)routeTo(l,true);drawMap();};
+$('betaPark').onclick=()=>{freeRoam(false);Object.assign(actors[0],PARK_POS);active=0;for(let i=1;i<3;i++)Object.assign(actors[i],clearSpot({x:PARK_POS.x+i*2,z:PARK_POS.z+2}));yaw=-Math.PI/2;pitch=-.08;setPaused(false);snapCamera();updateHUD();tip('PARKIĆ U NJEGOŠEVOJ · M karta · J događaji u kraju',5);};
+$('betaAtlas').onclick=()=>{setPaused(false);setBig(true);};
+const inMap=e=>{const r=mm.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*mm.width,z:(e.clientY-r.top)/r.height*mm.height}};
+function zoom(f,x,z){if(!mapOpen)return;const old=mapZoom;mapZoom=clamp(mapZoom*f,.75,10);const fac=mapZoom/old;mapPanX=x-(x-mm.width/2-mapPanX)*fac-mm.width/2;mapPanY=z-(z-mm.height/2-mapPanY)*fac-mm.height/2;drawMap()}
+const mapIntercept=e=>{if(!live)return;e.stopImmediatePropagation();e.stopPropagation()};
+let lastMapDrag=0;
+mm.addEventListener('click',e=>{if(!live)return;mapIntercept(e);if(!mapOpen){setBig(true);return}if(performance.now()-lastMapDrag<180)return;const a=inMap(e),p={x:clamp((a.x-mapping.cx)/mapping.scale,-HALF+5,HALF-5),z:clamp((a.z-mapping.cy)/mapping.scale,-HALF+5,HALF-5)};if(story.on){tip('Zlatni cilj prati zadatak priče. Slobodnu oznaku postavi u slobodnoj igri.',3);return}routeTo(p);drawMap()},true);
+mm.addEventListener('pointerdown',e=>{if(!live)return;mapIntercept(e);if(!mapOpen)return;const a=inMap(e);drag={id:e.pointerId,x:a.x,z:a.z,lastX:a.x,lastZ:a.z,moved:0};try{mm.setPointerCapture(e.pointerId)}catch(_){}},true);
+mm.addEventListener('pointermove',e=>{if(!live||!drag||!mapOpen||drag.id!==e.pointerId)return;mapIntercept(e);const a=inMap(e),dx=a.x-drag.lastX,dz=a.z-drag.lastZ;mapPanX+=dx;mapPanY+=dz;drag.lastX=a.x;drag.lastZ=a.z;drag.moved+=Math.abs(dx)+Math.abs(dz);if(drag.moved>12)lastMapDrag=performance.now();drawMap()},true);
+for(const kind of ['pointerup','pointercancel','lostpointercapture'])mm.addEventListener(kind,e=>{if(!live)return;mapIntercept(e);if(drag?.id===e.pointerId)drag=null},true);
+mm.addEventListener('wheel',e=>{if(!live)return;e.preventDefault();mapIntercept(e);const p=inMap(e);zoom(e.deltaY<0?1.2:1/1.2,p.x,p.z)},{capture:true,passive:false});
+mapBar.addEventListener('click',e=>{if(!live)return;mapIntercept(e);const a=e.target.closest('button')?.dataset.a;if(a==='x')setBig(false);else if(a==='me'){const p=actors[active];mapZoom=4;const s=Math.min(mm.width,mm.height)/(2*HALF);mapPanX=-p.x*s*mapZoom;mapPanY=-p.z*s*mapZoom;drawMap()}else zoom(a==='in'?1.5:1/1.5,mm.width/2,mm.height/2)});
+const oldMenu=window.kbMenu;
+window.kbMenu={...oldMenu,play:()=>start('free')};
+$('kb-hero-play').onclick=()=>start('free');$('play').onclick=()=>start('free');$('gx').onclick=stop;
+// Bind the one Beta entry; story actions enter the same renderer.
+document.addEventListener('click',e=>{const b=e.target.closest('[data-kb-story-launch]');if(b){e.preventDefault();e.stopImmediatePropagation();start('story')}},true);
+$('betaMenuBtn').onclick=()=>setPaused(!paused);$('betaResume').onclick=()=>setPaused(false);$('betaQuit').onclick=stop;
+$('betaFree').onclick=()=>{saveGame();freeRoam(true)};$('betaNewStory').onclick=()=>startStory(false);$('betaContinueStory').onclick=()=>startStory(true);
+$('betaGoFootball').onclick=()=>{if(story.on)saveGame();freeRoam(false);const a=actors[0];a.x=FIELD.x;a.z=FIELD.z-18.5;yaw=0;pitch=-.08;snapCamera();tip('Ulaz terena · E započinje meč · slobodna igra',4);saveGame()};
+$('betaSave').onclick=()=>tip(saveGame()?'Pozicija sačuvana na ovom uređaju.':'Vrati se iz meča ili kuće da sačuvaš poziciju.',3);
+$('betaVoice').onclick=()=>{voice=!voice;stateStore.put('kb_beta_voice',voice);if(!voice)try{speechSynthesis.cancel()}catch(_){}updateHUD()};
+$('betaOSM').onclick=()=>{if(story.on||football)return;tip('Učitavanje javne mape · ugrađeni svet ostaje dostupan.',5);loadOSM().catch(e=>tip('OSM nije dostupan · ugrađena mapa radi.'));loadElevation().catch(()=>{})};
+$('bq').onclick=()=>{quality=(quality+1)%5;stateStore.put('kb_beta_quality',quality);if(gl)renderWorld();updateHUD()};
+$('bs').onclick=()=>{season=(season+1)%4;stateStore.put('kb_beta_season',season);if(gl)renderWorld();updateHUD()};
+$('betaDay').onclick=()=>{dayMode=(dayMode+1)%4;updateHUD()};$('betaWeather').onclick=()=>{weather=(weather+1)%3;updateHUD()};
+$('betaAction').onclick=interact;$('betaLamp').onclick=()=>{torch=!torch;tip(torch?'Lampa izvađena · L je spremi':'Lampa spremljena · L je izvadi',1.6);updateHUD()};$('betaVehicle').onclick=changeVehicle;$('betaCamera').onclick=changeCamera;
+$('betaAim').onclick=()=>{aim=!aim;updateHUD()};$('betaFire').onclick=shootLight;$('bB').onpointerdown=e=>{e.preventDefault();passBall()};$('bB').onclick=null;$('bC').onpointerdown=e=>{e.preventDefault();switchFootballer()};$('bC').onclick=null;$('repel').onclick=repel;$('exitFootball').onclick=exitFootball;
+$('bM').onpointerdown=e=>{e.preventDefault();ride.mode=(ride.mode+1)%3;updateHUD()};$('bM').onclick=null;
+function holdButton(button,down,up){let held=null;button.onpointerdown=e=>{e.preventDefault();e.stopPropagation();if(held!==null)return;held=e.pointerId;try{button.setPointerCapture(e.pointerId)}catch(_){}down()};const release=e=>{if(held===null||e&&e.pointerId!==held)return;held=null;up()};button.onpointerup=release;button.onpointercancel=e=>{if(held===e.pointerId){held=null;clearInput()}};button.onlostpointercapture=e=>{if(held===e.pointerId){held=null;clearInput()}};button.onpointerleave=null;window.addEventListener('blur',()=>{held=null});}
+holdButton($('bA'),()=>{if(football){charging=true;shotCharge=0}else runPress=true},()=>{if(football&&charging)releaseShot();runPress=false});
+holdButton($('bW'),()=>ride.hold=true,()=>ride.hold=false);
+for(const b of hud.querySelectorAll('[data-crew]'))b.onclick=()=>switchActor(+b.dataset.crew);
+const joyEl=$('betaJoy');let joyPointer=null;
+function joyUpdate(e){const r=joyEl.getBoundingClientRect();let x=(e.clientX-r.left-r.width/2)/(r.width*.36),z=(e.clientY-r.top-r.height/2)/(r.height*.36),L=Math.max(1,hyp(x,z));x/=L;z/=L;joy.x=Math.abs(x)<.08?0:x;joy.z=Math.abs(z)<.08?0:z;joyEl.style.setProperty('--jx',x*34+'px');joyEl.style.setProperty('--jz',z*34+'px')}
+joyEl.addEventListener('pointerdown',e=>{if(paused||mapOpen||joyPointer!==null)return;e.preventDefault();joyPointer=e.pointerId;try{joyEl.setPointerCapture(e.pointerId)}catch(_){}joyUpdate(e)});
+joyEl.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)joyUpdate(e)});
+for(const k of ['pointerup','pointercancel','lostpointercapture'])joyEl.addEventListener(k,e=>{if(joyPointer!==e.pointerId)return;joyPointer=null;joy.x=joy.z=0;joyEl.style.setProperty('--jx','0px');joyEl.style.setProperty('--jz','0px')});
+const kbi={own:false};window.KBInput=Object.freeze({own(v){kbi.own=!!v;if(!v){joy.run=false}},move(x,z,run){if(paused||mapOpen){joy.x=joy.z=0;joy.run=false;return}joy.x=x;joy.z=z;joy.run=!!run},look(dx,dy){if(paused||mapOpen)return;yaw+=dx;pitch=clamp(pitch-dy,-1.2,1.2)}});
+function typing(t){return !!t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))}
+const handledKeys=new Set(['h','w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift',' ','e','f','r','v','c','t','x','m','n','p','escape','q','l','1','2','3','tab','y','enter','g','b','j','z']);
+window.addEventListener('keydown',e=>{if(live&&directorShot){const k=e.key.toLowerCase();if(['escape',' ','enter','e'].includes(k)&&!e.repeat)endShot();e.preventDefault();e.stopImmediatePropagation();return;}if(live&&(kb12Story.active||kb12Story.callOpen||(kb12Story.posterPanel&&!kb12Story.posterPanel.hidden))){
+   const k=e.key.toLowerCase();if(!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();e.stopImmediatePropagation();kb12Story.key(k)}return;
+  }if(live&&kb11Cutscene.active){
+ const k=e.key.toLowerCase();
+ if(k==='escape'||k==='enter'||k===' '||k==='p'||k==='backspace'){e.preventDefault();e.stopImmediatePropagation();kb11Cutscene.finish(false,true);}
+ return;
+ }if(live&&!paused&&!mapOpen&&!football&&!worldMini&&!journalOpen&&!cine?.choice&&!cine?.wire?.open&&!cine?.tuning&&!window.KBPhone3D?.isOpen()&&!typing(e.target)&&!e.metaKey&&!e.altKey){
+ const key=e.key.toLowerCase();
+ if(key==='control'){if(!motion.ctrl){if(!motion.cHeld)motion.previous=!!cine?.crouch;motion.ctrl=true;if(!cine)cine=newCine();cine.crouch=true;}e.preventDefault();e.stopImmediatePropagation();return;}
+ if(key==='c'&&!e.ctrlKey){if(!e.repeat&&!motion.cAt){motion.cAt=performance.now()||1;
+   motion.cTimer=setTimeout(()=>{if(!motion.cAt||!live||paused)return;if(!motion.ctrl)motion.previous=!!cine?.crouch;
+     motion.cHeld=true;if(!cine)cine=newCine();cine.crouch=true;},225);}
+   e.preventDefault();e.stopImmediatePropagation();return;}
+ }if(live&&quickKey(e,e.key.toLowerCase()))return;if(live&&part2&&part2.tunerKey(e,e.key.toLowerCase()))return;if(!live||typing(e.target)||(e.ctrlKey&&!(motion.ctrl&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','e','l','q','shift',' '].includes(e.key.toLowerCase())))||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();if(cinemaKey(e,k))return;if(!handledKeys.has(k))return;if((paused||mapOpen||e.target.closest?.('button,a,[role=dialog]'))&&['tab','enter',' '].includes(k))return;e.preventDefault();e.stopImmediatePropagation();if(k==='escape'){if(window.KBPhone3D?.isOpen()){window.KBPhone3D.close();return}if(mapOpen)setBig(false);else setPaused(!paused);return}if(k==='p'){setPaused(!paused);return}if(paused)return;
+ if(k==='m'||k==='n'){if(!e.repeat)setBig(!mapOpen);return}if(mapOpen)return;
+ if(k==='y'){if(!e.repeat){clearInput();if(window.KBMP?.on){document.exitPointerLock?.();window.KBMP.chat?.open()}else tip('Čet je dostupan kada se povežeš u multiplayer sobu.',3)}return}
+ keys.add(k);if(e.repeat)return;
+ if(k==='g')crewAbility();else if(k==='b')toggleRecorder();else if(k==='j')openJournal();else if(k==='z'){if(!cine)cine=newCine();cine.crouch=!cine.crouch;tip(cine.crouch?'KREĆEŠ SE TIHO · Z uspravi se':'Uspravljen hod',2);}else if(k==='e'||k==='f'||k==='enter')interact();else if(k==='r')repel();else if(k==='v')changeVehicle();else if(k==='c'||k==='tab'){if(football)switchFootballer();else changeCamera()}else if(k==='t'){ride.mode=(ride.mode+1)%3;updateHUD()}else if(k==='l'){torch=!torch;tip(torch?'Lampa izvađena · L je spremi':'Lampa spremljena · L je izvadi',1.6);updateHUD()}else if(k==='h'){window.KBPhone3D?.toggle()}else if(k==='q'){aimHeld=true;updateHUD()}else if(['1','2','3'].includes(k))switchActor(+k-1);else if(k===' '){spaceHeld=true;if(football){charging=true;shotCharge=0}else if(active===0&&(dogs.some(d=>distance(d,actors[0])<4)||task()?.type==='gate')&&kickObject()){}else if(!ride.kind&&actors[active].jump===0)actors[active].vy=5.2;}
+},true);
+window.addEventListener('keyup',e=>{if(!live)return;const k=e.key.toLowerCase();if(k==='control'&&motion.ctrl){motion.ctrl=false;if(!motion.cHeld&&cine)cine.crouch=motion.previous;}
+ if(k==='c'&&motion.cAt){clearTimeout(motion.cTimer);if(motion.cHeld){if(!motion.ctrl&&cine)cine.crouch=motion.previous;}else if(!paused&&!mapOpen&&!football)changeCamera();motion.cHeld=false;motion.cAt=0;e.preventDefault();e.stopImmediatePropagation();return;}
+ keys.delete(k);if(k==='q')aimHeld=false;if(k===' '){spaceHeld=false;if(charging&&football)releaseShot();charging=false}if(handledKeys.has(k)&&!typing(e.target)&&!paused&&!mapOpen&&!worldMini&&!cine?.tuning&&!cine?.wire?.open&&!journalOpen&&!e.target.closest?.('button,a,[role=dialog]')){e.preventDefault();e.stopImmediatePropagation()}},true);
+window.addEventListener('blur',()=>{clearInput();joyPointer=null});
+document.addEventListener('focusin',e=>{if(live&&typing(e.target)){clearInput();if(document.pointerLockElement===scene)document.exitPointerLock()}});
+document.addEventListener('visibilitychange',()=>{if(part2)part2.audio.update();if(document.hidden&&live){clearInput();saveGame()}last=performance.now();accumulator=0});
+window.addEventListener('beforeunload',saveGame);
+scene.addEventListener('contextmenu',e=>e.preventDefault());
+scene.addEventListener('pointerdown',e=>{if(!live||paused||mapOpen)return;initAudio();if(view===2){const q=planWorld(e.clientX,e.clientY);if(q)yaw=Math.atan2(q.x-actors[active].x,q.z-actors[active].z);if(e.pointerType==='mouse'&&e.button===0)shootLight();return;}if(e.pointerType==='mouse'){if(e.button===2){aimHeld=true;updateHUD();return}if(e.button===0&&document.pointerLockElement===scene){if(!football)shootLight();return}}if(kbi.own&&e.pointerType!=='mouse')return;if(e.pointerType!=='mouse'&&e.clientX<innerWidth*.34)return;lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY};try{scene.setPointerCapture(e.pointerId)}catch(_){} });
+scene.addEventListener('pointermove',e=>{if(live&&!paused&&!mapOpen&&view===2){const q=planWorld(e.clientX,e.clientY);if(q)yaw=Math.atan2(q.x-actors[active].x,q.z-actors[active].z);return;}if(!live||paused||mapOpen||!lookTouch||lookTouch.id!==e.pointerId||document.pointerLockElement===scene)return;yaw+=(e.clientX-lookTouch.x)*(e.pointerType==='mouse'?.004:.005);pitch=clamp(pitch-(e.clientY-lookTouch.y)*.004,-1.2,1.2);lookTouch.x=e.clientX;lookTouch.y=e.clientY;});
+for(const k of ['pointerup','pointercancel','lostpointercapture'])scene.addEventListener(k,e=>{if(lookTouch?.id===e.pointerId)lookTouch=null;if(e.button===2)aimHeld=false});
+scene.addEventListener('click',()=>{if(!live||paused||mapOpen||coarse||view===2)return;try{const promise=scene.requestPointerLock?.();promise?.catch(()=>tip('Prevuci scenu mišem za pogled. Kontrole i dalje rade.',3))}catch(_){tip('Prevuci scenu mišem za pogled.',3)}});
+document.addEventListener('mousemove',e=>{if(live&&!paused&&!mapOpen&&document.pointerLockElement===scene){yaw+=e.movementX*.0024;pitch=clamp(pitch-e.movementY*.0022,-1.2,1.2)}});
+document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==scene){keys.clear();runPress=false;aimHeld=false;ride.hold=false;charging=false}});
+document.addEventListener('pointerlockerror',()=>{if(live)tip('Prevlačenje po sceni takođe pomera kameru.',3)});
+scene.addEventListener('webglcontextlost',e=>{e.preventDefault();if(live){saveGame();cancelAnimationFrame(raf);paused=true;$('betaPause').hidden=false;tip('Grafički prikaz je privremeno prekinut. Sačekaj oporavak.',7)}});
+scene.addEventListener('webglcontextrestored',()=>{gl=null;r6.texture=null;r6.lightAt=-1;program=null;buffer=dynamic=innerBuffer=null;skyProgram=null;if(live){initGL();initSky();renderWorld();if(interior)uploadInterior();paused=false;$('betaPause').hidden=true;last=performance.now();raf=requestAnimationFrame(frame)}});
+// Backwards-compatible names now point to this one engine, not a second game.
+r6.scale=clamp(+stateStore.get('kb_beta_res',1)||1,.5,1);
+window.KBBeta3D={start,stop,save:saveGame,installPart2,setQuality:r2SetQuality,setRes:r2SetRes,get res(){return r6.scale},loadSaved:r2LoadSaved,get r2(){return r2on()?r2:null},get fpsInfo(){return {fps,ms:fps?1000/fps:0,scale:r6.scale}},get part2(){return part2?.publicAPI||null},get live(){return live},get status(){const p=actors[active];return {mode:football?'football':story.on?'story':'free',chapter:story.on?story.chapter+1:null,step:story.step+1,character:p.n,x:p.x,z:p.z,vehicle:['foot','bicycle','electric'][ride.kind],battery:ride.battery,quality:qualityNames[quality],season:seasonNames[season],fps,paused,score:football?.score.slice()||null,renderer:software?'Canvas 2D · prostorni prikaz':r2on()?'WebGL2 · KBR2 '+r2.version:'WebGL',version:'8.1-filmske-misije'}},get locations(){return [...LOC,{n:'Fudbalski teren · Grobarsko',x:FIELD.x,z:FIELD.z}].map(({n,x,z})=>({name:n,x,z}))}};
+window.KBGeo3D=window.KBBeta3D;
+window.KBStory={start:()=>start('story'),choose:switchActor,shoot:shootLight,get status(){return {active:live&&story.on,chapter:story.chapter+1,character:actors[active].n}}};
+// Expose the existing room lobby without starting a network connection automatically.
+const mpButton=document.createElement('button');mpButton.type='button';mpButton.textContent='MULTIPLAYER · SOBA';mpButton.onclick=()=>{stop();const X=$('kbx');X.className='menu';document.documentElement.classList.add('lock');X.querySelector('[data-p="multi"]')?.click()};settings.appendChild(mpButton);
+function flushPendingLaunch(){for(const b of document.querySelectorAll('[data-kb-launch-label]')){b.innerHTML=b.dataset.kbLaunchLabel;delete b.dataset.kbLaunchLabel;}if(!window.__kbBetaPending)return;const kind=window.__kbBetaPending;delete window.__kbBetaPending;start(kind);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',flushPendingLaunch,{once:true});else flushPendingLaunch();
+})();
+</script>
+<script id="kb-phone3d">/* KALAČ BRDO · Telefon u 3D · taster H / dugme TELEFON.
+   Nema sopstvene petlje: model telefona u ruci crta se kroz paintDynamic (hook KBPhone3D.paint),
+   muzika ide preko HTMLAudio sa pesmama iz 2D igre (window.KBSongs), a aplikacije su običan DOM. */
+(() => {
+  'use strict';
+  const gm = document.getElementById('gm');
+  if (!gm) return;
+  const H = () => (window.KBMissionDirector && window.KBMissionDirector.adapters && window.KBMissionDirector.adapters.host('3d')) || null;
+  const SG = () => window.KBSongs || null;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  const norm = q => String(q).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'dj').replace(/dj/g, 'd').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const fmt = t => { t = Math.max(0, t | 0); return (t / 60 | 0) + ':' + ('0' + t % 60).slice(-2); };
+  const st = {holder: 0, vol: loadVol(), owner: -1, photos: null, vf: null, vfn: 0, filt: 0, zoom: 1, snap: 0, open: false, rise: 0, peek: 0, app: '', song: -1, audio: null, threads: {misija: [], ekipa: null}, thread: '', unread: 0, buzz: 0, sent: new Set(), lastT: 0, poll: 0, timer: 0, hist: []};
+
+  /* ---------- poruke vezane za misije ---------- */
+  const STORY = {
+    '0:0': [['Lazar', 'Pera ćuti od 21:58. Poslao sam ti lokaciju parkića. Kreni, ja ću iza tebe.']],
+    '0:1': [['Lazar', 'Pera je poslednji put bio kod zapadne klupe. Gledaj tragove ispod lampe.']],
+    '0:2': [['Lazar', 'U travi na X stazama svetli neki ekran. Priđi, nemoj da trčiš.']],
+    '0:3': [['Lazar', 'Baterija i poklopac su u trnju. Čučni (Z), pretraži tiho. Psi su blizu.']],
+    '0:4': [['Lazar', 'Prebaci se na mene (2). Skener radi samo dok ja držim očitavanje.']],
+    '0:5': [['Lazar', 'Snimak je vraćen. Slušaj vreme poruke: pokazuje tri minuta unapred.']],
+    '0:6': [['Baba Rada', 'Sine, neko zviždi moju melodiju kod parka. Tri tona znam, četvrti fali.']],
+    '0:7': [['Lazar', 'Treća lampa od klupe, prema Durmitorskoj. Otvori kutiju u njenoj glavi.']],
+    '1:0': [['Lazar', 'Bandere šalju Morzeov kod. Uključi skener (G) i stani do 6 m od stuba.']],
+    '1:1': [['Lazar', 'Impuls kasni. Prati kabl do sledećeg stuba.']],
+    '1:2': [['Lazar', 'Signal ide do Ružičaste kuće. Još jedan čvor.']],
+    '1:3': [['Lazar', 'Ormarić ispod prozora. Spoji tri kontakta dok ima napona.']],
+    '1:4': [['Nepoznat broj', 'Andrej, čuješ li me? Iza kapije sam.'], ['Lazar', 'Ne veruj glasu. Može biti odjek.']],
+    '1:5': [['Lazar', 'Kapija je popustila. Pogledaj šta je ostalo iza nje.']],
+    '2:0': [['Lazar', 'Trag vodi do bele stanice. Idemo zajedno, niko ne ostaje sam.']],
+    '2:1': [['Pera', 'Ja sam kod svetla, Lazar skener, Andrej odvuci senku.']],
+    '2:2': [['Nepoznat broj', 'Andrej, nemoj gasiti.']],
+    'story.b1.glas:message': [['Vlada', 'Ako me čuješ dva puta, prvi glas nije moj.']],
+    'story.b1.glas:radio': [['Lazar', 'Tri pravca, jedan presek. Tako ćemo znati ko priča.']],
+    'story.b1.glas:false_echo': [['Lazar', 'Lažni odjek. Ugasi lampu (L) i miruj na dve tačke.']],
+    'story.b1.glas:rada': [['Baba Rada', 'Signal ume da laže, takt ne ume. Prati četiri tona.']],
+    'story.b1.glas:crossing': [['Pera', 'Ako moj glas kaže da potrčiš, prvo pogledaj svetlo.']],
+    'story.b1.glas:decision': [['Lazar', 'Odluči kome poveravaš snimak. Odluka ostaje u dnevniku.']],
+    'story.b1.glas:delivery': [['Vlada', 'Potvrdi frekvenciju preko radija. Sad vas čujem čisto.']],
+    'story.b2.negativ:message': [['Vlada', 'Na snimku je jutro, a kroz prozor stanice još je noć.']],
+    'story.b2.negativ:photo': [['Lazar', 'Kod stanice podigni tražilo. Sačuvaj tri anomalije.']],
+    'story.b2.negativ:negative': [['Lazar', 'Rezervni ormarić: uključi lampu i miruj tri sekunde.']],
+    'story.b2.negativ:circuit': [['Lazar', 'Tri voda u ormariću. Spoji ulaz i izlaz bez otvorenog kraja.']],
+    'story.b2.negativ:choice': [['Pera', 'Arhiva ili osvetljen izlaz? Odluka je tvoja.']],
+    'story.b2.negativ:storm': [['Lazar', 'Do uzemljenja. Drži pa otpusti E u zelenom prozoru, pre naleta.']],
+    'story.b2.negativ:finish': [['Vlada', 'Potvrdi zapis preko radija. Nema povratka do NPC-ja.']]
+  };
+
+  /* ---------- zvuk obaveštenja ---------- */
+  function ding() {
+    try {
+      const h = H(), ctx = h && h.audio;
+      if (!ctx || ctx.state === 'closed') return;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const t = ctx.currentTime;
+      [[880, 0], [1175, .14]].forEach(([f, d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(.0001, t + d); g.gain.exponentialRampToValueAtTime(.12, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .3);
+        o.connect(g); g.connect(ctx.destination); o.start(t + d); o.stop(t + d + .35);
+      });
+    } catch (_) {}
+  }
+
+  /* ---------- DOM ---------- */
+  const css = document.createElement('style');
+  css.id = 'kbPhone3DCss';
+  css.textContent = `
+#kbPhone3D{position:absolute;right:max(14px,3vw);bottom:0;z-index:62;--ph:min(88vh,560px);--ph:min(88dvh,560px);width:calc(var(--ph)*.56);height:var(--ph);font:500 max(9.5px,calc(var(--ph)/38))/1.3 Inter,system-ui,Arial,sans-serif;color:#f1f1f4;pointer-events:none;transform:translateY(112%) perspective(1100px) rotateX(12deg) rotateY(-6deg) rotateZ(3deg);transform-origin:50% 100%;transition:transform .42s cubic-bezier(.2,.9,.25,1.05),opacity .3s;opacity:0}
+#kbPhone3D.on{pointer-events:auto;opacity:1;transform:translateY(4%) perspective(1100px) rotateX(5deg) rotateY(-5deg) rotateZ(1.5deg)}
+#kbPhone3D .kp-frame{position:absolute;inset:0 0 8% 0;border-radius:2.6em;border:.62em solid #15161b;background:#0e0f13;box-shadow:0 1.2em 3em #000c,0 0 0 .12em #3a3b44,0 0 2.4em #4d8dff22;overflow:hidden;display:flex;flex-direction:column}
+#kbPhone3D .kp-notch{position:absolute;top:0;left:50%;width:34%;height:1.5em;transform:translateX(-50%);background:#15161b;border-radius:0 0 1.1em 1.1em;z-index:4}
+#kbPhone3D .kp-bar{display:flex;justify-content:space-between;padding:.6em 1.8em .15em;font-size:.82em;font-weight:700;z-index:5}
+#kbPhone3D .kp-screen{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(165deg,#1d3768,#4d2a68 55%,#a74b3a)}
+#kbPhone3D .kp-screen.app{background:#0f0f12}
+#kbPhone3D .kp-home{height:1.9em;flex:none;border:0;background:#0e0f13;position:relative;cursor:pointer}
+#kbPhone3D .kp-home:after{content:'';position:absolute;left:50%;top:50%;width:30%;height:.28em;transform:translate(-50%,-50%);border-radius:1em;background:#8a8b96}
+#kbPhone3D .kp-x{position:absolute;left:-.4em;top:.4em;width:2.4em;height:2.4em;border-radius:50%;border:0;background:#1b1c22;color:#fff;font-size:1em;z-index:8;box-shadow:0 .2em .8em #000a;cursor:pointer}
+#kbPhone3D .kp-hand{position:absolute;left:-10%;bottom:-3%;height:34%;z-index:6;pointer-events:none;width:120%}
+#kbPhone3D .kp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.3em .3em;padding:1.6em .7em 1em}
+#kbPhone3D .kp-ic{display:flex;flex-direction:column;align-items:center;gap:.4em;background:none;border:0;color:#fff;font-size:.82em;cursor:pointer;position:relative;padding:0}
+#kbPhone3D .kp-ic i{width:3.7em;height:3.7em;border-radius:1em;display:flex;align-items:center;justify-content:center;font-size:1.9em;font-style:normal;box-shadow:0 .25em .7em #0006}
+#kbPhone3D .kp-ic u{position:absolute;top:-.3em;right:.2em;min-width:1.5em;height:1.5em;border-radius:1em;background:#ff3b30;color:#fff;font-size:.9em;font-weight:800;text-decoration:none;display:flex;align-items:center;justify-content:center}
+#kbPhone3D .kp-mini{margin:auto .7em .8em;padding:.6em .8em;border-radius:1.1em;background:#0008;backdrop-filter:blur(6px);display:flex;align-items:center;gap:.6em;font-size:.88em}
+#kbPhone3D .kp-mini b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#kbPhone3D .kp-mini button{width:2.4em;height:2.4em;border-radius:50%;border:0;background:#fff;color:#000;cursor:pointer}
+#kbPhone3D .kp-app{position:absolute;inset:0;background:#0f0f12;display:flex;flex-direction:column;z-index:3}
+#kbPhone3D .kp-h{display:flex;align-items:center;gap:.6em;padding:.5em .8em;border-bottom:1px solid #26272e;flex:none}
+#kbPhone3D .kp-h b{flex:1;font-size:1.05em}
+#kbPhone3D .kp-bk{background:none;border:0;color:#fff;font-size:2em;line-height:1;cursor:pointer;padding:0 .2em}
+#kbPhone3D .kp-b{flex:1;overflow:auto;padding:.6em .7em;min-height:0;-webkit-overflow-scrolling:touch}
+#kbPhone3D input{width:100%;box-sizing:border-box;height:2.8em;border-radius:1.4em;border:1px solid #3a3b44;background:#1a1b21;color:#fff;padding:0 1.1em;font-size:1.08em;outline:0}
+#kbPhone3D input:focus{border-color:#4d8dff}
+#kbPhone3D .kp-c{display:flex;gap:.7em;align-items:center;padding:.55em;margin:.45em 0;border-radius:1em;background:#17181d;cursor:pointer}
+#kbPhone3D .kp-c:active{background:#23242b}
+#kbPhone3D .kp-th{width:5em;height:3.2em;border-radius:.7em;background:linear-gradient(135deg,#ff3d3d,#7a1fd0);display:flex;align-items:center;justify-content:center;flex:none;font-size:1.1em}
+#kbPhone3D .kp-c b{display:block;font-size:.95em;line-height:1.25}
+#kbPhone3D small,#kbPhone3D .kp-c small{color:#9a9ba5;font-size:.82em}
+#kbPhone3D .kp-pp{text-align:center}
+#kbPhone3D .kp-big{height:8em;border-radius:1em;margin-bottom:.7em;background:linear-gradient(135deg,#ff3d3d,#7a1fd0);display:flex;align-items:flex-end;justify-content:center;gap:.5em;padding-bottom:1.2em}
+#kbPhone3D .kp-big i{width:.7em;background:#fff;border-radius:.2em;height:20%;animation:kpEq .9s ease-in-out infinite alternate}
+#kbPhone3D .kp-big i:nth-child(2){animation-delay:.15s}#kbPhone3D .kp-big i:nth-child(3){animation-delay:.3s}#kbPhone3D .kp-big i:nth-child(4){animation-delay:.45s}#kbPhone3D .kp-big i:nth-child(5){animation-delay:.6s}
+#kbPhone3D .kp-big.off i{animation-play-state:paused}
+@keyframes kpEq{to{height:75%}}
+#kbPhone3D .kp-mini{flex-wrap:wrap;margin:auto .7em 5.4em}
+#kbPhone3D .kp-big{height:5.8em}
+#kbPhone3D .kp-vol{display:flex;align-items:center;gap:.5em;width:100%;margin:.5em 0 .1em}
+#kbPhone3D .kp-vol button{width:2.2em;height:2.2em;border-radius:50%;border:0;background:#2c2d36;color:#fff;cursor:pointer;flex:none;padding:0;font-size:1em}
+#kbPhone3D .kp-vol input{flex:1;width:auto;min-width:0;height:1.8em;padding:0;border:0;background:none;accent-color:#ff6b5f;border-radius:0}
+#kbPhone3D .kp-vol .vp{min-width:2.9em;text-align:right;font-size:.85em;color:#d6d7de}
+#kbPhone3D .kp-sp{display:block;width:100%;text-align:center;color:#9a9ba5;font-size:.78em;min-height:1.2em}
+#kbPhone3D{--ph:min(90vh,600px);--ph:min(90dvh,600px)}
+#kbPhone3D.on .kp-frame{box-shadow:0 1.4em 4em #000d,0 0 0 .12em #3a3b44,0 0 3em #7a8cff33;animation:kpPop .4s cubic-bezier(.2,.9,.3,1.2)}
+#kbPhone3D.on .kp-screen{animation:kpWake .5s ease-out}
+@keyframes kpPop{0%{transform:scale(.94)}100%{transform:scale(1)}}
+@keyframes kpWake{0%{filter:brightness(.15) saturate(.4)}100%{filter:none}}
+#kbPhoneDim{position:absolute;inset:0;z-index:61;pointer-events:none;opacity:0;transition:opacity .35s ease;background:radial-gradient(120% 95% at 82% 78%,rgba(6,10,20,.12),rgba(3,5,10,.66))}
+#kbPhoneDim.on{opacity:1}
+#gm #kbGeoHead,#gm #betaMenuBtn,#gm #kbGeoCross,#gm #kbGeoSource,#gm #kbGeoHelp,#gm .beta-status,#gm #betaToolbar,#gm .kb-story-crew,#gm #mm,#gm #gx,#gm #kxpm,#gm #gh{transition:opacity .3s ease,transform .3s ease}
+#gm.kb-phone-on #kbGeoHead,#gm.kb-phone-on #betaMenuBtn,#gm.kb-phone-on #kbGeoCross,#gm.kb-phone-on #kbGeoSource,#gm.kb-phone-on #kbGeoHelp,#gm.kb-phone-on .beta-status,#gm.kb-phone-on #betaToolbar,#gm.kb-phone-on .kb-story-crew,#gm.kb-phone-on #mm,#gm.kb-phone-on #gx,#gm.kb-phone-on #kxpm,#gm.kb-phone-on #gh{opacity:0!important;pointer-events:none!important}
+#kbPhone3D .kp-screen:not(.app){background:radial-gradient(110% 70% at 18% 8%,#5b7bff66,transparent 62%),radial-gradient(90% 60% at 92% 30%,#ff4fa35c,transparent 62%),radial-gradient(100% 70% at 40% 100%,#ffb34766,transparent 62%),linear-gradient(165deg,#0f1d46,#35205c 55%,#6d3547);background-size:150% 150%,150% 150%,150% 150%,100% 100%;animation:kpAurora 16s ease-in-out infinite alternate}
+@keyframes kpAurora{0%{background-position:0% 0%,100% 0%,50% 100%,0 0}100%{background-position:35% 45%,55% 30%,75% 55%,0 0}}
+#kbPhone3D .kp-wg{padding:1.05em 1em 0;text-align:center;flex:none}
+#kbPhone3D .kp-wt{display:block;font-size:2.8em;font-weight:200;letter-spacing:.02em;line-height:1;text-shadow:0 .05em .5em #0006}
+#kbPhone3D .kp-wd{display:block;font-size:.88em;margin-top:.25em;opacity:.9;text-transform:capitalize}
+#kbPhone3D .kp-grid{padding:.7em .6em .3em;gap:.55em .2em}
+#kbPhone3D .kp-ic{font-size:.7em}
+#kbPhone3D .kp-ic i{width:2.1em;height:2.1em;border-radius:.55em;font-size:1.9em}
+#kbPhone3D .kp-vz{display:block;width:100%;height:2.1em}
+#kbPhone3D .kp-mini{padding:.5em .7em;gap:.35em .6em}
+#kbPhone3D .kp-mini .kp-vz{height:1.4em}
+#kbPhone3D .kp-mini .kp-sp{display:none}
+#kbPhone3D .kp-mini .kp-vol{margin:.1em 0 0}
+#kbPhone3D .kp-big{padding:.4em .6em}
+#kbPhone3D .kp-big .kp-vz{height:100%}
+#kbPhone3D .kp-vfw{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+#kbPhone3D .kp-vf{position:absolute;inset:0;width:100%;height:100%;display:block}
+#kbPhone3D .kp-gd{position:absolute;inset:0;pointer-events:none;background:linear-gradient(#fff3,#fff3) 33.3% 0/1px 100% no-repeat,linear-gradient(#fff3,#fff3) 66.6% 0/1px 100% no-repeat,linear-gradient(#fff3,#fff3) 0 33.3%/100% 1px no-repeat,linear-gradient(#fff3,#fff3) 0 66.6%/100% 1px no-repeat}
+#kbPhone3D .kp-fl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#kbPhone3D .kp-fl.go{animation:kpFlash .4s ease-out}
+@keyframes kpFlash{0%{opacity:.95}100%{opacity:0}}
+#kbPhone3D .kp-zm{position:absolute;left:50%;bottom:.6em;transform:translateX(-50%);display:flex;gap:.3em;background:#0008;padding:.25em;border-radius:2em}
+#kbPhone3D .kp-zm button{border:0;border-radius:2em;min-width:2.5em;height:2.2em;background:none;color:#fff;font-size:.9em;cursor:pointer;padding:0 .4em}
+#kbPhone3D .kp-zm button.on{background:#ffd54a;color:#000;font-weight:700}
+#kbPhone3D .kp-cb{flex:none;display:flex;align-items:center;justify-content:space-around;padding:.6em .4em .8em;background:#000}
+#kbPhone3D .kp-sh{width:3.6em;height:3.6em;border-radius:50%;border:.22em solid #fff;background:#fff;box-shadow:inset 0 0 0 .2em #000;cursor:pointer;padding:0}
+#kbPhone3D .kp-sh:active{transform:scale(.92)}
+#kbPhone3D .kp-th3{width:2.8em;height:2.8em;border-radius:.6em;border:.12em solid #fff6;background:#222 center/cover;cursor:pointer;padding:0}
+#kbPhone3D .kp-ft{min-width:5.4em;height:2.5em;border-radius:1.3em;border:0;background:#2c2d36;color:#fff;font-size:.8em;cursor:pointer;padding:0 .8em}
+#kbPhone3D .kp-gg{display:grid;grid-template-columns:repeat(3,1fr);gap:.25em}
+#kbPhone3D .kp-gg button{aspect-ratio:3/4;border:0;padding:0;background:#222 center/cover;border-radius:.3em;cursor:pointer}
+#kbPhone3D .kp-gv img{width:100%;border-radius:.6em;display:block}
+#kbPhone3D .kp-gk{display:flex;gap:.5em;margin-top:.6em}
+#kbPhone3D .kp-gk button{flex:1;height:2.6em;border-radius:1.3em;border:0;background:#2c2d36;color:#fff;cursor:pointer}
+#kbPhone3D .kp-empty{text-align:center;color:#9a9ba5;margin-top:3em}
+#kbPhone3D .kp-bar2{height:.8em;border-radius:.4em;background:#2d2e36;margin:1em 0 .3em;position:relative;cursor:pointer;overflow:hidden}
+#kbPhone3D .kp-bar2 div{height:100%;width:0;background:#ff2d2d}
+#kbPhone3D .kp-bar2 span{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,#ffcf4a,#ff7a2e);opacity:.95;pointer-events:none}
+#kbPhone3D .kp-r{display:flex;justify-content:space-between;color:#9a9ba5;font-size:.85em}
+#kbPhone3D .kp-k{display:flex;gap:.5em;justify-content:center;margin-top:1em;flex-wrap:wrap}
+#kbPhone3D .kp-k button,#kbPhone3D .kp-btn{padding:.7em 1.1em;border-radius:99px;border:0;background:#2a2b33;color:#fff;font-size:1em;cursor:pointer}
+#kbPhone3D .kp-k .pl{background:#fff;color:#000;width:3.4em;padding:.7em 0}
+#kbPhone3D .kp-hk{color:#ffcf4a;font-size:.9em;min-height:1.4em;margin-top:.6em}
+#kbPhone3D .kp-msgs{display:flex;flex-direction:column;gap:.45em;flex:1;overflow:auto;padding:.7em;min-height:0}
+#kbPhone3D .kp-m{max-width:80%;padding:.55em .8em;border-radius:1.1em;background:#26272e;align-self:flex-start;font-size:.98em}
+#kbPhone3D .kp-m small{display:block;color:#8ab4ff;font-size:.78em;margin-bottom:.15em}
+#kbPhone3D .kp-m.me{align-self:flex-end;background:#2f7bff}
+#kbPhone3D .kp-send{display:flex;gap:.5em;padding:.6em;border-top:1px solid #26272e;flex:none}
+#kbPhone3D .kp-send button{width:3em;border:0;border-radius:99px;background:#2f7bff;color:#fff;cursor:pointer}
+#kbPhone3D .kp-th2{display:flex;align-items:center;gap:.7em;padding:.7em;margin:.4em 0;border-radius:1em;background:#17181d;cursor:pointer}
+#kbPhone3D .kp-th2 em{margin-left:auto;font-style:normal;background:#ff3b30;border-radius:1em;min-width:1.6em;text-align:center;font-weight:800;padding:.1em .4em}
+#kbPhone3D .kp-card{background:#17181d;border-radius:1em;padding:.8em;margin-bottom:.7em}
+#kbPhone3D .kp-card h4{margin:0 0 .3em;font-size:1.05em}
+#kbPhone3D .kp-card p{margin:.2em 0;font-size:.95em;color:#d8d8de}
+#kbPhone3D .kp-comp{display:flex;align-items:center;gap:.9em}
+#kbPhone3D .kp-arr{width:4em;height:4em;border-radius:50%;border:2px solid #d8be7f;display:flex;align-items:center;justify-content:center;font-size:2em;color:#d8be7f;flex:none;transition:transform .2s}
+#kbPhone3D .kp-po{margin-bottom:1em}
+#kbPhone3D .kp-im{height:10em;border-radius:.8em;display:flex;align-items:center;justify-content:center;font-size:3.4em;user-select:none}
+#kbPhone3D .kp-dp{font-size:2.6em;text-align:right;padding:.4em .2em;min-height:2em;overflow:hidden}
+#kbPhone3D .kp-kp{display:grid;grid-template-columns:repeat(4,1fr);gap:.5em}
+#kbPhone3D .kp-kp button{height:3em;border-radius:99px;border:0;background:#2a2b33;color:#fff;font-size:1.25em;cursor:pointer}
+#kbPhone3D .kp-kp .o{background:#ff9f0a}
+#betaPhone{position:relative}
+#betaPhone u{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:#ff3b30;color:#fff;font:800 11px/18px system-ui;text-align:center;text-decoration:none;padding:0 4px}
+@media (max-height:480px){#kbPhone3D{right:22px}#kbPhone3D.on{transform:translateY(3%) perspective(1100px) rotateX(3deg) rotateY(-2deg) rotateZ(1deg)}}
+`;
+  document.head.appendChild(css);
+
+  const root = document.createElement('div');
+  root.id = 'kbPhone3D';
+  root.setAttribute('role', 'dialog');
+  root.setAttribute('aria-label', 'Telefon');
+  root.setAttribute('aria-hidden', 'true');
+  root.innerHTML = '<div class="kp-frame"><i class="kp-notch"></i><div class="kp-bar"><b class="kp-time">--:--</b><span>5G ▂▄▆ 87%</span></div><div class="kp-screen"></div><button type="button" class="kp-home" aria-label="Početni ekran"></button></div>' +
+    '<button type="button" class="kp-x" aria-label="Spusti telefon · H">✕</button>' +
+    '<svg class="kp-hand" viewBox="0 0 260 150" preserveAspectRatio="xMidYMax meet" aria-hidden="true">' +
+    '<rect x="52" y="104" width="156" height="60" rx="14" fill="#2f4c3a"/><rect x="52" y="100" width="156" height="12" rx="6" fill="#3d6048"/>' +
+    '<path d="M62 106 Q58 70 84 58 L176 58 Q202 70 198 106 Z" fill="#b8805a"/>' +
+    '<ellipse cx="56" cy="60" rx="17" ry="38" transform="rotate(24 56 60)" fill="#cf9970"/><ellipse cx="53" cy="36" rx="9.5" ry="11" fill="#d6a27a"/>' +
+    '<rect x="196" y="22" width="30" height="16" rx="8" fill="#c8926a"/><rect x="198" y="42" width="30" height="16" rx="8" fill="#c8926a"/><rect x="196" y="62" width="28" height="15" rx="7.5" fill="#bf8962"/></svg>';
+  gm.appendChild(root);
+  const dim = document.createElement('div'); dim.id = 'kbPhoneDim'; gm.insertBefore(dim, root);
+  const screen = root.querySelector('.kp-screen'), timeEl = root.querySelector('.kp-time');
+  ['keydown', 'keyup', 'keypress'].forEach(t => root.addEventListener(t, e => {
+    if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) {
+      if (t === 'keydown' && e.key === 'Escape') { e.target.blur(); }
+      e.stopPropagation();
+    }
+  }));
+
+  /* ---------- aplikacije ---------- */
+  const ICONS = [
+    ['tube', 'PeraTube', '▶', '#ff2d2d'], ['msg', 'Poruke', '💬', 'linear-gradient(#5bde6b,#1fa83a)'],
+    ['task', 'Zadaci', '📋', 'linear-gradient(#e4b34a,#b9782a)'], ['gps', 'GPS', '📍', 'linear-gradient(#4aa3e4,#2a62b9)'],
+    ['lamp', 'Lampa', '🔦', '#2c2c34'], ['insta', 'Instagram', '📷', 'linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7)'],
+    ['calc', 'Kalkulator', '🧮', '#ff9f0a'], ['clock', 'Sat', '⏰', '#2c2c34'],
+    ['cam', 'Kamera', '📸', 'linear-gradient(#4a4c58,#17181d)'], ['gal', 'Galerija', '🖼️', 'linear-gradient(#9b7bff,#4b3acb)']
+  ];
+  const isPlaying = () => !!(st.audio && !st.audio.paused && !st.audio.ended);
+  function home() {
+    clearInterval(st.timer); st.vf = null; st.app = '';
+    screen.className = 'kp-screen';
+    screen.innerHTML = '<div class="kp-wg"><b class="kp-wt">--:--</b><span class="kp-wd"></span></div><div class="kp-grid"></div>';
+    wgTick(); st.timer = setInterval(wgTick, 1000);
+    const g = screen.querySelector('.kp-grid');
+    ICONS.forEach(([id, name, ic, bg]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'kp-ic'; b.dataset.app = id;
+      b.innerHTML = '<i style="background:' + bg + '">' + ic + '</i>' + name + (id === 'msg' && st.unread ? '<u>' + st.unread + '</u>' : '');
+      b.onclick = () => openApp(id); g.appendChild(b);
+    });
+    if (st.song >= 0 && st.audio) {
+      const m = document.createElement('div'); m.className = 'kp-mini';
+      m.innerHTML = '<span>♪</span><b>' + esc(SG().title(st.song)) + '</b><button type="button" data-a="pp">' + (isPlaying() ? '⏸' : '▶') + '</button><button type="button" data-a="st">⏹</button><canvas class="kp-vz mini"></canvas>' + volHtml();
+      m.querySelector('[data-a=pp]').onclick = () => { togglePlay(); home(); };
+      m.querySelector('[data-a=st]').onclick = () => { stopMusic(); home(); }; wireVol(m);
+      screen.appendChild(m);
+    }
+    updateBadge(); vzKick();
+  }
+  function shell(title, build) {
+    clearInterval(st.timer); st.vf = null;
+    const a = document.createElement('div'); a.className = 'kp-app';
+    a.innerHTML = '<div class="kp-h"><button type="button" class="kp-bk" aria-label="Nazad">‹</button><b>' + title + '</b></div><div class="kp-b"></div>';
+    a.querySelector('.kp-bk').onclick = home;
+    screen.innerHTML = ''; screen.className = 'kp-screen app'; screen.appendChild(a);
+    build(a.querySelector('.kp-b'), a); vzKick();
+  }
+  function openApp(id) {
+    st.app = id;
+    ({tube, msg, task, gps, lamp, insta, calc, clock, cam, gal}[id] || home)();
+    if (id !== 'lamp') updateBadge();
+  }
+
+  /* --- PeraTube --- */
+  function stopMusic() { if (st.audio) { try { st.audio.pause(); } catch (_) {} } spatialDetach(); st.audio = null; st.song = -1; }
+
+  /* ---------- 3D ZVUK: pesma svira iz telefona koji je u svetu ----------
+     Telefon ostaje kod lika koji je pustio pesmu. Slušalac je uvek lik kojim trenutno igraš:
+     kad se prebaciš na drugog lika (npr. Lazara) koji je dalje, pesma se čuje tiše, prigušenije
+     i sa one strane sa koje telefon stvarno svira. Zid/kuća između dodatno prigušuje.
+     Jačinu menjaš klizačem u telefonu ili tasterima  -  i  +  . */
+  function loadVol() { try { const v = parseFloat(localStorage.getItem('kb_phone_vol')); if (isFinite(v)) return Math.min(1, Math.max(0, v)); } catch (_) {} return .8; }
+  function saveVol() { try { localStorage.setItem('kb_phone_vol', String(st.vol)); } catch (_) {} }
+  const sp = {ctx: null, n: null, el: null, raf: 0, d: 0, g: 1, blocked: false, mine: true, chk: 0, ui: 0, rs: 0, act: null};
+  const poss = n => n === 'Pera' ? 'Perin' : n + 'ev';
+  const nameOf = i => { const h = H(), a = h && h.actors && h.actors[i]; return a && a.n ? a.n : 'Tuđi'; };
+  /* 1 u ruci · ~.55 na 5 m · ~.33 na 10 m · ~.17 na 20 m · posle 40 m utihne do nule na 70 m */
+  function distGain(d) {
+    const base = (1 + Math.pow(1 / 6, 1.3)) / (1 + Math.pow(Math.max(1, d) / 6, 1.3));
+    const f = Math.min(1, Math.max(0, (d - 40) / 30));
+    return base * (1 - f * f * (3 - 2 * f));
+  }
+  function spText() {
+    if (!st.audio) return '';
+    if (sp.mine) return '📍 Pesma svira iz tvog telefona';
+    return '📍 ' + poss(nameOf(st.owner)) + ' telefon svira ' + (sp.d > 45 ? 'negde daleko' : Math.round(sp.d) + ' m od tebe') + (sp.blocked ? ' · prigušeno' : '');
+  }
+  function volHtml() {
+    const p = Math.round(st.vol * 100);
+    return '<div class="kp-vol"><button type="button" class="vd" aria-label="Stišaj">🔈</button><input type="range" min="0" max="100" step="1" value="' + p + '" aria-label="Jačina telefona"><button type="button" class="vu" aria-label="Pojačaj">🔊</button><span class="vp">' + p + '%</span></div><small class="kp-sp">' + esc(spText()) + '</small>';
+  }
+  function setVol(v, say) {
+    st.vol = Math.round(Math.min(1, Math.max(0, v)) * 100) / 100; saveVol();
+    const p = Math.round(st.vol * 100);
+    root.querySelectorAll('.kp-vol input').forEach(i => { if (+i.value !== p) i.value = p; });
+    root.querySelectorAll('.kp-vol .vp').forEach(e => { e.textContent = p + '%'; });
+    if (say) { const h = H(); if (h && h.tip) h.tip('🔊 Jačina telefona: ' + p + '%', 1.6); }
+  }
+  function wireVol(scope) {
+    const r = scope.querySelector('.kp-vol input'); if (!r) return;
+    r.oninput = () => setVol(r.value / 100);
+    scope.querySelector('.kp-vol .vd').onclick = () => setVol(st.vol - .1);
+    scope.querySelector('.kp-vol .vu').onclick = () => setVol(st.vol + .1);
+  }
+  function phCtx() {
+    if (sp.ctx && sp.ctx.state !== 'closed') return sp.ctx;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+    try { sp.ctx = new AC({latencyHint: 'playback'}); } catch (_) { try { sp.ctx = new AC(); } catch (__) { sp.ctx = null; } }
+    return sp.ctx;
+  }
+  function spatialAttach(a) {
+    spatialDetach();
+    const h = H(); st.owner = h && h.active != null ? h.active : -1; sp.act = h ? h.active : null; sp.el = a;
+    sp.mine = true; sp.d = .45; sp.g = 1; sp.blocked = false; sp.chk = 0;
+    a.addEventListener('play', () => { if (!sp.raf && st.audio === a && sp.el === a) sp.raf = requestAnimationFrame(spatialTick); });
+    try {
+      const c = phCtx(); if (!c) throw 0; if (c.state === 'suspended') c.resume().catch(() => {});
+      const src = c.createMediaElementSource(a);
+      /* zvučnik telefona: bez basa, uska srednja oblast, blago izobličenje */
+      const h1 = c.createBiquadFilter(); h1.type = 'highpass'; h1.frequency.value = 520; h1.Q.value = .9;
+      const h2 = c.createBiquadFilter(); h2.type = 'highpass'; h2.frequency.value = 380; h2.Q.value = .7;
+      const pk = c.createBiquadFilter(); pk.type = 'peaking'; pk.frequency.value = 1800; pk.Q.value = 1.2; pk.gain.value = 7;
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3300; lp.Q.value = 1;
+      const ws = c.createWaveShaper(), cu = new Float32Array(1024); for (let k = 0; k < 1024; k++) cu[k] = Math.tanh((k / 512 - 1) * 2.2); ws.curve = cu; ws.oversample = '2x';
+      const cm = c.createDynamicsCompressor(); cm.threshold.value = -26; cm.ratio.value = 8;
+      const vg = c.createGain(); vg.gain.value = 0;
+      const an = c.createAnalyser(); an.fftSize = 512; an.smoothingTimeConstant = .78; src.connect(an); /* za vizualizator */
+      const pn = c.createPanner(); pn.panningModel = 'HRTF'; pn.distanceModel = 'inverse'; pn.refDistance = 1; pn.rolloffFactor = 0; /* jačinu po daljini računam sam */
+      src.connect(h1); h1.connect(h2); h2.connect(pk); pk.connect(lp); lp.connect(ws); ws.connect(cm); cm.connect(vg); vg.connect(pn); pn.connect(c.destination);
+      sp.n = {src, an, h1, h2, pk, lp, ws, cm, vg, pn};
+      a.volume = 1;
+    } catch (_) { sp.n = null; a.volume = Math.max(0, Math.min(1, st.vol * st.vol)); }
+    sp.raf = requestAnimationFrame(spatialTick);
+    if (h && h.tip) h.tip('♪ Pesma svira iz tvog telefona · jačina: klizač u telefonu ili tasteri  -  /  +', 4);
+  }
+  function spatialDetach() {
+    if (sp.raf) { cancelAnimationFrame(sp.raf); sp.raf = 0; }
+    if (sp.n) { for (const k in sp.n) { try { sp.n[k].disconnect(); } catch (_) {} } sp.n = null; }
+    sp.el = null; st.owner = -1;
+  }
+  function spatialTick(now) {
+    sp.raf = 0;
+    const a = st.audio; if (!a || a !== sp.el || !isPlaying()) return;
+    sp.raf = requestAnimationFrame(spatialTick);
+    const h = H(); if (!h || !h.live) return;
+    const A = h.actors, me = A && A[h.active], ow = A && A[st.owner]; if (!me) return;
+    const mine = !ow || st.owner === h.active, away = !mine && !!(h.interior || h.football);
+    const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw), ey = h.height(me.x, me.z) + 1.6;
+    let d = .45, sx, sy, sz;
+    if (mine) { sx = me.x + fx * .45; sy = ey - .45; sz = me.z + fz * .45; sp.blocked = false; }
+    else {
+      d = away ? 60 : Math.hypot(ow.x - me.x, ow.z - me.z);
+      sx = ow.x; sy = h.height(ow.x, ow.z) + 1.1; sz = ow.z;
+      if (away) sp.blocked = true;
+      else if (now - sp.chk > 250) { sp.chk = now; try { sp.blocked = !h.lineClear(me, ow, .1); } catch (_) { sp.blocked = false; } }
+    }
+    const g = distGain(d) * (sp.blocked ? .4 : 1), amp = st.vol * st.vol;
+    sp.d = d; sp.g = g;
+    if (sp.mine !== mine || sp.act !== h.active) {
+      const first = sp.act != null && sp.act !== h.active; sp.mine = mine; sp.act = h.active;
+      if (first && h.tip) h.tip(mine ? '♪ Opet si kod svog telefona' : '♪ ' + poss(nameOf(st.owner)) + ' telefon svira ' + (d > 45 ? 'negde daleko' : 'na ' + Math.round(d) + ' m od tebe'), 3.2);
+    }
+    const n = sp.n, c = sp.ctx;
+    if (n && c) {
+      if (c.state === 'suspended' && now - sp.rs > 500) { sp.rs = now; c.resume().catch(() => {}); }
+      const t = c.currentTime, L = c.listener, P = (p, v) => { if (p) p.setValueAtTime(v, t); };
+      if (L.positionX) { P(L.positionX, me.x); P(L.positionY, ey); P(L.positionZ, me.z); P(L.forwardX, fx); P(L.forwardY, 0); P(L.forwardZ, fz); P(L.upX, 0); P(L.upY, 1); P(L.upZ, 0); }
+      else { try { L.setPosition(me.x, ey, me.z); L.setOrientation(fx, 0, fz, 0, 1, 0); } catch (_) {} }
+      const pn = n.pn;
+      if (pn.positionX) { P(pn.positionX, sx); P(pn.positionY, sy); P(pn.positionZ, sz); } else { try { pn.setPosition(sx, sy, sz); } catch (_) {} }
+      n.vg.gain.setTargetAtTime(.95 * amp * g, t, .06);
+      n.lp.frequency.setTargetAtTime(Math.max(450, 3300 - Math.min(2300, d * 60)) * (sp.blocked ? .5 : 1), t, .15);
+    } else a.volume = Math.max(0, Math.min(1, amp * g));
+    if (now - sp.ui > 250) { sp.ui = now; const tx = spText(); root.querySelectorAll('.kp-sp').forEach(e => { if (e.textContent !== tx) e.textContent = tx; }); }
+  }
+  function togglePlay() {
+    const a = st.audio; if (!a) return;
+    if (a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => {}); } else a.pause();
+  }
+  function tube() {
+    const sg = SG();
+    shell('<span style="color:#ff2d2d">▶</span> PeraTube', (B, app) => {
+      if (!sg) { B.innerHTML = '<p>Pesme nisu učitane.</p>'; return; }
+      B.innerHTML = '<input type="search" placeholder="Pretraži pesmu" autocomplete="off" autocapitalize="off" spellcheck="false"><div class="kp-list"></div>';
+      const I = B.querySelector('input'), L = B.querySelector('.kp-list');
+      const list = () => {
+        const n = norm(I.value), r = [];
+        for (let i = 0; i < sg.count; i++) { const t = norm(sg.title(i) + ' ' + sg.artist(i)); if (!n || t.includes(n) || n.split(' ').every(w => t.includes(w))) r.push(i); }
+        L.innerHTML = (r.length ? (n ? '' : '<small>Predlozi za tebe</small>') : '<p style="text-align:center;color:#b3b4be;margin-top:2em">Nema rezultata.<br>Za sada su ovde samo pesme iz igre.</p>') +
+          r.map(i => '<div class="kp-c" data-i="' + i + '"><div class="kp-th">' + (st.song === i && isPlaying() ? '♪' : '▶') + '</div><div><b>' + esc(sg.title(i)) + '</b><small>' + esc(sg.artist(i)) + ' · Pesma</small></div></div>').join('');
+        L.querySelectorAll('[data-i]').forEach(x => x.onclick = () => { I.blur(); playView(+x.dataset.i); });
+      };
+      I.oninput = list; I.onkeydown = e => { if (e.key === 'Enter') I.blur(); };
+      list();
+      if (st.song >= 0 && st.audio) { const b = document.createElement('button'); b.type = 'button'; b.className = 'kp-btn'; b.style.cssText = 'width:100%;margin:.2em 0 .5em;background:#321616;border:1px solid #ff6b5f'; b.textContent = '⏹ UGASI MUZIKU'; b.onclick = () => { stopMusic(); tube(); }; B.insertBefore(b, L); }
+    });
+  }
+  function playView(i, resume) {
+    const sg = SG(); if (!sg) return;
+    if (!resume || st.song !== i || !st.audio) {
+      stopMusic();
+      const a = new Audio(sg.src(i)); a.volume = .85; a.preload = 'auto';
+      st.audio = a; st.song = i; spatialAttach(a);
+      const p = a.play(); if (p && p.catch) p.catch(() => { const e = screen.querySelector('.kp-err'); if (e) e.textContent = 'Dodirni ▶ da pustiš pesmu.'; });
+    }
+    const a = st.audio, hk = sg.hook(i);
+    shell('<span style="color:#ff2d2d">▶</span> PeraTube', B => {
+      B.innerHTML = '<div class="kp-pp"><div class="kp-big"><canvas class="kp-vz"></canvas></div><b style="font-size:1.15em">' + esc(sg.title(i)) + '</b><br><small>' + esc(sg.artist(i)) + '</small><div class="kp-bar2"><div></div><span></span></div><div class="kp-r"><span class="c1">0:00</span><span class="d1">0:00</span></div><div class="kp-k"><button type="button" class="pl">⏸</button>' + (hk ? '<button type="button" class="hk">🔥</button>' : '') + '<button type="button" class="bk2">Nazad</button></div>' + volHtml() + '<p class="kp-hk"></p><p class="kp-err" style="color:#ff8a80;font-size:.9em"></p></div>';
+      const big = B.querySelector('.kp-big'), bar = B.querySelector('.kp-bar2 div'), seg = B.querySelector('.kp-bar2 span'), c1 = B.querySelector('.c1'), d1 = B.querySelector('.d1'), pl = B.querySelector('.pl'), hl = B.querySelector('.kp-hk');
+      const sync = () => {
+        pl.textContent = a.paused ? '▶' : '⏸'; big.classList.toggle('off', a.paused);
+        c1.textContent = fmt(a.currentTime); if (a.duration) { d1.textContent = fmt(a.duration); bar.style.width = (a.currentTime / a.duration * 100) + '%'; if (hk) { seg.style.left = hk[0] / a.duration * 100 + '%'; seg.style.width = Math.max(1.5, (hk[1] - hk[0]) / a.duration * 100) + '%'; } }
+        if (hk) { const on = a.currentTime >= hk[0] && a.currentTime <= hk[1]; hl.textContent = on ? '🔥 NAJBOLJI DEO · svi pevaju!' : '🔥 Najbolji deo: ' + fmt(hk[0]) + '–' + fmt(hk[1]); }
+      };
+      a.onerror = () => { const e = B.querySelector('.kp-err'); if (e) e.textContent = 'Ova pesma još nije ubačena u igru.'; };
+      a.ontimeupdate = sync; a.onplay = a.onpause = a.onloadedmetadata = a.onended = sync;
+      pl.onclick = () => { togglePlay(); sync(); };
+      const hb = B.querySelector('.hk'); if (hb) hb.onclick = () => { a.currentTime = Math.max(0, hk[0] - 2); const p = a.play(); if (p && p.catch) p.catch(() => {}); sync(); };
+      B.querySelector('.kp-bar2').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); if (a.duration) a.currentTime = Math.max(0, Math.min(a.duration - .5, (e.clientX - r.left) / r.width * a.duration)); };
+      B.querySelector('.bk2').onclick = tube; wireVol(B);
+      sync();
+    });
+  }
+
+  /* ---------- sat/datum vidžet ---------- */
+  function wgTick() {
+    const t = root.querySelector('.kp-wt'), d = root.querySelector('.kp-wd'); if (!t || !d) return;
+    const gt = ((document.getElementById('betaTime') || {}).textContent || '').trim();
+    t.textContent = /^\d{1,2}:\d{2}/.test(gt) ? gt.slice(0, 5) : new Date().toTimeString().slice(0, 5);
+    let ds = ''; try { ds = new Date().toLocaleDateString('sr-Latn-RS', {weekday: 'long', day: 'numeric', month: 'long'}); } catch (_) {}
+    if (d.textContent !== ds) d.textContent = ds;
+  }
+
+  /* ---------- vizualizator muzike (stvarni spektar pesme) ---------- */
+  const vz = {raf: 0, data: null, g: new Map()};
+  function vzKick() { if (!vz.raf && st.open) vz.raf = requestAnimationFrame(vzTick); }
+  function vzTick(now) {
+    vz.raf = 0;
+    if (!st.open) return;
+    const cs = root.querySelectorAll('canvas.kp-vz'); if (!cs.length) return;
+    vz.raf = requestAnimationFrame(vzTick);
+    const playing = isPlaying(), an = sp.n && sp.n.an, bars = 22;
+    if (an) { if (!vz.data || vz.data.length !== an.frequencyBinCount) vz.data = new Uint8Array(an.frequencyBinCount); an.getByteFrequencyData(vz.data); }
+    cs.forEach(cv => {
+      const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(w * dpr), Hh = Math.round(h * dpr);
+      if (cv.width !== W || cv.height !== Hh) { cv.width = W; cv.height = Hh; }
+      const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+      const hero = !cv.classList.contains('mini'), bw = w / bars;
+      const gr = g.createLinearGradient(0, h, 0, 0); gr.addColorStop(0, '#ff4fa3'); gr.addColorStop(1, hero ? '#fff0b0' : '#ffd37a'); g.fillStyle = gr;
+      for (let i = 0; i < bars; i++) {
+        let v;
+        if (an && playing && vz.data) v = Math.pow(vz.data[Math.min(vz.data.length - 1, 1 + Math.floor(Math.pow(i / bars, 1.7) * vz.data.length * .38))] / 255, 1.35);
+        else v = playing ? .2 + .2 * Math.sin(now / 170 + i * .8) : .04;
+        const bh = Math.max(2, v * h * (hero ? .92 : 1)), x = i * bw + bw * .18, ww = bw * .64;
+        if (hero) g.fillRect(x, (h - bh) / 2, ww, bh); else g.fillRect(x, h - bh, ww, bh);
+      }
+    });
+  }
+
+  /* ---------- Kamera / Galerija ---------- */
+  const FILT = [['Normalno', 'none'], ['Retro', 'sepia(.55) saturate(1.5) contrast(1.08) brightness(1.05)'], ['Noć', 'brightness(.85) contrast(1.25) saturate(1.2) hue-rotate(185deg)'], ['Crno-belo', 'grayscale(1) contrast(1.15)']];
+  function photos() {
+    if (!st.photos) {
+      try { const a = JSON.parse(localStorage.getItem('kb_phone_photos') || '[]'); st.photos = Array.isArray(a) ? a.filter(x => typeof x === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(x)).slice(-12) : []; } catch (_) { st.photos = []; }
+    }
+    return st.photos;
+  }
+  function savePhotos() {
+    const ph = photos();
+    for (;;) { try { localStorage.setItem('kb_phone_photos', JSON.stringify(ph)); return; } catch (_) { if (ph.length <= 1) return; ph.shift(); } }
+  }
+  function shutterSound() {
+    try {
+      const c = phCtx(); if (!c) return; if (c.state === 'suspended') c.resume().catch(() => {});
+      [0, .085].forEach((d, k) => {
+        const n = Math.floor(c.sampleRate * .05), b = c.createBuffer(1, n, c.sampleRate), x = b.getChannelData(0);
+        for (let i = 0; i < n; i++) x[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+        const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+        s.buffer = b; f.type = 'bandpass'; f.frequency.value = k ? 1800 : 3000; f.Q.value = .9; g.gain.value = .45;
+        s.connect(f); f.connect(g); g.connect(c.destination); s.start(c.currentTime + d);
+      });
+    } catch (_) {}
+  }
+  function drawCrop(g, scn, W, Hh) {
+    const ta = W / Hh, sw0 = scn.width, sh0 = scn.height;
+    let ch = sh0 / st.zoom, cw = ch * ta; if (cw > sw0 / st.zoom) { cw = sw0 / st.zoom; ch = cw / ta; }
+    g.drawImage(scn, (sw0 - cw) / 2, (sh0 - ch) / 2, cw, ch, 0, 0, W, Hh);
+  }
+  function vfDraw() {
+    const v = st.vf; if (!v || !v.cv.isConnected) { st.vf = null; return; }
+    const scn = document.getElementById('kbGeo3D'); if (!scn || !scn.width) return;
+    const cv = v.cv, W = cv.clientWidth | 0, Hh = cv.clientHeight | 0; if (!W || !Hh) return;
+    if (cv.width !== W || cv.height !== Hh) { cv.width = W; cv.height = Hh; }
+    try { drawCrop(cv.getContext('2d'), scn, W, Hh); } catch (_) {}
+    if (st.snap) { st.snap = 0; takePhoto(scn); }
+  }
+  function takePhoto(scn) {
+    const v = st.vf, h = H(); if (!v) return;
+    const ta = (v.cv.width || 3) / (v.cv.height || 4), W = 540, Hh = Math.round(W / ta);
+    const c = document.createElement('canvas'); c.width = W; c.height = Hh;
+    const g = c.getContext('2d');
+    try { if ('filter' in g) g.filter = FILT[st.filt][1]; } catch (_) {}
+    let url = '';
+    try { drawCrop(g, scn, W, Hh); url = c.toDataURL('image/jpeg', .82); } catch (_) { if (h && h.tip) h.tip('📷 Slika nije uspela', 2); return; }
+    const ph = photos(); ph.push(url); while (ph.length > 12) ph.shift(); savePhotos();
+    if (v.fl && v.fl.isConnected) { v.fl.classList.remove('go'); void v.fl.offsetWidth; v.fl.classList.add('go'); }
+    if (v.thumb) v.thumb();
+    shutterSound();
+    if (h && h.tip) h.tip('📸 Slika sačuvana u Galeriji (' + ph.length + ')', 2.2);
+  }
+  function cam() {
+    shell('📸 Kamera', B => {
+      B.style.cssText = 'padding:0 0 5.6em;display:flex;flex-direction:column;overflow:hidden';
+      B.innerHTML = '<div class="kp-vfw"><canvas class="kp-vf"></canvas><i class="kp-gd"></i><i class="kp-fl"></i><div class="kp-zm"><button type="button" data-z="1">1×</button><button type="button" data-z="2">2×</button></div></div><div class="kp-cb"><button type="button" class="kp-th3" aria-label="Galerija"></button><button type="button" class="kp-sh" aria-label="Slikaj"></button><button type="button" class="kp-ft"></button></div>';
+      const cv = B.querySelector('.kp-vf'), fl = B.querySelector('.kp-fl'), th = B.querySelector('.kp-th3'), ft = B.querySelector('.kp-ft');
+      const showFilt = () => { ft.textContent = '🎞 ' + FILT[st.filt][0]; cv.style.filter = FILT[st.filt][1]; };
+      const showZoom = () => B.querySelectorAll('[data-z]').forEach(b => b.classList.toggle('on', +b.dataset.z === st.zoom));
+      const showThumb = () => { const ph = photos(); th.style.backgroundImage = ph.length ? 'url(' + ph[ph.length - 1] + ')' : 'none'; };
+      showFilt(); showZoom(); showThumb();
+      B.querySelectorAll('[data-z]').forEach(b => { b.onclick = () => { st.zoom = +b.dataset.z; showZoom(); }; });
+      ft.onclick = () => { st.filt = (st.filt + 1) % FILT.length; showFilt(); };
+      th.onclick = () => gal();
+      B.querySelector('.kp-sh').onclick = () => {
+        st.snap = 1;
+        setTimeout(() => { if (st.snap) { st.snap = 0; const h = H(); if (h && h.tip) h.tip('📷 Kamera sada ne može da slika (enterijer)', 2.5); } }, 600);
+      };
+      st.vf = {cv, fl, thumb: showThumb};
+    });
+  }
+  function gal() {
+    shell('🖼️ Galerija', (B, app) => {
+      const ph = photos();
+      const grid = () => {
+        B.style.cssText = ''; app.querySelector('.kp-bk').onclick = home;
+        if (!ph.length) { B.innerHTML = '<p class="kp-empty">Još nema slika.<br>Otvori 📸 Kameru i slikaj kraj.</p>'; return; }
+        B.innerHTML = '<div class="kp-gg">' + ph.map((u, i) => '<button type="button" data-i="' + i + '" style="background-image:url(' + u + ')"></button>').reverse().join('') + '</div>';
+        B.querySelectorAll('[data-i]').forEach(b => { b.onclick = () => view(+b.dataset.i); });
+      };
+      const view = i => {
+        app.querySelector('.kp-bk').onclick = grid;
+        B.innerHTML = '<div class="kp-gv"><img alt="Slika"><div class="kp-gk"><button type="button" data-a="dl">⬇ Sačuvaj</button><button type="button" data-a="del">🗑 Obriši</button></div></div>';
+        B.querySelector('img').src = ph[i];
+        B.querySelector('[data-a=dl]').onclick = () => { const a = document.createElement('a'); a.href = ph[i]; a.download = 'kalac-brdo-' + (i + 1) + '.jpg'; document.body.appendChild(a); a.click(); a.remove(); };
+        B.querySelector('[data-a=del]').onclick = () => { ph.splice(i, 1); savePhotos(); grid(); };
+      };
+      grid();
+    });
+  }
+
+  /* --- Poruke --- */
+  function msg() {
+    const sg = SG();
+    if (!st.threads.ekipa) st.threads.ekipa = (sg && sg.chat ? sg.chat : [['Pera', 'Gde si, bre, budalo? Ekipa čeka na terenu!']]).map(m => ({who: m[0], text: m[1], me: false}));
+    st.unread = 0; updateBadge();
+    shell('Poruke', B => {
+      const m = st.threads.misija, e = st.threads.ekipa;
+      B.innerHTML = '<div class="kp-th2" data-t="misija"><span style="font-size:1.6em">📋</span><div><b>Misija</b><br><small>' + esc(m.length ? m[m.length - 1].text.slice(0, 38) : 'Nema poruka još') + '</small></div></div><div class="kp-th2" data-t="ekipa"><span style="font-size:1.6em">🔥</span><div><b>Ekipa</b><br><small>' + esc(e[e.length - 1].text.slice(0, 38)) + '</small></div></div>';
+      B.querySelectorAll('[data-t]').forEach(x => x.onclick = () => thread(x.dataset.t));
+    });
+  }
+  function thread(id) {
+    st.thread = id; st.unread = 0; updateBadge();
+    const arr = st.threads[id];
+    shell(id === 'misija' ? 'Misija' : 'Ekipa 🔥', (B, app) => {
+      B.style.cssText = 'display:flex;flex-direction:column;padding:0';
+      B.innerHTML = '<div class="kp-msgs"></div>' + (id === 'ekipa' ? '<div class="kp-send"><input placeholder="Poruka..." autocomplete="off"><button type="button">➤</button></div>' : '');
+      app.querySelector('.kp-bk').onclick = msg;
+      const M = B.querySelector('.kp-msgs');
+      const add = m => { const d = document.createElement('div'); d.className = 'kp-m' + (m.me ? ' me' : ''); if (!m.me) { const s = document.createElement('small'); s.textContent = m.who; d.appendChild(s); } d.appendChild(document.createTextNode(m.text)); M.appendChild(d); M.scrollTop = 1e9; };
+      arr.forEach(add);
+      if (!arr.length) M.innerHTML = '<p style="color:#9a9ba5;text-align:center;margin-top:2em">Poruke vezane za misiju stižu ovde.</p>';
+      if (id === 'ekipa') {
+        const I = B.querySelector('input'), rp = (SG() && SG().replies) || ['Haha, tačno!', 'Dolazim za pet minuta!'];
+        const send = () => {
+          const t = I.value.trim().slice(0, 200); if (!t) return; I.value = '';
+          const mine = {who: '', text: t, me: true}; arr.push(mine); add(mine);
+          setTimeout(() => { if (!st.open || st.thread !== 'ekipa' || !M.isConnected) return; const r = {who: ['Pera', 'Kosta', 'Joca', 'Lazar'][Math.random() * 4 | 0], text: rp[Math.random() * rp.length | 0], me: false}; arr.push(r); add(r); }, 700 + Math.random() * 900);
+        };
+        B.querySelector('.kp-send button').onclick = send; I.onkeydown = e => { if (e.key === 'Enter') send(); };
+      }
+    });
+  }
+  function deliver(from, text) {
+    st.threads.misija.push({who: from, text, me: false});
+    if (st.threads.misija.length > 60) st.threads.misija.shift();
+    if (st.open && st.app === 'msg' && st.thread === 'misija') { thread('misija'); return; }
+    st.unread++; st.buzz = 6; ding(); updateBadge();
+    const h = H(); if (h && h.tip) h.tip('📱 ' + from + ': ' + (text.length > 60 ? text.slice(0, 58) + '…' : text) + ' · H', 5);
+    if (st.open && !st.app) home();
+  }
+
+  /* --- Zadaci / GPS --- */
+  function current() {
+    const h = H(); if (!h) return null;
+    const ext = [window.KBB1Runtime, window.KBB2Runtime].find(r => r && r.active);
+    const a = h.actors && h.actors[h.active];
+    if (ext) {
+      try {
+        const d = ext.debug(), def = (ext === window.KBB1Runtime ? window.KBB1Chapter : window.KBB2Chapter).definition(), s = def.stages[d.stage] || {};
+        return {no: 'POGLAVLJE', title: def.title, task: (s.title ? s.title + '. ' : '') + (s.hint || ''), step: d.stage, n: def.stages.length, target: d.target, dist: a && d.target ? Math.hypot(d.target.x - a.x, d.target.z - a.z) : null, a, h, loc: def.location};
+      } catch (_) {}
+    }
+    const t = h.task;
+    if (h.story && h.story.on && t) {
+      const q = id => (document.getElementById(id) || {}).textContent || '';
+      return {no: q('betaChapterNo'), title: q('betaChapterTitle'), task: t.text, step: h.story.step, n: [8, 6, 3][h.story.chapter] || 0, target: t, dist: a ? Math.hypot(t.x - a.x, t.z - a.z) : null, a, h};
+    }
+    return {no: '', title: '', task: '', target: null, dist: null, a, h};
+  }
+  function dirOf(c) {
+    if (!c || !c.target || !c.a) return {deg: 0, name: ''};
+    const rad = Math.atan2(c.target.x - c.a.x, c.target.z - c.a.z) - c.h.yaw, TAU = Math.PI * 2;
+    return {deg: rad * 180 / Math.PI, name: ['NAPRED', 'DESNO', 'IZA TEBE', 'LEVO'][(Math.round((rad + TAU * 4) / TAU * 4) % 4 + 4) % 4]};
+  }
+  function task() {
+    shell('Zadaci', B => {
+      const draw = () => {
+        const c = current();
+        if (!c || !c.title && !c.task) { B.innerHTML = '<div class="kp-card"><h4>Nema aktivnog zadatka</h4><p>U slobodnoj igri istražuj kraj. Pokreni priču da dobiješ zadatke.</p></div>'; return; }
+        const d = dirOf(c);
+        const pr = c.n ? '<div class="kp-bar2" style="margin:.5em 0 .2em;cursor:default"><div style="width:' + Math.round((c.step) / c.n * 100) + '%;background:#d8be7f"></div></div><small>Faza ' + Math.min(c.n, c.step + 1) + ' / ' + c.n + '</small>' : '';
+        B.innerHTML = '<div class="kp-card"><small>' + esc(c.no) + '</small><h4>' + esc(c.title) + '</h4><p>' + esc(c.task) + '</p>' + pr + '</div>' +
+          (c.target ? '<div class="kp-card kp-comp"><div class="kp-arr" style="transform:rotate(' + d.deg.toFixed(0) + 'deg)">↑</div><div><b style="font-size:1.3em">' + Math.round(c.dist) + ' m</b><br><small>' + d.name + '</small></div></div>' : '') +
+          (c.loc ? '<div class="kp-card"><small>Lokacija</small><p>' + esc(c.loc) + '</p></div>' : '') +
+          '<p><small>Zlatni marker u svetu pokazuje cilj. M otvara kartu.</small></p>';
+      };
+      draw(); st.timer = setInterval(() => { if (st.open && st.app === 'task') draw(); }, 400);
+    });
+  }
+  function gps() {
+    shell('GPS', B => {
+      const draw = () => {
+        const c = current(), d = dirOf(c), q = id => (document.getElementById(id) || {}).textContent || '';
+        B.innerHTML = '<div class="kp-card"><small>Koordinate</small><p><b>' + esc(q('geoCoord')) + '</b></p><small>Zona</small><p>' + esc(q('kbGeoArea')) + '</p></div>' +
+          (c && c.target ? '<div class="kp-card kp-comp"><div class="kp-arr" style="transform:rotate(' + d.deg.toFixed(0) + 'deg)">↑</div><div><small>Cilj misije</small><br><b style="font-size:1.3em">' + Math.round(c.dist) + ' m</b> · <small>' + d.name + '</small></div></div>' : '<div class="kp-card"><p>Nema zadatog cilja.</p></div>') +
+          '<button type="button" class="kp-btn" style="width:100%" data-map>OTVORI KARTU · M</button>';
+        B.querySelector('[data-map]').onclick = () => { close(); key('m'); };
+      };
+      draw(); st.timer = setInterval(() => { if (st.open && st.app === 'gps') draw(); }, 500);
+    });
+  }
+  function key(k) {
+    try { ['keydown', 'keyup'].forEach(t => document.body.dispatchEvent(new KeyboardEvent(t, {key: k, bubbles: true, cancelable: true}))); } catch (_) {}
+  }
+  function lamp() {
+    key('l');
+    setTimeout(() => { const t = (document.getElementById('betaLamp') || {}).textContent || ''; const h = H(); if (h && h.tip) h.tip('Lampa: ' + (/DA/.test(t) ? 'uključena' : 'isključena'), 2); }, 80);
+    home();
+  }
+
+  /* --- Instagram, Kalkulator, Sat (kao u 2D igri) --- */
+  function insta() {
+    shell('Instagram', B => {
+      const posts = (SG() && SG().posts) || [];
+      B.innerHTML = '<div style="display:flex;gap:.9em;overflow-x:auto;padding:.3em 0 .8em;font-size:.82em">' + ['Pera', 'Andrej', 'Vuk', 'Kosta', 'Joca', 'Lazar'].map(n => '<div style="text-align:center"><span style="display:flex;width:3.8em;height:3.8em;border-radius:50%;padding:2px;background:conic-gradient(#f9ce34,#ee2a7b,#6228d7,#f9ce34);margin-bottom:.2em"><u style="display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;border-radius:50%;width:100%;height:100%;background:#1a1b21;border:2px solid #0f0f12">' + n[0] + '</u></span>' + n + '</div>').join('') + '</div>';
+      posts.forEach(p => {
+        const d = document.createElement('div'); d.className = 'kp-po'; let on = 0;
+        d.innerHTML = '<b>' + esc(p[1].toLowerCase()) + '</b><div class="kp-im" style="background:' + esc(p[3]) + '">' + esc(p[2]) + '</div><div style="font-size:1.5em;padding:.2em 0"><button type="button" style="background:none;border:0;font-size:1em;cursor:pointer">🤍</button>💬</div><div class="lk" style="font-weight:700;font-size:.9em"></div><div style="font-size:.9em;color:#d8d8de"><b>' + esc(p[1].toLowerCase()) + '</b> ' + esc(p[4]) + '</div>' + p[5].map(x => '<div style="font-size:.85em;color:#bbb"><b>' + esc(x[0]) + '</b> ' + esc(x[1]) + '</div>').join('');
+        const lk = d.querySelector('.lk'), bt = d.querySelector('button'), upd = () => { lk.textContent = (p[6] + on) + ' sviđanja'; bt.textContent = on ? '❤️' : '🤍'; };
+        bt.onclick = () => { on = on ? 0 : 1; upd(); }; d.querySelector('.kp-im').ondblclick = () => { on = 1; upd(); }; upd(); B.appendChild(d);
+      });
+    });
+  }
+  function calc() {
+    shell('Kalkulator', B => {
+      let cur = '0', acc = null, op = null, fr = 1;
+      B.style.cssText = 'display:flex;flex-direction:column;padding:.6em';
+      B.innerHTML = '<div class="kp-dp">0</div><div class="kp-kp"></div>';
+      const D = B.querySelector('.kp-dp'), G = B.querySelector('.kp-kp');
+      const run = () => { if (op == null || acc == null) return; const x = +cur; acc = op == '+' ? acc + x : op == '−' ? acc - x : op == '×' ? acc * x : (x ? acc / x : NaN); cur = String(+acc.toFixed(8)); if (cur == 'NaN') cur = 'Greška'; };
+      const press = k => {
+        if (cur == 'Greška' && k != 'C') return;
+        if ('0123456789'.includes(k)) { cur = (fr || cur == '0') ? k : cur + k; fr = 0; }
+        else if (k == '.') { if (fr) { cur = '0.'; fr = 0; } else if (!cur.includes('.')) cur += '.'; }
+        else if (k == 'C') { cur = '0'; acc = op = null; fr = 1; }
+        else if (k == '±') cur = String(-cur);
+        else if (k == '=') { run(); op = null; acc = null; fr = 1; }
+        else { if (op && !fr) run(); acc = +cur; op = k; fr = 1; }
+        D.textContent = cur;
+      };
+      ['C', '±', '÷', '×', '7', '8', '9', '−', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.'].forEach(k => { const b = document.createElement('button'); b.type = 'button'; b.textContent = k; if ('÷×−+='.includes(k)) b.className = 'o'; b.onclick = () => press(k); G.appendChild(b); });
+    });
+  }
+  function clock() {
+    shell('Sat', B => {
+      B.style.cssText = 'padding:1em;text-align:center';
+      B.innerHTML = '<div style="font-size:2.6em;font-weight:700;margin:.4em 0" class="ck"></div><small>Kalač brdo · vreme u igri <span class="ig"></span></small><h4>Štoperica</h4><div style="font-size:2em;margin:.4em 0 .8em" class="sw">0:00.0</div><div><button type="button" class="kp-btn s1">START</button> <button type="button" class="kp-btn s2">RESET</button></div>';
+      const C = B.querySelector('.ck'), S = B.querySelector('.sw'), b1 = B.querySelector('.s1'), ig = B.querySelector('.ig');
+      let t0 = 0, acc = 0, run = 0;

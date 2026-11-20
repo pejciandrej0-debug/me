@@ -1,0 +1,1000 @@
+ slSlab(g,x+4,y+rh+34,aw+14,acc);slWin(g,x+10,y+rh+30-2,14,20,'#454a58');g.fillStyle='#454a58';g.fillRect(x+34,y+rh+28,2,0);slWin(g,x+aw+12,y+rh+30,20,20,'#454a58');slAC(g,x+aw-22,y+rh+27);
+ /* donji nivo: drveni okviri i vrata */
+ slSlab(g,x+4,y+rh+66,aw+14,acc);slAC(g,x+8,y+rh+45);
+ g.fillStyle='#b8793f';g.fillRect(x+10,y+rh+76,26,22);g.fillStyle='#8fb0c4';g.fillRect(x+13,y+rh+79,20,16);g.fillStyle='rgba(255,255,255,.3)';g.fillRect(x+13,y+rh+79,20,3);g.fillStyle='#b8793f';g.fillRect(x+44,y+rh+74,38,26);g.fillStyle='#8fb0c4';g.fillRect(x+47,y+rh+77,14,20);g.fillRect(x+64,y+rh+77,14,20);g.fillStyle='#e8e6dc';for(let k=0;k<5;k++)g.fillRect(x+47,y+rh+79+k*4,14,.8);
+ /* nedovršena garaža od cigle sa betonskom pločom ispred */
+ slBrick(g,x-22,by-34,34,34,'#a8503a');g.fillStyle='#1a1514';g.fillRect(x-14,by-26,18,26);slSlab(g,x-26,by-40,46,'#8f8d86');g.fillStyle='#d0d0cb';g.fillRect(x+12,by-48,10,8);g.fillStyle='#c06448';for(let r=0;r<3;r++)g.fillRect(x+12,by-48+r*3,10,1.5);
+ /* gomila crepa, plava kanta, stoličica */
+ for(let r=0;r<3;r++)for(let i=0;i<7-r;i++){g.fillStyle=['#b8532f','#c4623a','#a64a2c'][(i+r)%3];g.fillRect(x+w*.52+i*8+r*4,by+4-r*5,8,5);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x+w*.52+i*8+r*4,by+8-r*5,8,1)}
+ slBin(g,x+w*.4,by+8,'#2f6fbf');g.fillStyle='#6a5a48';g.fillRect(x+w*.82,by-6,16,3);g.fillRect(x+w*.82+1,by-3,2,10);g.fillRect(x+w*.82+13,by-3,2,10);
+ slFence(g,x-26,by+16,w+44,'brick')}
+function slB17(g,b){const{x,y,w,h}=b,rh=44,by=y+h;slShadow(g,x,y+rh*.4,w,h-rh*.4);slSide(g,x,y,w,h,rh,'#a64b37');slRoof(g,x,y,w,rh,'#8a3d2c');
+ slBrick(g,x,y+rh,w,h-rh,'#b4543c');g.fillStyle='#b4543c';g.beginPath();g.moveTo(x,y+rh+1);g.lineTo(x+w/2,y+1);g.lineTo(x+w,y+rh+1);g.closePath();g.fill();
+ /* drveni zabat sa gredama */
+ g.fillStyle='#c98a4a';g.beginPath();g.moveTo(x+w*.3,y+rh*.92);g.lineTo(x+w*.5,y+rh*.15);g.lineTo(x+w*.7,y+rh*.92);g.closePath();g.fill();g.strokeStyle='rgba(90,50,20,.45)';g.lineWidth=1;for(let i=1;i<6;i++){g.beginPath();g.moveTo(x+w*.3+i*w*.4/6,y+rh*.92);g.lineTo(x+w*.5+(i-3)*2,y+rh*.2);g.stroke()}
+ slBarge(g,x,y,w,rh,'#8a3d2c','#c98a4a');slWin(g,x+w*.5-9,y+rh*.5,18,16,'#7a5a3a');
+ /* betonska ploča između spratova */
+ slSlab(g,x-2,y+rh+30,w+4,'#a9a69d');
+ slWin(g,x+16,y+rh+8,26,20,'#3b3f48','#6a4a36');slWin(g,x+w-62,y+rh+8,46,20,'#3b3f48','#6a4a36');
+ /* sprat sa kovanom ogradom i lozom */
+ slRail(g,x+4,y+rh+50,w-8,'#202226');slWin(g,x+18,y+rh+42,26,20,'#3b3f48','#8a5a3a');slWin(g,x+w-62,y+rh+42,44,20,'#3b3f48','#8a5a3a');
+ /* tamna garažna vrata */
+ g.fillStyle='#1a1514';g.fillRect(x+w*.38,y+rh+66,w*.54,h-rh-70);g.fillStyle='rgba(255,255,255,.07)';for(let k=0;k<6;k++)g.fillRect(x+w*.38,y+rh+70+k*4,w*.54,.8);
+ /* šipak sa plodovima */
+ for(let i=0;i<26;i++){const a=slRG()*6.28,r=slRG()*30;g.fillStyle=['#3f6a2a','#58802f','#2f5a26'][(slRG()*3)|0];g.beginPath();g.arc(x+36+Math.cos(a)*r,by-28+Math.sin(a)*r*.8,5+slRG()*5,0,7);g.fill()}for(let i=0;i<9;i++){g.fillStyle='#c0342a';g.beginPath();g.arc(x+36+(slRG()-.5)*50,by-28+(slRG()-.5)*38,2.3,0,7);g.fill()}
+ slFence(g,x-10,by+12,w+24,'iron')}
+function slBlk(g,b){const{x,y,w,h}=b,rh=40,by=y+h,wall='#ebe6da';slShadow(g,x,y+rh*.4,w,h-rh*.4);slSide(g,x,y,w,h,rh,wall);slRoof(g,x,y,w,rh,'#a64a30');slFront(g,x,y,w,h,rh,wall);
+ slBarge(g,x,y,w,rh,'#a64a30','#4b3a33');slWin(g,x+w*.5-6,y+rh*.4,12,12,'#f4efe2');
+ const fh=(h-rh)/4;
+ /* balkoni sa crnim ogradama (levo, jedan preko drugog) */
+ for(let f=0;f<3;f++){const fy=y+rh+f*fh;slSlab(g,x+4,fy+fh-9,w*.5,'#aaa69c');slRail(g,x+6,fy+fh-24,w*.5-4,'#17181b');slWin(g,x+w*.58,fy+8,20,fh-16,'#f4efe2','#d8d2c4');g.fillStyle='#e8e6e0';g.fillRect(x+10,fy+6,18,fh-20);g.fillStyle='#6f8fa5';g.fillRect(x+12,fy+8,14,fh-24)}
+ slAC(g,x+w*.5+2,y+rh+8);slAC(g,x+w*.5+2,y+rh+fh+8);
+ /* prizemlje: garažna vrata */
+ for(let i=0;i<2;i++){g.fillStyle='#8f8e88';g.fillRect(x+10+i*52,y+rh+3*fh+4,44,fh-6);g.fillStyle='rgba(0,0,0,.2)';for(let k=0;k<6;k++)g.fillRect(x+10+i*52,y+rh+3*fh+8+k*5,44,.8)}
+ slWin(g,x+w-30,y+rh+3*fh+6,18,fh-14,'#f4efe2');
+ /* gomila peska i cigle */
+ g.fillStyle='#b9a77c';g.beginPath();g.moveTo(x-6,by+14);g.quadraticCurveTo(x+8,by-10,x+26,by+14);g.fill();for(let i=0;i<5;i++){g.fillStyle='#c06448';g.fillRect(x+26+i*5,by+8,5,3.4)}
+ slFence(g,x-4,by+14,w+10,'brick')}
+function slR19(g,b){const{x,y,w,h}=b,rh=44,by=y+h;slShadow(g,x,y+rh*.4,w,h-rh*.4);slSide(g,x,y,w,h,rh,'#b0705a');slRoof(g,x,y,w,rh,'#c0642c');
+ /* gornji nivo: gola cigla sa dva otvora i belim najlonima */
+ slBrick(g,x,y+rh,w,36,'#c4624a');g.fillStyle='#c4624a';g.beginPath();g.moveTo(x,y+rh+1);g.lineTo(x+w/2,y+1);g.lineTo(x+w,y+rh+1);g.closePath();g.fill();slBrick(g,x+w*.12,y+rh*.28,w*.76,rh*.7,'#c4624a');
+ slBarge(g,x,y,w,rh,'#c0642c','#8a5a3a');
+ [[x+14,26],[x+w-44,30]].forEach(([wx,ww])=>{g.fillStyle='#2a2320';g.fillRect(wx,y+rh+6,ww,22);g.fillStyle='#f0f0ee';g.beginPath();g.moveTo(wx+2,y+rh+7);g.lineTo(wx+ww-2,y+rh+7);g.quadraticCurveTo(wx+ww-6,y+rh+18,wx+ww-4,y+rh+27);g.lineTo(wx+4,y+rh+27);g.quadraticCurveTo(wx+8,y+rh+16,wx+2,y+rh+7);g.fill()});
+ g.fillStyle='#b99a6a';g.fillRect(x+w*.46,y+rh+2,3,34);for(let k=0;k<4;k++)g.fillRect(x+w*.43,y+rh+6+k*8,10,2);
+ slSlab(g,x-4,y+rh+36,w+8,'#a9a69d');
+ /* srednji nivo: bež fasada, balkon sa kovanom ogradom, suncobran */
+ g.fillStyle='#d8c9ab';g.fillRect(x,y+rh+44,w,h-rh-44);g.fillStyle='rgba(0,0,0,.08)';for(let i=0;i<30;i++)g.fillRect(x+slRG()*w,y+rh+44+slRG()*(h-rh-44),4,1.5);
+ slWin(g,x+12,y+rh+48,24,22,'#c9b48a','#6a4630');slWin(g,x+w-52,y+rh+48,32,22,'#c9b48a','#6a4630');
+ slSlab(g,x-4,y+rh+76,w+8,'#a9a69d');g.strokeStyle='#2a2c30';g.lineWidth=1.3;g.beginPath();g.moveTo(x-2,y+rh+60);g.lineTo(x+w+2,y+rh+60);g.stroke();for(let px=x;px<x+w;px+=6){g.beginPath();g.moveTo(px,y+rh+60);g.quadraticCurveTo(px+3,y+rh+74,px+6,y+rh+60);g.stroke()}
+ /* suncobran + sto */
+ g.fillStyle='#2f6fd0';g.beginPath();g.moveTo(x+24,y+rh+40);g.lineTo(x+40,y+rh+66);g.lineTo(x+14,y+rh+66);g.fill();g.fillStyle='#fff';g.fillRect(x+25,y+rh+50,3,10);g.fillStyle='#2a2c30';g.fillRect(x+w*.5,y+rh+66,22,2);g.fillRect(x+w*.5+3,y+rh+68,2,8);g.fillRect(x+w*.5+17,y+rh+68,2,8);
+ /* prizemlje: roletne i vrata */
+ g.fillStyle='#d2c19f';g.fillRect(x,y+rh+84,w,h-rh-84);slWin(g,x+8,y+rh+90,28,16,'#c9b48a','#6a4630');slWin(g,x+w-42,y+rh+90,30,16,'#c9b48a','#6a4630');g.fillStyle='#4a3a30';g.fillRect(x+w*.45,y+rh+88,20,h-rh-90);g.fillStyle='#d9d5c8';g.fillRect(x+w*.45+3,y+rh+92,14,16);
+ slVine(g,x-10,y+rh+60,40,50,40);for(let i=0;i<3;i++)slCyp(g,x+w*.4+i*24,by+4,.55);
+ slFence(g,x-10,by+14,w+24,'iron')}
+function slAnd(g,b){const{x,y,w,h}=b,rh=52,by=y+h,V=b.vuk,wall=V?'#d99f8c':'#e3adbb',trim=V?'#ecc9b8':'#f8ece9',dx=x+117;slShadow(g,x,y+rh*.4,w,h-rh*.4);slSide(g,x,y,w,h,rh,V?'#b97d6c':'#d197a8');slRoof(g,x,y,w,rh,'#b8532f');slFront(g,x,y,w,h,rh,wall);
+ slBarge(g,x,y,w,rh,'#b8532f','#7a4e3a');slWin(g,x+w/2-7,y+rh*.4,14,15,trim,'#7a5a3a');slChim(g,x,y,w,'#a4553d');
+ slWin(g,x+12,y+rh+8,18,24,trim,'#8a6a4a');slWin(g,x+52,y+rh+8,18,24,trim,'#c9a36a');slWin(g,x+92,y+rh+8,22,24,trim);
+ slWin(g,x+12,y+rh+52,22,22,trim,'#8a6a4a');slWin(g,x+56,y+rh+52,22,22,trim);slAC(g,x+88,y+rh+40);
+ g.fillStyle='#5a3a28';g.fillRect(dx-9,by-36,18,36);g.fillStyle='#8fb0c4';g.fillRect(dx-6,by-32,12,18);g.fillStyle='rgba(255,255,255,.3)';g.fillRect(dx-6,by-32,12,4);
+ for(let i=0;i<3;i++){g.fillStyle=i%2?'#b9b7ae':'#cfcdc4';g.fillRect(dx-14+i*2,by+i*5,28-i*4,5);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(dx-14+i*2,by+i*5+4,28-i*4,1)}
+ g.strokeStyle='#5a3a2a';g.lineWidth=1.6;[-15,15].forEach(o=>{g.beginPath();g.moveTo(dx+o,by+16);g.lineTo(dx+o,by-10);g.stroke()});g.beginPath();g.moveTo(dx-15,by-10);g.lineTo(dx-15,by+16);g.moveTo(dx+15,by-10);g.lineTo(dx+15,by+16);g.stroke();
+ slBush(g,x+w*.42,by+2,13,'#355a2a','#4a7a36','#d86a8a');slBush(g,x+16,by+4,11,'#2f6a32','#3d8a40');
+ if(!V)slFence(g,x-8,by+18,w*.6,'iron');
+ if(V){for(const yy of[y+rh+37,y+rh+81]){if(yy>by-12)continue;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+8,yy+6,w*.55,3);g.fillStyle='#c48a78';g.fillRect(x+6,yy,w*.55,6);g.fillStyle='rgba(255,255,255,.25)';g.fillRect(x+6,yy,w*.55,1.4);slRail(g,x+8,yy-10,w*.55-4,'#17171b')}
+ g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x-4,by-26,3,30);g.fillStyle='#8a8d90';g.fillRect(x-6,by-32,3,34);g.fillStyle='#f4f4f2';g.fillRect(x-16,by-46,15,11);g.strokeStyle='#c33';g.lineWidth=1.2;g.strokeRect(x-13,by-43,9,6);g.beginPath();g.arc(x-14,by-32,4,0,Math.PI);g.stroke()}}
+function slVuk(g,b){slAnd(g,Object.assign({vuk:1},b))}
+function slTopStairs(g){const A=[612,2010],B=[655,1950],L=Math.hypot(B[0]-A[0],B[1]-A[1]),ang=Math.atan2(B[1]-A[1],B[0]-A[0]),n=9,sd=L/n;g.save();g.translate(A[0],A[1]);g.rotate(ang);
+ g.fillStyle='rgba(0,0,0,.28)';g.fillRect(-4,-22,L+8,44);
+ for(let i=0;i<n;i++){const k=i/n;g.fillStyle=`rgb(${138+k*55|0},${136+k*53|0},${128+k*48|0})`;g.fillRect(i*sd,-16,sd-.8,32);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(i*sd+sd-2,-16,2,32);g.fillStyle='rgba(255,255,255,.22)';g.fillRect(i*sd,-16,1.3,32);if(i%3==1){g.fillStyle='rgba(70,120,50,.55)';g.fillRect(i*sd+1,-16+slRG()*20,sd-3,4)}}
+ [-1,1].forEach(sg=>{g.fillStyle='#8f8c84';g.fillRect(-4,sg<0?-24:16,L+8,8);g.fillStyle='#b4b1a8';g.fillRect(-4,sg<0?-24:16,L+8,2.4);g.fillStyle='rgba(0,0,0,.2)';for(let i=0;i<5;i++)g.fillRect(i*(L/5),sg<0?-24:16,1,8)});
+ g.restore();
+ /* gusto rastinje i živice uz stepenice, ograda sa žutim sandučićem levo */
+ for(let i=0;i<9;i++){const t=i/8,px=A[0]+(B[0]-A[0])*t,py=A[1]+(B[1]-A[1])*t,nx=-Math.sin(ang),ny=Math.cos(ang);slBush(g,px+nx*-32,py+ny*-32,9+slRG()*3,'#2f6a32','#3d8a40');slBush(g,px+nx*32,py+ny*32,9+slRG()*3,'#355a2a','#4a7a36','#e0742a')}
+ {const px=A[0]-44,py=A[1]-26;g.fillStyle='#a09d94';g.fillRect(px,py-18,7,22);g.fillStyle='#e6c24a';g.fillRect(px+1,py-12,5,7);slFence(g,px-34,py+2,34,'iron')}}
+function slWood(g){const[x,y,w,h]=SLX[0];g.fillStyle='rgba(0,0,0,.28)';g.fillRect(x+4,y+h-4,w+10,8);g.fillStyle='#4a3626';g.fillRect(x,y+4,w,h-4);for(let r=0;r<6;r++)for(let c2=0;c2<4;c2++){const lx=x+4+c2*7.4+(r%2)*3.7,ly=y+9+r*7.6;g.fillStyle=['#c9a574','#b58d5a','#d7b988','#a67c4a'][(r*5+c2)%4];g.beginPath();g.arc(lx,ly,3.9,0,7);g.fill();g.fillStyle='#8a6034';g.beginPath();g.arc(lx,ly,1.6,0,7);g.fill()}}
+
+/* --- ulica: asfalt, ivičnjaci, trotoari, zakrpe --- */
+function slRoadFx(g){g.lineCap=g.lineJoin='round';const pts=SLN.slice(0,7);const path=()=>{g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]))};
+ const off=d=>{const o=[];for(let s=0;s<=SLL[6];s+=10)o.push(slAt(s,d));return o};
+ const strip=(d,w,c)=>{const o=off(d);g.strokeStyle=c;g.lineWidth=w;g.beginPath();o.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke()};
+ g.lineCap='butt';[34,-34].forEach(d=>{strip(d,24,'#8c8a83');strip(d,24,'rgba(255,255,255,.05)')});g.lineCap='round';
+ g.strokeStyle='#212225';g.lineWidth=50;path();g.stroke();g.strokeStyle='#5c5e62';g.lineWidth=44;path();g.stroke();g.strokeStyle='rgba(255,255,255,.045)';g.lineWidth=24;path();g.stroke();
+ g.lineCap='butt';[23,-23].forEach(d=>{strip(d,4,'#bab7ad');strip(d+(d>0?2.6:-2.6),1.2,'rgba(0,0,0,.4)')});g.lineCap='round';
+ /* fuge na trotoaru */
+ g.strokeStyle='rgba(0,0,0,.22)';g.lineWidth=1;for(let s=0;s<SLL[6];s+=26)[34,-34].forEach(d=>{const a=slAt(s,d-11),b=slAt(s,d+11);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke()});
+ /* zakrpe, pukotine, šaht */
+ for(let i=0;i<22;i++){const s=slRG()*SLL[6],o=(slRG()-.5)*30,p=slAt(s,o);g.fillStyle=slRG()<.5?'rgba(35,36,40,.5)':'rgba(125,127,131,.32)';g.beginPath();g.ellipse(p[0],p[1],6+slRG()*16,3+slRG()*7,p[2],0,7);g.fill()}
+ g.strokeStyle='rgba(20,20,22,.55)';g.lineWidth=1;for(let i=0;i<34;i++){const s=slRG()*SLL[6],p=slAt(s,(slRG()-.5)*38);g.beginPath();g.moveTo(p[0],p[1]);let x=p[0],y=p[1];for(let k=0;k<4;k++){x+=(slRG()-.5)*10;y+=2+slRG()*8;g.lineTo(x,y)}g.stroke()}
+ [[470,4],[880,-5]].forEach(([s,o])=>{const p=slAt(s,o);g.fillStyle='#2e2f33';g.beginPath();g.ellipse(p[0],p[1],10,6,0,0,7);g.fill();g.fillStyle='#55585c';g.beginPath();g.ellipse(p[0],p[1]-.5,8,4.6,0,0,7);g.fill();g.strokeStyle='#2e2f33';g.lineWidth=1;for(let k=-2;k<=2;k++){g.beginPath();g.moveTo(p[0]-7,p[1]+k*1.6);g.lineTo(p[0]+7,p[1]+k*1.6);g.stroke()}});
+ /* gume i ulje sredinom trake */
+ g.strokeStyle='rgba(20,20,22,.22)';g.lineWidth=3;[-8,8].forEach(d=>{const o=off(d);g.beginPath();o.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke()});
+ const j=SLN[0];g.fillStyle='rgba(60,45,30,.5)';for(let i=0;i<26;i++){g.beginPath();g.ellipse(j[0]+(slRG()-.5)*50,j[1]+(slRG()-.1)*26,3+slRG()*6,2+slRG()*3,slRG()*3,0,7);g.fill()}}
+
+/* --- prečica: staza + stepenice + plato --- */
+function slShortcutGround(g){const q=SCP.slice(1);g.lineCap=g.lineJoin='round';const path=()=>{g.beginPath();q.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]))};
+ g.strokeStyle='rgba(25,18,10,.32)';g.lineWidth=27;path();g.stroke();g.strokeStyle='#86745a';g.lineWidth=21;path();g.stroke();g.strokeStyle='#a39070';g.lineWidth=11;path();g.stroke();g.strokeStyle='rgba(60,45,30,.35)';g.lineWidth=2;[-5,5].forEach(d=>{g.setLineDash([6,9]);path();g.stroke();g.setLineDash([])});
+ for(let i=1;i<q.length;i++){const a=q[i-1],b=q[i],L=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let t=0;t<L;t+=14){const px=a[0]+(b[0]-a[0])*t/L+(slRG()-.5)*16,py=a[1]+(b[1]-a[1])*t/L+(slRG()-.5)*10;g.fillStyle=slRG()<.5?'rgba(235,225,200,.45)':'rgba(60,45,30,.4)';g.beginPath();g.ellipse(px,py,1+slRG()*2.2,.8+slRG()*1.4,0,0,7);g.fill()}}
+ /* zelenilo uz stazu */
+ for(let i=1;i<q.length;i++){const a=q[i-1],b=q[i],L=Math.hypot(b[0]-a[0],b[1]-a[1]),nx=-(b[1]-a[1])/L,ny=(b[0]-a[0])/L;for(let t=6;t<L;t+=22)[-1,1].forEach(sd=>{if(slRG()<.6){const px=a[0]+(b[0]-a[0])*t/L+nx*sd*(17+slRG()*8),py=a[1]+(b[1]-a[1])*t/L+ny*sd*(17+slRG()*8);slBush(g,px,py,5+slRG()*4,'#355a2a','#4a7a36')}})}}
+function slStairsDraw(g){const{x0,x1,yc,hw}=SCS,n=12,sw=(x1-x0)/n;
+ /* betonska podloga stepeništa i zidovi sa obe strane */
+ g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x0,yc-hw-9,x1-x0+8,5);
+ g.fillStyle='#8d8b83';g.fillRect(x0,yc-hw,x1-x0+8,hw*2);
+ for(let i=0;i<n;i++){const sx=x0+i*sw,k=i/n;g.fillStyle=`rgb(${150+k*60|0},${148+k*58|0},${140+k*52|0})`;g.fillRect(sx,yc-hw,sw-1,hw*2);g.fillStyle='rgba(0,0,0,.28)';g.fillRect(sx+sw-2.2,yc-hw,2.2,hw*2);g.fillStyle='rgba(255,255,255,.22)';g.fillRect(sx,yc-hw,1.4,hw*2)}
+ /* gornji (severni) potporni zid sa mrežastom ogradom */
+ g.fillStyle='#7f7d76';g.fillRect(x0,yc-hw-8,x1-x0+8,8);g.fillStyle='#a7a59c';g.fillRect(x0,yc-hw-8,x1-x0+8,2.6);g.fillStyle='rgba(0,0,0,.2)';for(let i=0;i<8;i++)g.fillRect(x0+i*13+4,yc-hw-8,1,8);
+ slFence(g,x0+2,yc-hw-6,x1-x0+4,'chain');
+ /* donji (južni) zid platoa */
+ g.fillStyle='#8a8880';g.fillRect(x0,yc+hw,x1-x0+8,9);g.fillStyle='#b4b2a8';g.fillRect(x0,yc+hw,x1-x0+8,2.4);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x0,yc+hw+9,x1-x0+8,3);
+ /* plato za kola sa pukotinama */
+ const[px,py,pw,ph]=SCPAD;g.fillStyle='rgba(0,0,0,.25)';g.fillRect(px,py+ph,pw+10,5);g.fillStyle='#8e8d87';g.fillRect(px,py,pw,ph);g.fillStyle='rgba(255,255,255,.06)';for(let i=0;i<30;i++)g.fillRect(px+slRG()*pw,py+slRG()*ph,5,2);g.strokeStyle='rgba(30,30,28,.45)';g.lineWidth=1;g.beginPath();g.moveTo(px+14,py+4);g.lineTo(px+30,py+22);g.lineTo(px+24,py+34);g.lineTo(px+44,py+46);g.moveTo(px+60,py+8);g.lineTo(px+52,py+28);g.lineTo(px+70,py+40);g.stroke();g.fillStyle='rgba(20,20,20,.18)';g.beginPath();g.ellipse(px+66,py+34,12,6,0,0,7);g.fill();
+ g.fillStyle='#9a9890';g.fillRect(px+pw,py,9,ph+8);g.fillStyle='#bdbbb2';g.fillRect(px+pw,py,2.4,ph+8);g.fillStyle='#8a8880';g.fillRect(px,py+ph,pw+10,8);g.fillStyle='#b4b2a8';g.fillRect(px,py+ph,pw+10,2.4);
+ /* crvena burad */
+ {const bx=px+10,by2=py+9;g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(bx+3,by2+8,9,4,0,0,7);g.fill();g.fillStyle='#a8382e';g.fillRect(bx-7,by2-9,14,17);g.beginPath();g.ellipse(bx,by2+8,7,3,0,0,7);g.fill();g.fillStyle='#c14a3e';g.beginPath();g.ellipse(bx,by2-9,7,3,0,0,7);g.fill();g.fillStyle='rgba(255,255,255,.18)';g.fillRect(bx-5,by2-8,2.5,15)}
+ /* šipka-znak "ПРЕЧИЦА" na stubiću */
+ {const sx=x0-6,sy=yc-hw-10;g.fillStyle='#6e6e6a';g.fillRect(sx-1.2,sy-30,2.4,32);g.fillStyle='#1d5fa8';slRR(g,sx-3,sy-38,46,13,2);g.fill();g.strokeStyle='#fff';g.lineWidth=.9;g.strokeRect(sx-1,sy-36.2,42,9.4);g.fillStyle='#fff';g.font='700 6.8px Arial';g.textAlign='left';g.fillText('ПРЕЧИЦА ▸',sx+2,sy-29)}}
+function slLotTrees(g){/* voćke i mrežasta ograda iza platoa (kruške/šljive) */
+ const gx=SCPAD[0]+SCPAD[2]+14;g.fillStyle='#5a8f40';g.fillRect(gx,2770,150,50);for(let i=0;i<46;i++){g.fillStyle=slRG()<.5?'rgba(40,90,35,.35)':'rgba(130,175,80,.3)';g.fillRect(gx+slRG()*150,2770+slRG()*50,3,2)}g.fillStyle='rgba(0,0,0,.22)';g.fillRect(gx,2818,150,3);
+ slFence(g,gx,2772,150,'chain')}
+
+/* ===== KALAČ BRDO · PROŠIRENJE NASELJA OKO LOLE STOJANOVIĆA =====
+   Ručno oblikovane, povezane sporedne ulice i male kućne parcele.
+   Geometrija je odvojena od postojećeg proceduralnog rasporeda kako se
+   već postavljene kuće, znamenitosti i početna ruta ne bi pomerile. */
+let kbResidentialRegistered=false;
+function kbResidentialExpansion(g){
+ const streets=[
+  {w:30,p:[[260,2150],[246,1970],[232,1785],[258,1600],[390,1440],[575,1325],[800,1240],[1015,1220]]},
+  {w:25,p:[[390,1440],[450,1540],[555,1630],[690,1640]]},
+  {w:28,p:[[575,1325],[630,1155],[780,1035],[965,1015],[1120,1060]]},
+  {w:24,p:[[630,1155],[690,1215],[800,1240]]},
+  {w:24,p:[[780,1035],[730,900],[850,825],[1035,830],[1170,900]]},
+  {w:30,p:[[700,1900],[760,2070],[820,2280]]},
+  {w:30,p:[[620,2360],[810,2280],[1040,2250],[1270,2280],[1510,2300],[1750,2260],[1970,2190],[2200,2100]]},
+  {w:27,p:[[810,2280],[800,2400],[900,2530],[1110,2540],[1310,2500],[1510,2500],[1740,2470]]},
+  {w:25,p:[[1110,2540],[1170,2700],[1360,2780],[1570,2740],[1740,2660]]},
+  {w:24,p:[[1270,2280],[1280,2390],[1310,2500]]},
+  {w:24,p:[[1510,2300],[1570,2410],[1510,2500]]},
+  {w:25,p:[[1740,2470],[1840,2340],[1970,2190]]},
+  {w:29,p:[[1670,1460],[1800,1530],[1900,1650],[2040,1720],[2160,1790]]},
+  {w:25,p:[[2160,1790],[2190,1940],[2200,2100]]},
+  /* VEZA LOLE STOJANOVIĆA ↔ PERINA ULICA (zelena linija na mapi): od ulice koja silazi sa Lole do Perine ulice */
+  {w:28,nh:1,p:[[300,2501],[440,2501],[556,2470],[622,2358]]}
+ ];
+ const oldLines=[P,...BR].slice();
+ if(!kbResidentialRegistered){BR.push(...streets.map(r=>r.p));kbResidentialRegistered=true;}
+ const rnd=n=>{const a=Math.sin(n*127.1+311.7)*43758.5453123;return a-Math.floor(a)};
+ const segDist=(x,y,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/den));return Math.hypot(x-a[0]-dx*t,y-a[1]-dy*t)};
+ const oldDist=(x,y)=>{let d=1e9;for(const line of oldLines)for(let i=1;i<line.length;i++)d=Math.min(d,segDist(x,y,line[i-1],line[i]));return d};
+ const roadDist=(x,y,skipI,skipJ)=>{let d=1e9;for(let ri=0;ri<streets.length;ri++){const r=streets[ri];for(let j=1;j<r.p.length;j++){if(ri===skipI&&j-1===skipJ)continue;d=Math.min(d,segDist(x,y,r.p[j-1],r.p[j])-r.w*.5)}}return d};
+ const path=(pts)=>{g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]))};
+ const stroke=(pts,w,col,dash)=>{g.strokeStyle=col;g.lineWidth=w;g.setLineDash(dash||[]);path(pts);g.stroke();g.setLineDash([])};
+ g.save();g.lineCap='round';g.lineJoin='round';
+ /* Slojevi asfalt/trotoar, suptilne fuge i tragovi korišćenja. */
+ streets.forEach((r,ri)=>{
+  const p=r.p,w=r.w;
+  stroke(p,w+20,'rgba(25,24,20,.48)');
+  stroke(p,w+14,'#77756e');
+  stroke(p,w+10,'#aaa69b');
+  stroke(p,w+5,'rgba(224,219,204,.45)');
+  stroke(p,w,'#65676a');
+  stroke(p,w-6,'#707271');
+  stroke(p,Math.max(7,w-15),'rgba(255,255,255,.055)');
+  /* ivičnjaci i diskretne fuge na trotoaru */
+  for(let i=1;i<p.length;i++){
+   const a=p[i-1],b=p[i],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l;
+   [-1,1].forEach(side=>{g.strokeStyle='rgba(49,48,43,.38)';g.lineWidth=1;g.beginPath();g.moveTo(a[0]+nx*side*(w*.5+5),a[1]+ny*side*(w*.5+5));g.lineTo(b[0]+nx*side*(w*.5+5),b[1]+ny*side*(w*.5+5));g.stroke()});
+   for(let d=32;d<l-18;d+=34){const t=d/l,x=a[0]+dx*t,y=a[1]+dy*t;g.fillStyle='rgba(28,27,24,.17)';g.fillRect(x-1,y-1,2,2)}
+  }
+  /* pukotine/zakrpe, ali bez preteranih oznaka preko male ulice */
+  let dist=0;
+  for(let i=1;i<p.length;i++){
+   const a=p[i-1],b=p[i],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,ang=Math.atan2(dy,dx);dist+=l;
+   for(let d=100;d<l-30;d+=210){const x=a[0]+dx*d/l,y=a[1]+dy*d/l;if(rnd(ri*99+i*17+d)<.44){g.save();g.translate(x,y);g.rotate(ang);g.fillStyle='rgba(23,22,20,.24)';g.fillRect(-8,-2,16,4);g.fillStyle='rgba(215,211,199,.11)';g.fillRect(-6,-1,9,1);g.restore()}}
+  }
+  if(w>=29){g.save();g.globalAlpha=.19;stroke(p,1.15,'#e8d9a7',[9,17]);g.restore()}
+ });
+ /* Mali slivnici i ulične lampe uz nekoliko raskrsnica. */
+ [[555,1630,1.1],[965,1015,1.0],[1040,2250,.8],[1510,2500,.85],[1900,1650,.9]].forEach(([x,y,k],i)=>{
+  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(x+4,y+5,8*k,3*k,0,0,Math.PI*2);g.fill();
+  g.fillStyle='#303236';g.beginPath();g.ellipse(x,y,6*k,4*k,0,0,Math.PI*2);g.fill();g.strokeStyle='#737578';g.lineWidth=1;g.beginPath();g.ellipse(x,y,4.2*k,2.5*k,0,0,Math.PI*2);g.stroke();
+  for(let j=-1;j<=1;j++){g.beginPath();g.moveTo(x-3*k,y+j*1.4*k);g.lineTo(x+3*k,y+j*1.4*k);g.stroke()}
+  if(i===0||i===2||i===4){const lx=x+(i%2?15:-17),ly=y+13;g.fillStyle='#464a4d';g.fillRect(lx-1.5,ly-1,3,23);g.fillStyle='#24282a';g.fillRect(lx-4,ly-3,8,3);const glow=g.createRadialGradient(lx,ly-4,1,lx,ly-4,24);glow.addColorStop(0,'rgba(255,211,115,.18)');glow.addColorStop(1,'rgba(255,211,115,0)');g.fillStyle=glow;g.fillRect(lx-24,ly-28,48,48)}
+ });
+ /* Parcela, kuća, dvorište — raspoređeno deterministično da se raspored ne menja pri resetu. */
+ const walls=['#d5c8b4','#c5d0cb','#e0d2b7','#cbbfc2','#bfcbd6','#d8c5a8','#c6c1b4','#dbc4b1','#aebdaa'];
+ const roofs=['#9b4534','#b55339','#684b3c','#824232','#59636b','#8e4934','#735044','#a04a32'];
+ let houseNo=0;
+ for(let ri=0;ri<streets.length;ri++){
+  const r=streets[ri],pts=r.p;if(r.nh)continue;
+  for(let si=1;si<pts.length;si++){
+   const a=pts[si-1],b=pts[si],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
+   const step=ri>=5&&ri<=11?104:112;
+   for(let along=52;along<len-35;along+=step){
+    const t=along/len,px=a[0]+dx*t,py=a[1]+dy*t;
+    for(const side of [-1,1]){
+     const seed=ri*100000+si*10000+along*3+(side+2)*131;
+     const off=61+rnd(seed+1)*17,cx=px+nx*side*off,cy=py+ny*side*off;
+     const ww=62+(rnd(seed+2)*25|0),hh=51+(rnd(seed+3)*21|0),x=Math.round(cx-ww/2),y=Math.round(cy-hh/2),lot=[x-9,y-8,ww+18,hh+27];
+     if(x<35||y<35||x+ww>WW-40||y+hh>WH-40)continue;
+     if([[x-2,y-2],[x+ww+2,y-2],[x-2,y+hh+2],[x+ww+2,y+hh+2]].some(q=>oldDist(q[0],q[1])<78))continue;
+     if(ov(lot,4))continue;
+     /* Druga ulica ne sme da prolazi kroz plac/kuću. */
+     if(roadDist(cx,cy,ri,si-1)<Math.max(56,Math.max(ww,hh)*.56+7))continue;
+     /* Ne stavljaj kuću u raskrsnicu niti na sam asfalt. */
+     if(segDist(cx,cy,a,b)<r.w*.5+Math.max(ww,hh)*.48+7)continue;
+     const wall=walls[(rnd(seed+4)*walls.length)|0],roof=roofs[(rnd(seed+5)*roofs.length)|0];
+     const h={r:[x,y,ww,hh],wl:wall,rf:roof,ab:0,pk:0};
+     /* Malo travnatog placa, staza, živica, kapija i zelenila. */
+     g.fillStyle=['rgba(75,105,55,.47)','rgba(103,119,66,.43)','rgba(91,119,65,.45)','rgba(125,127,78,.34)'][(rnd(seed+6)*4)|0];
+     g.fillRect(lot[0],lot[1],lot[2],lot[3]);
+     g.strokeStyle='rgba(33,44,28,.52)';g.lineWidth=1;g.strokeRect(lot[0]+.5,lot[1]+.5,lot[2]-1,lot[3]-1);
+     for(let z=0;z<9;z++){const gx=lot[0]+4+rnd(seed+10+z)*Math.max(2,lot[2]-8),gy=lot[1]+4+rnd(seed+30+z)*Math.max(2,lot[3]-8);g.fillStyle=z%2?'rgba(205,204,140,.23)':'rgba(34,70,31,.24)';g.fillRect(gx,gy,1.5,2)}
+     /* Šetalište od ulice do ulaza. Kuća se okreće za 180° na donjoj strani puta. */
+     const roadY=py;
+     const roadNorth=roadY<cy;
+     g.fillStyle='rgba(174,165,145,.92)';
+     if(roadNorth)g.fillRect(cx-4,y-13,8,14);else g.fillRect(cx-4,y+hh-1,8,15);
+     g.fillStyle='rgba(0,0,0,.15)';
+     if(roadNorth)g.fillRect(cx-4,y-2,8,3);else g.fillRect(cx-4,y+hh+10,8,3);
+     /* Živa ograda i metalna ograda, sa otvorom za kapiju ka ulici. */
+     const fx=lot[0],fy=lot[1],fw=lot[2],fh=lot[3];
+     g.strokeStyle='rgba(42,47,34,.76)';g.lineWidth=2;
+     if(roadNorth){g.beginPath();g.moveTo(fx,fy+fh);g.lineTo(fx+fw,fy+fh);g.moveTo(fx,fy);g.lineTo(cx-8,fy);g.moveTo(cx+8,fy);g.lineTo(fx+fw,fy);g.stroke()}
+     else{g.beginPath();g.moveTo(fx,fy);g.lineTo(fx+fw,fy);g.moveTo(fx,fy);g.lineTo(fx,fy+fh);g.moveTo(fx+fw,fy);g.lineTo(fx+fw,fy+fh);g.stroke();g.beginPath();g.moveTo(fx,fy+fh);g.lineTo(cx-8,fy+fh);g.moveTo(cx+8,fy+fh);g.lineTo(fx+fw,fy+fh);g.stroke()}
+     g.fillStyle='#4b503e';
+     for(let fenceX=fx;fenceX<=fx+fw;fenceX+=9){g.fillRect(fenceX,roadNorth?fy+fh-3:fy-1,1.5,4)}
+     /* Cvećnjak, žbunovi i poneko drvo po dvorištu. */
+     if(rnd(seed+40)>.18){const by=roadNorth?fy+fh-7:fy+3;g.fillStyle='rgba(53,42,27,.5)';g.fillRect(fx+5,by,Math.min(ww-2,24),4);for(let q=0;q<5;q++){g.fillStyle=['#e6a2ae','#f5d46a','#f2e9d0','#d59be2'][q%4];g.beginPath();g.arc(fx+8+q*4.2,by-2,1.6,0,Math.PI*2);g.fill()}}
+     if(rnd(seed+41)>.48){const tx=fx+fw-9,ty=fy+fh-12;g.fillStyle='rgba(0,0,0,.23)';g.beginPath();g.ellipse(tx+4,ty+5,9,3,0,0,Math.PI*2);g.fill();g.fillStyle='#5c432b';g.fillRect(tx-1,ty-1,3,8);g.fillStyle='#285a32';g.beginPath();g.arc(tx,ty-5,7,0,Math.PI*2);g.fill();g.fillStyle='rgba(175,213,130,.35)';g.beginPath();g.arc(tx-2,ty-7,3.5,0,Math.PI*2);g.fill()}
+     const savedSeed=sd;sd=(Math.abs(seed*97+12345)%2147483646)+1;
+     g.save();if(roadNorth){g.translate(x+ww/2,y+hh/2);g.rotate(Math.PI);g.translate(-(x+ww/2),-(y+hh/2))}house(g,h);yard(g,h);g.restore();sd=savedSeed;
+     /* mali pomoćni objekat ili automobil na ponekoj parceli */
+     if(rnd(seed+42)>.86){const cx2=fx+10,cy2=fy+fh*.55;g.fillStyle='rgba(0,0,0,.22)';g.fillRect(cx2+2,cy2+3,22,12);g.fillStyle=['#a6adb2','#8e312a','#31547c','#d3c8ae'][(rnd(seed+43)*4)|0];g.fillRect(cx2,cy2,22,11);g.fillStyle='rgba(255,255,255,.3)';g.fillRect(cx2+3,cy2+1,13,2);g.fillStyle='#262b30';g.fillRect(cx2+3,cy2+8,4,4);g.fillRect(cx2+15,cy2+8,4,4)}
+     HS.push([x-5,y-5,ww+10,hh+10]);houseNo++;
+    }
+   }
+  }
+ }
+ /* Par diskretnih raskrsničkih znakova: bez izmišljanja imena okolnih ulica. */
+ [[260,2150,-1.48],[2200,2100,-.52]].forEach(([x,y,a])=>{g.save();g.translate(x+24,y-18);g.rotate(a);g.fillStyle='#626a6e';g.fillRect(-1.5,-16,3,16);g.fillStyle='#1d5c37';if(g.roundRect){g.beginPath();g.roundRect(-20,-28,40,13,2);g.fill()}else g.fillRect(-20,-28,40,13);g.strokeStyle='#d7e6d6';g.lineWidth=.8;g.strokeRect(-18,-26,36,9);g.fillStyle='#e7f1e7';g.font='700 5.6px Arial';g.textAlign='center';g.fillText('KALAČ BRDO',0,-20);g.restore()});
+ g.restore();
+}
+
+
+/* ===== POPRAVKA ULICA: spoj Lole Stojanovića sa Perinom ulicom + nazivi (Svetislava Trgojevića, Lole Stojanovića nastavak) ===== */
+function kbStreetFix(g){
+ g.save();g.lineCap=g.lineJoin='round';
+ /* ušće veze u Perinu ulicu: isti asfalt kao Perina, bez „šava“ i trotoara preko kolovoza */
+ const pc=slAt(slNear(300,2501),0),cx=pc[0];
+ g.fillStyle='#5c5e62';g.fillRect(cx-22,2501-14,44+26,28);
+ g.fillStyle='rgba(255,255,255,.045)';g.fillRect(cx-22,2501-8,44+26,16);
+ /* trotoar Perine ulice (istočni) se prekida na ušću, uz blagu ivicu */
+ g.fillStyle='#8c8a83';g.fillRect(cx+22,2501-19,26,4);g.fillRect(cx+22,2501+15,26,4);
+ /* pešački prelaz preko veze, uz Perinu ulicu */
+ g.fillStyle='rgba(240,238,225,.8)';for(let o=-11;o<=11;o+=6.6)g.fillRect(cx+54,2501+o-1.6,9,3.2);
+ /* oznake ulica */
+ slLabel(g,'СВЕТИСЛАВА ТРГОЈЕВИЋА',239,1878,-1.49,13,.78);
+ slLabel(g,'СВЕТИСЛАВА ТРГОЈЕВИЋА',482,1382,-.555,13,.78);
+ slLabel(g,'ЛОЛЕ СТОЈАНОВИЋА',790,2175,1.292,13,.78);
+ g.restore()}
+function slDraw(g){g.save();slRoadFx(g);try{loleRoad(g)}catch(e){console.error('lole',e)}try{kbResidentialExpansion(g)}catch(e){console.error('stambeni deo mape',e)}try{kbStreetFix(g)}catch(e){console.error('kbStreetFix',e)}
+ /* oznake ulica: ispisano na asfaltu, kao na Street View-u */
+ {const p=slAt(120,0);slLabel(g,'ЉУБИШЕ ПОПОВИЋА СЛАВКА',p[0],p[1],p[2]+Math.PI,15,.78);const q=slAt(560,0);slLabel(g,'ЉУБИШЕ ПОПОВИЋА СЛАВКА',q[0],q[1],q[2]+Math.PI,15,.78);const r=slAt(985,0);slLabel(g,'ЉУБИШЕ ПОПОВИЋА СЛАВКА',r[0],r[1],r[2],15,.78);
+  const a=P[0],b=P[1],t=.46,ang=Math.atan2(b[1]-a[1],b[0]-a[0]);slLabel(g,'ЛОЛЕ СТОЈАНОВИЋА',a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t+22,ang,18,.7)}
+ /* prečica: staza iza svega */
+ slShortcutGround(g);slLotTrees(g);slStairsDraw(g);slTopStairs(g);
+ {const op=HLg.find(h=>h.pk&&h!==ANDH);if(op)op.pk=0;if(!HLg.includes(ANDH))HLg.push(ANDH)}
+ slAnd(g,{x:ANDH.r[0],y:ANDH.r[1],w:ANDH.r[2],h:ANDH.r[3]});
+ /* kuće, od severa ka jugu */
+ SLH.slice().sort((u,v)=>u.y-v.y).forEach(b=>{({b17:slB17,rawv:slRawv,unf:slUnf,mod:slMod,blk:slBlk,r19:slR19,pink:slPink,gen:slGen,vuk:slVuk})[b.k](g,b);if(b.k=='gen'&&b.fn)slFence(g,b.x-8,b.y+b.h+12,b.w+18,b.fn)});
+ try{loleDetails(g)}catch(e){console.error('loleD',e)}try{slStingYard(g)}catch(e){console.error('sting',e)}slWood(g);
+ /* čempresi, žbunje, voćke */
+ [[262,2250],[267,2275],[261,2300]].forEach(([x,y],i)=>slCyp(g,x,y,.8+i%2*.1));
+ slCyp(g,264,2928,.85);slCyp(g,262,2952,.8);
+ slBush(g,332,2458,10,'#2f6a32','#3d8a40');slBush(g,334,2652,11,'#2f6a32','#3d8a40','#f3f0ff');slBush(g,360,2700,9,'#355a2a','#4a7a36');
+ for(let i=0;i<4;i++)slBush(g,590+i*12,3060+i*3,11,'#50703f','#6c8d4e','#f0ecff');
+ slPear(g,478,2802,1.05);slPear(g,540,2792,.95);
+ /* kola */
+ SLC.forEach(c=>{slCar(g,c);if(c.rust){g.save();g.translate(c.x,c.y);g.rotate(c.a-Math.PI/2);g.fillStyle='rgba(140,70,30,.65)';for(let i=0;i<9;i++)g.fillRect(-10+slRG()*20,-22+slRG()*44,2+slRG()*4,2+slRG()*3);g.fillStyle='rgba(20,20,20,.5)';g.fillRect(-12,-12,3,8);g.fillRect(9,10,3,8);g.restore()}});
+ /* stubovi + kablovi */
+ const tops=SLP.map(p=>[p.x,p.y-66]);for(let i=1;i<tops.length;i++){[[-12,0],[-6,2],[6,3],[12,0]].forEach(([dx,dy],k)=>slWire(g,[tops[i-1][0]+dx,tops[i-1][1]+dy],[tops[i][0]+dx,tops[i][1]+dy],14+k*3,.7))}
+ /* priključci: svaki stub šalje po kabl do najbliže kuće */
+ SLP.forEach((p,i)=>{SLH.slice().sort((u,v)=>Math.hypot(u.x+u.w/2-p.x,u.y+u.h*.4-p.y)-Math.hypot(v.x+v.w/2-p.x,v.y+v.h*.4-p.y)).slice(0,2).forEach((b,k)=>{const tx=b.x+b.w*(k?.2:.8),ty=b.y+b.h*.45;if(Math.hypot(tx-p.x,ty-p.y)<200)slWire(g,[tops[i][0]+(k?-6:6),tops[i][1]+2],[tx,ty],10+k*4,.6)})});
+ {const j=P[0];slWire(g,[tops[0][0]-12,tops[0][1]],[j[0]+60,j[1]-70],18,.55)}
+ SLP.forEach(p=>slPole(g,p.x,p.y));
+ {const p=slAt(40,-44);slSign(g,p[0],p[1])}
+ /* naziv Perine kuće */
+ g.font='700 11px Oswald,Arial';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#000';SLH.forEach(b=>{if(b.pera){g.strokeText(b.nm,b.x+b.w/2,b.y-14);g.fillStyle='#ff9ec0';g.fillText(b.nm,b.x+b.w/2,b.y-14)}});
+ g.restore()}
+
+
+/* ===== ULICA LOLE STOJANOVIĆA (Andrejeva ulica): normalan asfalt, trotoari, par rupa, lampe i detalji oko kuća ===== */
+let _lL=null;
+function loleInfo(){if(_lL)return _lL;const q=[P[0],P[1],P[2],P[3]],L=[0];for(let i=1;i<q.length;i++)L.push(L[i-1]+Math.hypot(q[i][0]-q[i-1][0],q[i][1]-q[i-1][1]));return _lL={q,L,T:L[L.length-1]}}
+function loleAt(s,o){const{q,L,T}=loleInfo();s=Math.max(0,Math.min(T,s));let i=1;while(i<q.length-1&&L[i]<s)i++;const a=q[i-1],b=q[i],l=L[i]-L[i-1],t=(s-L[i-1])/l,dx=(b[0]-a[0])/l,dy=(b[1]-a[1])/l;return[a[0]+(b[0]-a[0])*t-dy*(o||0),a[1]+(b[1]-a[1])*t+dx*(o||0),Math.atan2(dy,dx)]}
+function loleOff(d){const{q}=loleInfo(),o=[];for(let i=0;i<q.length;i++){const a=q[Math.max(0,i-1)],b=q[i],c=q[Math.min(q.length-1,i+1)];let n1=[0,0],n2=[0,0];if(i>0){const l=Math.hypot(b[0]-a[0],b[1]-a[1]);n1=[-(b[1]-a[1])/l,(b[0]-a[0])/l]}if(i<q.length-1){const l=Math.hypot(c[0]-b[0],c[1]-b[1]);n2=[-(c[1]-b[1])/l,(c[0]-b[0])/l]}if(i==0)n1=n2;if(i==q.length-1)n2=n1;let nx=n1[0]+n2[0],ny=n1[1]+n2[1];const nl=Math.hypot(nx,ny)||1;nx/=nl;ny/=nl;const dd=nx*n1[0]+ny*n1[1],k=d/Math.max(.55,dd);o.push([b[0]+nx*k,b[1]+ny*k])}return o}
+function loleRoad(g){const{q,T}=loleInfo(),path=pts=>{g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]))},strip=(d,w,c,dash)=>{g.strokeStyle=c;g.lineWidth=w;g.setLineDash(dash||[]);path(loleOff(d));g.stroke();g.setLineDash([])};
+ g.save();g.lineJoin='round';g.lineCap='butt';
+ [41,-41].forEach(d=>{strip(d,26,'#77756e');strip(d,23,'#a9a69d');strip(d,23,'rgba(255,255,255,.07)')});
+ g.strokeStyle='rgba(0,0,0,.2)';g.lineWidth=1;for(let s=6;s<T;s+=22)[41,-41].forEach(d=>{const a=loleAt(s,d-11),b=loleAt(s,d+11);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke()});
+ [30,-30].forEach(d=>{strip(d,5,'#d0cdc2');strip(d+(d>0?3:-3),1.4,'rgba(0,0,0,.35)')});
+ g.lineCap='round';g.strokeStyle='#6f6e69';g.lineWidth=56;path(q);g.stroke();g.strokeStyle='#a9a7a0';g.lineWidth=51;path(q);g.stroke();g.strokeStyle='rgba(255,255,255,.10)';g.lineWidth=30;path(q);g.stroke();g.strokeStyle='rgba(60,58,52,.28)';g.lineWidth=1.2;g.setLineDash([9,13,4,17]);[-14,13].forEach(d=>{strip(d,1.2,'rgba(60,58,52,.28)',[9,13,4,17])});g.setLineDash([]);
+ g.lineCap='butt';strip(24,3,'rgba(90,84,66,.35)');strip(-24,3,'rgba(90,84,66,.35)');
+ /* zakrpe */
+ [[210,-9,34,14],[540,10,40,16],[870,-8,30,14],[1130,9,38,15]].forEach(([s,o,w,h])=>{const p=loleAt(s,o);g.save();g.translate(p[0],p[1]);g.rotate(p[2]);g.fillStyle='rgba(20,21,24,.38)';g.fillRect(-w/2,-h/2,w,h);g.strokeStyle='rgba(0,0,0,.4)';g.lineWidth=1;g.strokeRect(-w/2,-h/2,w,h);g.restore()});
+ /* pukotine */
+ g.strokeStyle='rgba(20,20,22,.5)';g.lineWidth=1;for(let i=0;i<14;i++){const p=loleAt(slRG()*T,(slRG()-.5)*44);g.beginPath();g.moveTo(p[0],p[1]);let x=p[0],y=p[1];for(let k=0;k<4;k++){x+=(slRG()-.5)*9;y+=2+slRG()*7;g.lineTo(x,y)}g.stroke()}
+ /* nekoliko rupa */
+ [[300,8,11,6,0],[620,-12,13,7,1],[960,6,10,6,0],[1190,-7,12,7,1]].forEach(([s,o,w,h,wt])=>{const p=loleAt(s,o);g.save();g.translate(p[0],p[1]);g.rotate(p[2]);g.fillStyle='rgba(18,16,14,.55)';g.beginPath();g.ellipse(0,0,w+3,h+2,0,0,7);g.fill();g.fillStyle=wt?'rgba(98,120,136,.7)':'rgba(46,38,30,.85)';g.beginPath();g.ellipse(0,0,w,h,0,0,7);g.fill();if(wt){g.fillStyle='rgba(235,245,255,.35)';g.beginPath();g.ellipse(-w*.25,-h*.3,w*.4,h*.28,0,0,7);g.fill()}g.restore()});
+ /* šahtovi */
+ [[420,4],[780,-5],[1060,3]].forEach(([s,o])=>{const p=loleAt(s,o);g.fillStyle='#2e2f33';g.beginPath();g.ellipse(p[0],p[1],9,5.6,0,0,7);g.fill();g.fillStyle='#55585c';g.beginPath();g.ellipse(p[0],p[1]-.5,7.4,4.2,0,0,7);g.fill();g.strokeStyle='#2e2f33';g.lineWidth=1;for(let k=-2;k<=2;k++){g.beginPath();g.moveTo(p[0]-6,p[1]+k*1.5);g.lineTo(p[0]+6,p[1]+k*1.5);g.stroke()}});
+ /* rešetke za kišu uz ivičnjak */
+ [[150,26],[480,-26],[820,26],[1100,-26],[1330,26]].forEach(([s,o])=>{const p=loleAt(s,o);g.save();g.translate(p[0],p[1]);g.rotate(p[2]);g.fillStyle='#1c1d20';g.fillRect(-7,-2.6,14,5.2);g.strokeStyle='#6b6e73';g.lineWidth=1;for(let k=-5;k<=5;k+=2.5){g.beginPath();g.moveTo(k,-2.6);g.lineTo(k,2.6);g.stroke()}g.restore()});
+ /* pešački prelaz */
+ {const s0=700;g.fillStyle='rgba(240,238,225,.82)';for(let o=-22;o<=22;o+=7.4){const p=loleAt(s0,o);g.save();g.translate(p[0],p[1]);g.rotate(p[2]);g.fillRect(-7,-2.2,14,4.4);g.restore()}}
+ /* prelaz u šljunak na kraju asfalta */
+ for(let i=0;i<150;i++){const p=loleAt(T-slRG()*60,(slRG()-.5)*58);g.fillStyle=slRG()<.5?'rgba(150,130,98,.6)':'rgba(70,56,40,.5)';g.fillRect(p[0],p[1],2+slRG()*3,1.5+slRG()*2)}
+ /* oznake ulice na asfaltu */
+ [[640,0],[1230,0]].forEach(([s,o])=>{const p=loleAt(s,o);slLabel(g,'ЛОЛЕ СТОЈАНОВИЋА',p[0],p[1],p[2],15,.7)});
+ g.restore()}
+function loleLamp(g,x,y,side){g.save();g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(x+5,y+2,9,2.6,0,0,7);g.fill();const gr=g.createLinearGradient(x-2,0,x+2,0);gr.addColorStop(0,'#8e9399');gr.addColorStop(1,'#4a4f55');g.fillStyle=gr;g.fillRect(x-1.8,y-52,3.6,54);g.fillStyle='#3a3e44';g.fillRect(x-4,y-3,8,4);const hx=x+side*13;g.strokeStyle='#4a4f55';g.lineWidth=2.4;g.beginPath();g.moveTo(x,y-50);g.quadraticCurveTo(x+side*5,y-58,hx,y-54);g.stroke();g.fillStyle='#2c2f34';g.beginPath();g.ellipse(hx,y-53,6,2.4,0,0,7);g.fill();g.fillStyle='#ffe9a8';g.beginPath();g.ellipse(hx,y-51.4,4.2,1.3,0,0,7);g.fill();const gl=g.createRadialGradient(hx,y-50,1,hx,y-50,34);gl.addColorStop(0,'rgba(255,225,150,.18)');gl.addColorStop(1,'rgba(255,225,150,0)');g.fillStyle=gl;g.beginPath();g.arc(hx,y-50,34,0,7);g.fill();g.restore()}
+function loleDetails(g){const{q,T}=loleInfo(),dpl=(x,y)=>{let m=1e9;for(let i=1;i<q.length;i++){const a=q[i-1],b=q[i],dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy))),d=Math.hypot(x-a[0]-dx*t,y-a[1]-dy*t);if(d<m)m=d}return m};
+ const hs=SLH.filter(b=>!b.pera&&b.k!='vuk'&&dpl(b.x+b.w/2,b.y+b.h/2)<240).map(b=>[b.x,b.y,b.w,b.h]);hs.push(ANDH.r.slice());
+ const fl=['#e84a5f','#ffd166','#ffffff','#ff9ff3','#ff7a5c','#b794f6'],pc=['#2f7a36','#3f9a44','#d83a3a','#2a5fb0','#e0b020','#8a8a90'];
+ hs.forEach(([x,y,w,h],i)=>{const by=y+h,rr=k=>{const v=Math.sin((x*12.9+y*78.2+k*37.7+i*5.1))*43758.5453;return v-Math.floor(v)};
+  /* cvetne leje uz ćoškove kuće */
+  [[x+3,26],[x+w-29,26]].forEach(([fx,fw],j)=>{if(rr(j+1)<.2)return;g.fillStyle='rgba(40,28,16,.55)';g.fillRect(fx,by-3,fw,7);for(let k=0;k<9;k++){g.fillStyle='#2f6a32';g.fillRect(fx+2+k*2.8,by-6,1,4);g.fillStyle=fl[(k+i+j)%6];g.beginPath();g.arc(fx+2.4+k*2.8,by-7,1.8,0,7);g.fill()}});
+  /* saksije kod ulaza */
+  [[.38,0],[.62,1]].forEach(([u,j])=>{if(rr(10+j)<.3)return;const px=x+w*u;g.fillStyle='rgba(0,0,0,.25)';g.fillRect(px-4,by+3,10,2);g.fillStyle='#b5683c';g.beginPath();g.moveTo(px-4,by-3);g.lineTo(px+4,by-3);g.lineTo(px+3,by+3);g.lineTo(px-3,by+3);g.fill();g.fillStyle=pc[(i+j*2)%6==5?1:(i+j*2)%3];g.beginPath();g.arc(px,by-6,4.2,0,7);g.fill();g.fillStyle=fl[(i*2+j)%6];g.beginPath();g.arc(px-1.4,by-7.4,1.5,0,7);g.arc(px+2,by-5.6,1.3,0,7);g.fill()});
+  /* staza od kamenih ploča do kapije */
+  g.fillStyle='rgba(190,184,170,.9)';for(let k=0;k<3;k++){g.fillRect(x+w*.5-9,by+4+k*5,18,4);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x+w*.5-9,by+7.4+k*5,18,.9);g.fillStyle='rgba(190,184,170,.9)'}
+  /* poštansko sanduče na stubu */
+  {const mx=x+w+(rr(4)<.5?2:-w-9),my=by+10;g.fillStyle='rgba(0,0,0,.25)';g.fillRect(mx-1,my+1,10,2);g.fillStyle='#4a4a4f';g.fillRect(mx+3,my-14,2.2,15);g.fillStyle=['#c0392b','#2a5fb0','#e0b020','#2f7a36'][i%4];g.fillRect(mx-1,my-22,10,8);g.fillStyle='rgba(255,255,255,.3)';g.fillRect(mx-1,my-22,10,2);g.fillStyle='#111';g.fillRect(mx+2,my-19,4,1)}
+  /* kontejner za smeće sa strane */
+  if(rr(5)<.65){const bx=x+(rr(6)<.5?w+7:-17),bc=['#2f6a32','#6a6e72','#2a5fb0','#d6b020'][(i+1)%4];g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(bx+5,by-1,8,2.6,0,0,7);g.fill();g.fillStyle=bc;g.fillRect(bx,by-16,10,15);g.fillStyle='rgba(255,255,255,.22)';g.fillRect(bx,by-16,3,15);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(bx-1,by-18,12,3);g.fillStyle='#111';g.fillRect(bx+1,by-2,2.4,2);g.fillRect(bx+7,by-2,2.4,2)}
+  /* ukrasno žbunje */
+  slBush(g,x-9,by-2,7,'#2f6a32','#3d8a40',i%2?'#ffd2e6':null);if(rr(7)<.6)slBush(g,x+w+10,by-2,6,'#355a2a','#4a7a36');
+  /* voćka u dvorištu */
+  if(i%3==0)slPear(g,x+w+30,by-6,.85);
+  /* satelitska antena i oluk */
+  if(rr(8)<.5){g.fillStyle='#d9d9d4';g.beginPath();g.ellipse(x+w-12,y+h*.55,4.6,3.4,-.4,0,7);g.fill();g.strokeStyle='#8c9196';g.lineWidth=1;g.beginPath();g.moveTo(x+w-12,y+h*.55);g.lineTo(x+w-8,y+h*.55-3);g.stroke()}
+ });
+ /* ulične lampe uz trotoar */
+ for(let s=110,k=0;s<T-40;s+=190,k++){const sd=k%2?1:-1,p=loleAt(s,sd*49);loleLamp(g,p[0],p[1],-sd)}
+ /* nekoliko klupa i žardinjera uz trotoar */
+ [[330,-49],[900,49],[1260,-49]].forEach(([s,o],i)=>{const p=loleAt(s,o);g.save();g.translate(p[0],p[1]);g.rotate(p[2]);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-13,3,26,4);g.fillStyle='#6b4a2e';g.fillRect(-13,-4,26,3);g.fillRect(-13,-9,26,2.4);g.fillStyle='#3a3a40';g.fillRect(-12,-4,2,8);g.fillRect(10,-4,2,8);g.restore()})}
+
+/* ===== UVOD: Pera izlazi iz kuće br. 14, priča sam sa sobom i dolazi do Andrejeve roze kuće ===== */
+let INT=null;
+/* ===== FREE PLAY: Pera obilazi kuće i pita ko ide napolje, pa je cela ekipa zajedno; psi jure, ali ne ubijaju ===== */
+let FP={on:0,done:0},frBiteCd=0;
+const FRS=[
+{n:['Aleksa M'],q:'Aleksa! Ko ide napolje, bee?',r:['Evo me! Samo da obučem jaknu.']},
+{n:['Novak'],q:'Novače, izlazi, idemo napolje!',r:['Ja sam spreman. Ja samo šetam, ali idem s vama.']},
+{n:['Lazar Z'],q:'Lazare, ko ide napolje, bee?',r:['Idem ja. Ali ne trčite, budale, psi vas čuju.']},
+{n:['Aleksa B'],q:'Aleksa B! Ima li koga napolje?',r:['Evo me! Ima li neko loptu?']},
+{n:['Mihajlo','Kosta D'],q:'Mihajlo! Kosta! Ko ide napolje, bee?',r:['Idem, ako me ne budite rano.','Idem i ja. Samo ne idemo ovuda.']}];
+const frKnock=()=>[0,260,520].forEach(t=>kb7Later(()=>tn(190,50,.12,.1,'square'),t));
+function frBegin(){if(FP.done)return;FP={on:1,done:1,k:0,t:0,tp:0,q1:0,q2:0,e:0,bs:[]};
+ FRS.forEach(st=>st.n.forEach(nm=>{const f=KBP.find(q=>q.n==nm);if(f&&f.hx==null){f.hx=f.x;f.hy=f.y}}));
+ bSk.hidden=false;bSk.textContent='PRESKOČI ▶';lateFade(1)}
+function frJoin(st){st.n.forEach(nm=>{const f=KBP.find(q=>q.n==nm);if(f){f.fol=1;f.m=0;f.w=0;f.run=0}})}
+function frSkip(){if(!FP.on||FP.e)return;FRS.forEach(frJoin);FP.k=FRS.length;FP.t=0;FP.e=0;FP.bs=[]}
+function frUp(dt){const F=FP,n=npc;F.t+=dt;bub.length=0;cineStep(dt,1);
+ const st=FRS[F.k];
+ if(!st){if(!F.e){F.e=1;F.t=0;lateFade(1)}
+  if(F.e==1&&F.t>.6){F.e=2;const mem=KBP.filter(q=>q.fol);n.x=pl.x-(pl.dx||1)*62;n.y=pl.y+22;n.dx=pl.dx||1;n.m=0;n.run=0;push(n,10);
+   mem.forEach((q,i)=>{q.x=pl.x-(pl.dx||1)*(100+i*34);q.y=pl.y+(i%2?30:-30);q.dx=pl.dx||1;q.m=0;push(q,10)});
+   cam.x=pl.x;cam.y=pl.y;lateFade(0);bSk.hidden=true;n.say=['Cela ekipa je na okupu, bee! Samo pazi na pse!',5];n.sayT=3;speak('Cela ekipa je na okupu. Samo pazi na pse.');F.on=0}
+  return}
+ const fr=st.n.map(nm=>KBP.find(q=>q.n==nm)).filter(Boolean);
+ if(!F.tp&&F.k>0&&F.t<dt)lateFade(1);
+ if(!F.tp&&F.t>=(F.k?.55:.2)){F.tp=1;const f0=fr[0];if(f0){n.x=f0.x-54;n.y=f0.y+4;n.dx=1;n.m=0;n.run=0;push(n,10);fr.forEach(q=>q.dx=-1);cam.x=(n.x+f0.x)/2;cam.y=n.y;F.t=.6}lateFade(0)}
+ if(F.tp){const f0=fr[0];if(f0){cam.x+=((n.x+f0.x)/2-cam.x)*Math.min(1,dt*3);cam.y+=(n.y-cam.y)*Math.min(1,dt*3)}
+  if(!F.q1&&F.t>1.3){F.q1=1;F.bs.push({o:n,t:st.q,u:F.t+2.6});speak(st.q);frKnock()}
+  if(!F.q2&&F.t>3.2){F.q2=1;fr.forEach((q,i)=>F.bs.push({o:q,t:st.r[i]||st.r[0],u:F.t+2.6+i*.4}));frJoin(st);tn(520,50,.05,.03,'sine')}
+  if(F.t>6.2){F.k++;F.t=0;F.tp=0;F.q1=F.q2=0;F.bs=[]}}
+ F.bs.forEach(b=>{if(F.t<b.u)bub.push([b.o.x,b.o.y-50,b.t])})}
+function frFollow(dt){if(FP.on||(INT&&INT.on)||mode!=1||dead)return;const mem=KBP.filter(q=>q.fol);if(!mem.length)return;
+ mem.forEach((q,i)=>{const gap=82+i*30,dx=pl.x-q.x,dy=pl.y-q.y,d=Math.hypot(dx,dy);let sp=0,tx=pl.x,ty=pl.y;
+  if(d>1500){q.x=pl.x-(pl.dx||1)*120;q.y=pl.y+30;return}
+  let ch=null,cd=1e9;for(const g of dogs)if(!g.hid&&g.ch){const e=Math.hypot(g.x-q.x,g.y-q.y);if(e<cd){cd=e;ch=g}}
+  if(ch&&cd<240){const a=Math.atan2(q.y-ch.y,q.x-ch.x),a2=Math.atan2(dy,dx);let fx=Math.cos(a)*1.2+Math.cos(a2)*.5,fy=Math.sin(a)*1.2+Math.sin(a2)*.5;const l=Math.hypot(fx,fy)||1;tx=q.x+fx/l;ty=q.y+fy/l;sp=215;q.run=1;
+   if(!(q.sayT>0)){q.sayT=3;bub.push([q.x,q.y-50,['Ker! Bežiii!','Alo, ker nas juri!','Trči, trči!'][(i+Math.random()*3)%3|0]])}}
+  else{q.run=0;if(d>gap)sp=Math.min(300,70+(d-gap)*1.5)}
+  q.sayT=Math.max(0,(q.sayT||0)-dt);
+  if(sp){const a=Math.atan2(ty-q.y,tx-q.x);q.x+=Math.cos(a)*sp*dt;q.y+=Math.sin(a)*sp*dt;q.w=(q.w||0)+dt*sp/(q.run?9:11);if(Math.abs(Math.cos(a))>.25)q.dx=Math.cos(a)>0?1:-1;push(q,10)}
+  q.m=(q.m||0)+((sp?1:0)-(q.m||0))*Math.min(1,dt*9)})}
+function frBite(d){if(d.warn>0||frBiteCd>T)return;kb7Hit(d,0);frBiteCd=T+1.6;const a=Math.atan2(pl.y-d.y,pl.x-d.x);pl.x+=Math.cos(a)*110;pl.y+=Math.sin(a)*110;push(pl,10);hurt=1.2;shake=10;d.cool=4;d.ch=0;bub.push([pl.x,pl.y-34,'AU!']);tn(140,60,.3,.15,'sawtooth');ban=['AU!\nPas te je zagrizao. Beži od njih!',2.5]}
+function frReset(){FP={on:0,done:0};KBP.forEach(q=>{if(q.fol||q.hx!=null){if(q.hx!=null){q.x=q.hx;q.y=q.hy;q.hx=null}q.fol=0;q.m=q.w=q.run=0}});try{bSk.hidden=true;lateFade(0)}catch(e){}}
+
+const bSk=document.createElement('button');bSk.id='bSk';bSk.type='button';bSk.hidden=true;bSk.textContent='PRESKOČI UVOD ▶';bSk.style.cssText='position:absolute;right:12px;top:104px;z-index:31;padding:8px 14px;border-radius:999px;border:1px solid #d8a83d;background:rgba(13,31,22,.82);color:#fff;font:700 11px Arial;cursor:pointer;letter-spacing:.04em';gm.appendChild(bSk);
+const INL=[
+[0,'P','Alo beee, opet ova strmina... svako jutro uz nju, noge mi otpadaju.'],
+[.14,'P','Idem prečicom pored kuće: stepenice, pa gore na Lole Stojanovića. Prvo svraćam po Vuka, pa po Andreja.'],
+[.55,'P','Vuk Blažić stanuje u onoj roze kući, br. 25. Samo da me njegov Leon ne pojede.']];
+const INLO=[
+[0,'P','Alo beee, danas sam ustao na vreme! Još samo da Vuk bude spreman čim ga pozovem.'],
+[.14,'P','Prečica pored kuće: stepenice, pa gore na Lole Stojanovića. Prvo po Vuka, pa po Andreja, pa do Lazara.'],
+[.55,'P','Vuk Blažić stanuje u roze kući, br. 25. Leon laje, ali Vuk je rekao da će izaći odmah.']];
+const INLK=[
+[0,'P','Alo beee, opet ova strmina... a znam da će Vuk opet reći "za minut".'],
+[.14,'P','Idem prečicom pored kuće: stepenice, pa gore na Lole Stojanovića. Prvo svraćam po Vuka, pa po Andreja.'],
+[.55,'P','Vuk Blažić stanuje u onoj roze kući, br. 25. Samo da me njegov Leon ne pojede.']];
+const INL2=[
+[.04,'P','Idemo po Andreja. Njegova prokleta roze kuća je ona ukleta. Brrr.'],
+[.2,'V','Nije ukleta, Pero. Samo škripe vrata.'],
+[.34,'V','Leone, ne zaostaj! Ovaj mali je hrabriji od mene.'],
+[.4,'P','Evo i Kalač puta. Gde asfalt pukne, tu počinje Kalač.'],
+[.56,'V','Čujem pse iz dvorišta. Ja ih ne gledam u oči.'],
+[.7,'P','Ne gledaj ni ti, Vuče. Ne gledaj, ne gledaj...'],
+[.86,'V','Ja ne bežim, ja samo brzo hodam, brate.']];
+function slSegHit(a,b,r,m){for(let t=0;t<=1;t+=.05){const x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;if(x>r[0]-m&&x<r[0]+r[2]+m&&y>r[1]-m&&y<r[1]+r[3]+m)return true}return false}
+function slRoute(a,b,r){const m=24;if(!slSegHit(a,b,r,m))return[b];const cs=[[r[0]-m,r[1]+r[3]+m],[r[0]+r[2]+m,r[1]+r[3]+m],[r[0]-m,r[1]-m],[r[0]+r[2]+m,r[1]-m]];for(const c1 of cs)if(!slSegHit(a,c1,r,10)&&!slSegHit(c1,b,r,10))return[c1,b];for(const c1 of cs)for(const c2 of cs)if(c1!==c2&&!slSegHit(a,c1,r,10)&&!slSegHit(c1,c2,r,10)&&!slSegHit(c2,b,r,10))return[c1,c2,b];return[b]}
+function introStart(){const pk=HLg.find(h=>h.pk),pb=SLH.find(b=>b.pera);if(!pk||!pb){INT=null;return}
+ const[hx,hy,hw,hh]=pk.r,n2=Math.max(2,hw/40|0),dxp=hx+(n2-.5)*hw/n2-8,door={x:dxp+8,y:hy+hh},F={x:door.x,y:door.y+17},G={x:pb.x+73,y:pb.y+pb.h+6};
+ const SG=stgGeom();const pts=[SG?[SG.xE+16,SG.gy]:[G.x,G.y+20]];const s0=slNear(G.x,G.y),sE=slNear(SCP[0][0],SCP[0][1]);for(let s=s0;s>sE;s-=40){const p=slAt(s,-6+Math.sin(s*.05)*2);pts.push([p[0],p[1]])}SCP.forEach(p=>pts.push([p[0],p[1]]));
+ {const dense=[];for(let k=1;k<P.length;k++){const a=P[k-1],b=P[k],L=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let t=0;t<L;t+=20)dense.push([a[0]+(b[0]-a[0])*t/L,a[1]+(b[1]-a[1])*t/L])}let bi=0,bd=1e9;dense.forEach((q,k)=>{const d=Math.hypot(q[0]-F.x,q[1]-F.y);if(d<bd){bd=d;bi=k}});let k1=0,d1=1e9;dense.forEach((q,k)=>{const d=Math.hypot(q[0]-P[1][0],q[1]-P[1][1]);if(d<d1){d1=d;k1=k}});for(let k=k1+2;k<=bi;k+=3)pts.push(dense[k]);const Q=dense[bi];slRoute(Q,[F.x,F.y],pk.r).forEach(p=>pts.push(Array.isArray(p)?p:[p.x,p.y]))}
+ const VH=vukHouse();let vi=-1,VG=null;
+  if(VH){VG=vukGeom(VH);let k0=0;const sl=SCP[SCP.length-1];for(let k=0;k<pts.length;k++)if(pts[k][0]==sl[0]&&pts[k][1]==sl[1]){k0=k;break}
+   let bk=-1,bd2=1e9;for(let k=k0;k<pts.length-1;k++){const d=Math.hypot(pts[k][0]-VG.mx,pts[k][1]-VG.my);if(d<bd2){bd2=d;bk=k}}
+   if(bk>=0&&bd2<900){const M=[VG.mx,VG.my],rt=slRoute(pts[bk],M,[VH.x,VH.y,VH.w,VH.h]).map(p=>Array.isArray(p)?p:[p.x,p.y]);rt[rt.length-1]=M;pts.splice(bk+1,0,...rt);vi=bk+rt.length}}
+  let tot=0,dv=0;for(let i=1;i<pts.length;i++){const l=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);tot+=l;if(vi>=0&&i<=vi)dv+=l}
+  INT={on:1,t:0,st:SG?5:0,s5:{p:10,t:0,w:0},sg:SG,i:0,d:0,li:0,fa:SG?1:0,pts,tot,F,door,out:0,say:null,say2:null,sayV:null,mv:0,sk:0,t2:0,t3:0,t4:0,vi,dv,vd:0,vp:0,G:VG,L:INL,ot:Math.random()<.5};INT.L=INT.ot?INLO:INLK;
+  vuk.on=0;vuk.a=1;vuk.go=0;vuk.man=null;vuk.lat=0;vuk.rch=null;try{vukAskClose()}catch(e){}vuk.say=null;vuk.m=0;vuk.sayT=25+Math.random()*20;try{leonInit()}catch(e){leon.on=0}
+ Object.assign(npc,{x:SG?SG.cx:G.x,y:SG?SG.by+.5:G.y,dx:1,w:0,m:0,run:0,say:null,sayT:0,dead:0,ride:0,split:0,grave:null});pd=null;pq&&closeQ();
+ pl.x=npc.x;pl.y=npc.y;pl.m=0;pl.vx=pl.vy=0;cam.x=npc.x;cam.y=npc.y;sc.on=0;sc.x=door.x-48;sc.y=door.y+40;sc.sp=0;sv.x=sv.y=0;
+ stgReset();zi=-1;fear=0;shake=0;ban=['Ljubiše Popovića Slavka\nPerina ulica. Roze kuća broj 14 je njegova.',5];bSk.hidden=false;
+ ['#bB','#repel'].forEach(q=>{const e=$(q);if(e)e.hidden=true})}
+function introEnd(){const I=INT;if(!I)return;try{stgDone()}catch(e){}try{lateFade(0)}catch(e){}I.on=0;ban=['',0];bSk.hidden=true;pl.m=0;npc.m=0;const b=$('#bB');if(b)b.hidden=false;const r=$('#repel');if(r)r.hidden=false;npc.say=['Vidi Kukirin! Priđi mu i pritisni F.',6];npc.sayT=3;try{vukEnd()}catch(e){}INT=null;if(window.KB_FREE)try{frBegin()}catch(e){console.error('free',e)}try{window.dispatchEvent(new Event('kb:classic-intro-end'))}catch(e){}}
+function introSkip(){if(INT?.on){kb7SkipIntro();return;}const I=INT;if(!I||!I.on||(I.st>=2&&I.st!=5))return;if(I.st==0||I.st==3||I.st==5){try{stgDone()}catch(e){}npc.x=I.F.x;npc.y=I.F.y;I.fa=1;I.st=1;I.t2=I.late?9.3:1.9;I.c1=1;if(I.late){I.k1b=I.k2b=1}try{vukSkip()}catch(e){}}else{const m=I.late?9.3:1.9;if(I.t2<m)I.t2=m}}
+function introUp(dt){const I=INT,n=npc;I.t+=dt;bub.length=0;try{stgUp(dt)}catch(e){}if(I.st!=0&&I.st!=5&&n.run)n.run=0;if(I.say)I.say[1]-=dt;if(I.say2)I.say2[1]-=dt;setGo('Uvod · Leon laje na kapiji, Pera zove Vuka, pa zajedno idu po Andreja · SPACE preskače');cineStep(dt,1);
+ if(I.t>150&&(I.st==0||I.st==3))introSkip();
+ if(I.st==5){stgIntroStep(dt,I,n)}else if(I.st==0){I.fa=Math.min(1,I.fa+dt*1.7);
+  /* Anti-stuck: if Pera has barely moved toward a cutscene waypoint, gently
+     advance him to the next waypoint instead of leaving him frozen. */
+  I._stuckT=(I._stuckT||0)+dt;
+  I._stuckX=I._stuckX==null?n.x:I._stuckX;
+  I._stuckY=I._stuckY==null?n.y:I._stuckY;
+  if(I._stuckT>.75){
+    const moved=Math.hypot(n.x-I._stuckX,n.y-I._stuckY);
+    if(moved<2 && I.i<I.pts.length-1){
+      const pp=I.pts[I.i],nn=I.pts[I.i+1],dd=Math.hypot(nn[0]-pp[0],nn[1]-pp[1])||1;
+      n.x=pp[0]+(nn[0]-pp[0])*Math.min(.35,40/dd);
+      n.y=pp[1]+(nn[1]-pp[1])*Math.min(.35,40/dd);
+      n.m=.8;n.run=I.fast?1:0;
+      I.i++;
+    }
+    I._stuckX=n.x;I._stuckY=n.y;I._stuckT=0;
+  }if(I.i>=I.pts.length){I.st=1;I.t2=0;return}const p=I.pts[I.i],dx=p[0]-n.x,dy=p[1]-n.y,d=Math.hypot(dx,dy),sp=I.fa<1?50:(I.fast?150:92);
+  if(d<(I.i==I.vi?16:5)){if(I.i==I.vi&&!I.vd){I.vd=1;I.st=3;I.t4=0;I.vp=0;I.fast=0}else{I.i++;if(I.i>=I.pts.length){I.st=1;I.t2=0}}}
+  else{const k=Math.min(d,sp*dt),ox=n.x,oy=n.y;n.x+=dx/d*k;n.y+=dy/d*k;n.w+=dt*sp/11;if(Math.abs(dx)>1)n.dx=dx>0?1:-1;push(n,10);const mv=Math.hypot(n.x-ox,n.y-oy);I.d+=mv;I.mv+=mv;I.sk+=dt;if(I.sk>1.3){if(I.mv<sp*1.3*.3){I.i++;if(I.i>=I.pts.length){I.st=1;I.t2=0}}I.mv=0;I.sk=0}}
+  n.m+=(1-n.m)*Math.min(1,dt*9);n.run=I.fast?1:0;
+  {const LL=I.L,bs=I.vd?I.dv:0,sp2=I.vd?I.tot-I.dv:(I.vi>=0?I.dv:I.tot);while(I.li<LL.length&&I.d>=bs+LL[I.li][0]*sp2){const e=LL[I.li];if(e[1]=='V')I.sayV=[e[2],3.4];else I.say=[e[2],3.6];speak(e[2]);tn(e[1]=='V'?330:520,50,.05,.03,'sine');I.li++}}}
+ else if(I.st==1){I.t2+=dt;n.m+=(0-n.m)*Math.min(1,dt*9);if(!I.c1&&I.t2>.5){I.c1=1;I.say=['ANDREEEJ! Izlazi bee, stigao sam!',3];speak(I.say[0]);[0,260,520].forEach(t=>kb7Later(()=>tn(190,50,.12,.1,'square'),t))}
+  if(I.late){const kn=()=>[0,260,520].forEach(t=>kb7Later(()=>tn(190,50,.12,.1,'square'),t));if(!I.k1b&&I.t2>3.4){I.k1b=1;I.say=['ANDREEEJ! Spavaš li, bee?! Kucam!',3];speak(I.say[0]);kn()}if(!I.k2b&&I.t2>6.4){I.k2b=1;I.say=['Pa gde si ti, bee?! Vuk čeka, ja čekam...',3];speak(I.say[0]);kn()}}
+  if(I.t2>(I.late?9.4:2.1)){I.st=2;I.t3=0;I.out=1;pl.x=I.door.x;pl.y=I.door.y-3;pl.dx=1;pl.f=Math.PI/2;pl.w=0;tn(150,90,.2,.1,'sawtooth')}}
+ else if(I.st==3){try{vukScene(dt)}catch(e){I.st=0;I.vp=4;I.vd=1;I.i++;console.error('vuk',e)}}else if(I.st==6){lateStep(dt,I,n)}
+  else{I.t3+=dt;const tx=I.F.x+36,ty=I.F.y+8,dx=tx-n.x,dy=ty-n.y,d=Math.hypot(dx,dy);if(d>3){const k=Math.min(d,70*dt);n.x+=dx/d*k;n.y+=dy/d*k;n.w+=dt*70/11;n.dx=dx>0?1:-1;n.m+=(1-n.m)*Math.min(1,dt*9)}else{n.m+=(0-n.m)*Math.min(1,dt*9);n.dx=-1}
+  const gy=I.door.y+26;if(pl.y<gy){pl.y+=Math.min(gy-pl.y,62*dt);pl.w+=dt*62/16;pl.m+=(1-pl.m)*Math.min(1,dt*9)}else pl.m+=(0-pl.m)*Math.min(1,dt*9);
+  if(I.t3>.7&&!I.c2){I.c2=1;I.say2=[I.late?'Evo me, Pero! Ne lupaj više, bee!':'Evo me, Pero! Šta ima, bee?',3];speak(I.say2[0])}
+  if(!I.late&&I.c2&&!I.c3&&I.t3>2.6){I.c3=1;I.say=['Idemo do Lazara, bee! Ajde, ne čekaj, spavalice!',3.2];speak(I.say[0]);tn(520,50,.05,.03,'sine')}
+  if(I.late&&!I.back){if(!I.c2b&&I.t3>2.4){I.c2b=1;I.say=['Sad idemo po Vuka. Rekao je za neki minut...',3.2];speak(I.say[0])}if(I.t3>5.6){lateBack();return}}else if(I.t3>(I.late?3.2:7)||(I.late?(I.c2&&I.say2[1]<0&&pl.y>=gy-1):(I.c3&&I.say[1]<0&&pl.y>=gy-1))){introEnd();return}}
+ if(I.st<2){pl.x=n.x;pl.y=n.y}
+ if(I.say&&I.say[1]>0){const sc3=I.st==3&&I.vp<3;bub.push([n.x+(sc3?105:0),n.y-(sc3?26:48),I.say[0]])}if(I.say2&&I.say2[1]>0)bub.push([pl.x,pl.y-40,I.say2[0]]);try{vukIntro(dt)}catch(e){}
+ let fx=I.st==2?(pl.x+n.x)/2:n.x,fy=I.st==2?(pl.y+n.y)/2:n.y;if(I.st==3&&I.G){fx=I.G.gc+(I.vp>=20?22:4);fy=I.G.fy+(I.vp>=20?8:14)}cam.x+=(fx-cam.x)*Math.min(1,dt*3.2);cam.y+=(fy-cam.y)*Math.min(1,dt*3.2)}
+function introA(){return INT&&INT.on&&INT.st==0?INT.fa:1}
+bSk.onclick=()=>{if(FP.on)frSkip();else introSkip()};addEventListener('keydown',e=>{if(gm.classList.contains('geo-mode'))return;if(!gm.hidden&&FP.on&&(e.code=='Space'||e.code=='Enter')){e.preventDefault();frSkip()}});addEventListener('keydown',e=>{if(gm.classList.contains('geo-mode'))return;if(gm.hidden||!INT||!INT.on)return;if(e.code=='Space'||e.code=='Enter'){e.preventDefault();introSkip()}});
+function peraDraw(){if(INT&&INT.on&&INT.hid)return;const a=introA();if(a<1){c.save();c.globalAlpha=a;peraDraw0();c.restore()}else peraDraw0()}
+
+
+/* ===== VUK BLAŽIĆ: izlazi iz svoje kuće kad ga Pera pozove (kapija na crnoj ogradi), pa zajedno idu do Andreja ===== */
+const vuk={x:0,y:0,w:0,m:0,dx:1,a:1,on:0,go:0,say:null,sayT:30,pi:0,run:0};
+let _VH=null;
+function vukHouse(){return _VH||(_VH=SLH.find(b=>b.k=='vuk')||null)}
+function vukGeom(H){const x=H.x,y=H.y,w=H.w,h=H.h,by=y+h,fy=by+18,fx0=x-10,fx1=x+w*.5+2,gw=30,gx0=fx1,gx1=gx0+gw,door=x+117;
+ return{x,y,w,h,by,fy,fx0,fx1,gx0,gx1,gw,gc:gx0+gw/2,door,mx:gx0+gw/2+16,my:by+58,path:[[door,by+13],[gx0+gw/2,by+14],[gx0+gw/2+3,fy+16]]}}
+{const H0=vukHouse();if(H0){const G0=vukGeom(H0);HS.push([G0.fx0,G0.fy-3,G0.fx1-G0.fx0,7])}}
+function vFence(G){const x0=G.fx0,x1=G.fx1,y=G.fy;c.save();
+ c.fillStyle='rgba(0,0,0,.25)';c.fillRect(x0,y-1,x1-x0+5,4);
+ c.strokeStyle='#08080a';c.fillStyle='#08080a';c.lineWidth=2.2;c.beginPath();c.moveTo(x0,y-26);c.lineTo(x1,y-26);c.moveTo(x0,y-5);c.lineTo(x1,y-5);c.stroke();
+ c.lineWidth=1.6;for(let px=x0+3;px<x1;px+=6){c.beginPath();c.moveTo(px,y-4);c.lineTo(px,y-28);c.stroke();c.beginPath();c.moveTo(px-1.8,y-28);c.lineTo(px,y-33);c.lineTo(px+1.8,y-28);c.fill()}
+ for(const px of[x0,(x0+x1)/2,x1]){c.fillStyle='#08080a';c.fillRect(px-2.4,y-32,4.8,35);c.fillStyle='#2b2b32';c.fillRect(px-2.4,y-32,1.5,35)}
+ c.restore()}
+function vGate(G,o,lt){const a=o*1.2,hx=G.gx0,hy=G.fy,ex=hx+Math.cos(a)*G.gw,ey=hy+Math.sin(a)*G.gw*.6;c.save();c.strokeStyle='#08080a';c.fillStyle='#08080a';c.lineWidth=2.2;
+ c.beginPath();c.moveTo(hx,hy-26);c.lineTo(ex,ey-26);c.moveTo(hx,hy-5);c.lineTo(ex,ey-5);c.stroke();
+ c.lineWidth=1.6;const n=Math.max(4,Math.round(G.gw/6));for(let i=0;i<=n;i++){const k=i/n,px=hx+(ex-hx)*k,py=hy+(ey-hy)*k;c.beginPath();c.moveTo(px,py-4);c.lineTo(px,py-28);c.stroke();c.beginPath();c.moveTo(px-1.8,py-28);c.lineTo(px,py-33);c.lineTo(px+1.8,py-28);c.fill()}
+ c.fillStyle='#08080a';c.fillRect(G.gx1-2.4,hy-32,4.8,35);c.fillStyle='#2b2b32';c.fillRect(G.gx1-2.4,hy-32,1.5,35);
+ c.fillStyle='#c9ced8';c.fillRect(G.gx1-.8,hy-19.5,3.6,4);
+ {c.save();c.translate(ex-9,ey-17);c.rotate(-(lt||0)*1.05);c.fillStyle='#9aa0ab';c.fillRect(0,-1.1,11,2.2);c.fillStyle='#e3e7ee';c.fillRect(0,-1.1,11,.8);c.fillStyle='#5c616b';c.beginPath();c.arc(0,0,1.8,0,7);c.fill();c.restore()}
+ c.restore()}
+function vukEs(){const r=[],H=vukHouse();if(!H)return r;const G=vukGeom(H);
+ if(Math.abs(cam.x-(G.x+G.w/2))<1000&&Math.abs(cam.y-G.by)<800){
+  r.push({y:G.fy,f:()=>{const conf=leon.on&&leon.mode>=1&&leon.mode<=3,want=((vuk.on&&Math.hypot(vuk.x-G.gc,vuk.y-G.fy)<46)||(!conf&&(Math.hypot(pl.x-G.gc,pl.y-G.fy)<42||Math.hypot(npc.x-G.gc,npc.y-G.fy)<42))||(leon.on&&leon.mode==4&&Math.hypot(leon.x-G.gc,leon.y-G.fy)<30))?1:0;if(vuk.man!=null)vuk.go=vuk.man;else vuk.go+=(want-vuk.go)*.2;if(vuk.go>.35&&!vuk.gso){vuk.gso=1;if(vuk.man==null)tn(210,90,.35,.05,'sawtooth')}if(vuk.go<.05)vuk.gso=0;vFence(G);vGate(G,vuk.go,vuk.lat||0)}});
+  r.push({y:G.y-18,f:()=>{c.save();c.font='700 11px Oswald,Arial';c.textAlign='center';c.lineWidth=3;c.strokeStyle='#000';const tx='Vukova kuća · br. 25';c.strokeText(tx,G.x+G.w/2,G.y-14);c.fillStyle='#ffb347';c.fillText(tx,G.x+G.w/2,G.y-14);c.restore()}})}
+ if(leon.on&&Math.abs(leon.x-cam.x)<900&&Math.abs(leon.y-cam.y)<700)r.push({y:leon.y,f:leonDraw});
+ if(vuk.on)r.push({y:vuk.rch?G.fy+1:vuk.y,f:()=>{c.save();c.globalAlpha=Math.max(0,Math.min(1,vuk.a));man(vuk.x,vuk.y,{b:'#a3342d',h:'#1b1209',lg:'#232a3a',n:'Vuk',nc:'#ffb347',s:1.17,sx:1.38,w:vuk.w,m:vuk.m,dx:vuk.dx,run:vuk.run,rch:vuk.rch});c.restore()}});
+ return r}
+const VL=['Brate, ova strmina me ubija.','Gladan sam. Ima li negde burek?','Ja ne bežim, ja samo brzo hodam.','Pero, ne guraj me, brate.','Ko ovde voli pse? Niko.','Idem iza vas, pazim vam leđa.','Mrak je veći nego što izgleda.'];
+function vukUp0(dt){const v=vuk;if(!v.on||(INT&&INT.on))return;
+ const d=dist(pl,v);v.sayT-=dt;if(v.say)v.say[1]-=dt;let sp=0;
+ if(d>1300){v.x=pl.x-(pl.dx||1)*120;v.y=pl.y+40}
+ else if(d>150){sp=Math.min(310,70+(d-150)*1.25);const a=Math.atan2(pl.y-v.y,pl.x-v.x);v.x+=Math.cos(a)*sp*dt;v.y+=Math.sin(a)*sp*dt;if(Math.abs(Math.cos(a))>.25)v.dx=Math.cos(a)>0?1:-1;v.w+=dt*sp/11}
+ else if(Math.abs(pl.x-v.x)>8)v.dx=pl.x>v.x?1:-1;
+ v.m+=((sp?1:0)-v.m)*Math.min(1,dt*9);v.run=sp>200?1:0;push(v,10);
+ if(v.sayT<=0&&!pq&&d<260){v.sayT=45+Math.random()*50;v.say=[VL[Math.random()*VL.length|0],3.4];speak(v.say[0])}
+ else if(v.sayT<=0&&d>480){v.sayT=30;v.say=['Čekajte me, brate!',2.6]}
+ if(v.say&&v.say[1]>0)bub.push([v.x,v.y-62,v.say[0]])}
+function vukTrail(dt,tx,ty,gap){const v=vuk,dx=tx-v.x,dy=ty-v.y,d=Math.hypot(dx,dy);let sp=0;
+ if(d>gap){sp=Math.min(250,66+(d-gap)*2);const k=Math.min(d-gap,sp*dt);v.x+=dx/d*k;v.y+=dy/d*k;if(Math.abs(dx)>1)v.dx=dx>0?1:-1;v.w+=dt*sp/11}else if(Math.abs(dx)>3)v.dx=dx>0?1:-1;
+ v.m+=((sp?1:0)-v.m)*Math.min(1,dt*9)}
+function vukIntro(dt){const I=INT,v=vuk;if(!I)return;try{leonUp(dt)}catch(e){}
+ if(I.sayV){I.sayV[1]-=dt;if(I.sayV[1]>0&&v.on)bub.push([v.x,v.y-62,I.sayV[0]])}
+ if(!v.on||I.vp<4)return;vukTrail(dt,npc.x,npc.y,44);push(v,10)}
+/* scena: Leon laje iza kapije, Pera dovikuje Vuka, Vuk izađe, kapija se otvori, Leon izleti i svi zajedno krenu do Andreja */
+function vukScene(dt){const I=INT,n=npc,v=vuk,G=I.G,L=leon;I.t4+=dt;
+ /* Vuk anti-stuck: cutscene movement must never freeze on a gate/path point. */
+ if(I.vp==2||I.vp==24){I._vst=(I._vst||0)+dt;I._vsx=I._vsx==null?v.x:I._vsx;I._vsy=I._vsy==null?v.y:I._vsy;if(I._vst>.8){const moved=Math.hypot(v.x-I._vsx,v.y-I._vsy);if(moved<1.5){v.x+=(G.gc-v.x)*.18;v.y+=(G.fy+18-v.y)*.18;v.m=.7;v.run=1}I._vsx=v.x;I._vsy=v.y;I._vst=0}}else{I._vst=0;I._vsx=v.x;I._vsy=v.y}
+ n.m+=(0-n.m)*Math.min(1,dt*9);if(I.vp<2)n.dx=G.gc>=n.x?1:-1;else if(I.vp<3)n.dx=G.door>=n.x?1:-1;else if(I.vp>=20)n.dx=v.x>=n.x?1:-1;
+ if(I.vp==0){if(L.on&&L.mode==1){L.mode=2;L.nt=.1}if(!I.c0&&I.t4>.5){I.c0=1;I.say=['Aaa! Leone, miruj bee, ludi psu! To sam ja, Pera!',3.2];speak(I.say[0])}
+  if(I.t4>2.4){I.vp=1;I.t4=0;I.say=[I.late?'VUKEEE! Prošao je minut, bee! Izlazi, do đavola!':(I.ot?'VUKEEE! Jesi spreman, bee, spavalice? Idemo po Andreja!':'VUKEEE! Možeš li napolje, bee? Tvoj me ne pušta!'),3.4];speak(I.say[0]);[0,260,520].forEach(t=>kb7Later(()=>tn(190,50,.12,.1,'square'),t))}}
+ else if(I.vp==1){if(I.t4>2.7&&!I.late&&!I.dec){I.dec=1;I.ok=!!I.ot;if(!I.ok){I.shower=1;I.vp=30;I.t4=0;return}}if(I.t4>2.7){I.vp=2;I.t4=0;v.on=1;v.a=0;v.x=G.door;v.y=G.by-6;v.dx=-1;v.m=0;v.pi=0;v.man=0;v.lat=0;v.rch=null;I.sayV=['Evo me, evo me! Leone, mirno! Sedi!',3.2];speak(I.sayV[0]);tn(150,90,.2,.1,'sawtooth');if(L.on)L.mode=3}}
+ else if(I.vp==2){v.a=Math.min(1,v.a+dt*3.5);const S=vkSpot(G,0),dx=S[0]-v.x,dy=S[1]-v.y,d=Math.hypot(dx,dy),sp=78;
+   if(d>3){const k=Math.min(d,sp*dt);v.x+=dx/d*k;v.y+=dy/d*k;v.w+=dt*sp/11;if(Math.abs(dx)>.5)v.dx=dx>0?1:-1;v.m+=(1-v.m)*Math.min(1,dt*9)}
+   else{v.m+=(0-v.m)*Math.min(1,dt*9);v.dx=-1;I.vp=20;I.t4=0}}
+  /* Vuk stoji kod zasuna i pita Peru za Leona */
+  else if(I.vp==30){const q=I.t4;n.dx=G.door>=n.x?1:-1;const shower=I.shower!==0;if(q>.3&&q<3.6)bub.push([G.door,G.by-22,shower?'Evo da se istuširam, bee!':'Pero, za neki minut! Dovršavam ručak!']);if(!I.c30&&q>.3){I.c30=1;const msg=shower?'Evo da se istuširam, bee!':'Pero, za neki minut! Dovršavam ručak!';speak(msg)}if(!I.c31&&q>3.9){I.c31=1;I.say=[shower?'A ŠTA?! Sad kad smo došli?! Ajde, prvo idem po Andreja, pa se vraćamo po tebe!':'Ma kakav minut, bee! Idem po Andreja, pa ćemo po tebe!',3.8];speak(I.say[0]);tn(160,70,.3,.1,'sawtooth')}if(q>7.8){I.st=0;I.vp=4;I.vd=1;I.dv=I.d;I.L=INL2N;I.li=0;I.sayV=null;I.late=1;if(L.on){L.mode=1;L.pop=[]}I.i++;if(I.i>=I.pts.length){I.st=1;I.t2=0}}}
+   else if(I.vp==20){v.m+=(0-v.m)*Math.min(1,dt*9);v.dx=-1;
+   if(!I.c20&&I.t4>.4){I.c20=1;I.sayV=['Pero, da li da vodim i Leona sa nama?',3.6];speak(I.sayV[0]);if(L.on&&L.mode<4){L.pop.push({t:0,s:'VAU?',o:0});tn(1250,520,.085,.06,'sawtooth')}}
+   if(I.t4>3.3){I.vp=21;I.t4=0;I.askDone=0;vukAsk(ch=>{I.ch=ch;I.askDone=1})}}
+  else if(I.vp==21){v.m+=(0-v.m)*Math.min(1,dt*9);v.dx=-1;
+   if(I.t4>30&&!I.askDone){vukAskClose();I.ch=0;I.askDone=1}
+   if(I.askDone){I.askDone=0;I.vp=22;I.t4=0}}
+  else if(I.vp==22){v.m+=(0-v.m)*Math.min(1,dt*9);v.dx=-1;const q=I.t4,ch=I.ch|0,Q=VKA[ch];
+   if(!I.c22&&q>.05){I.c22=1;I.say=[Q[0],3.2];speak(Q[0])}
+   if(!I.c22b&&q>2.9){I.c22b=1;I.sayV=[Q[1],3.2];speak(Q[1]);if(ch==1)L.stay=1}
+   if(q>5.9){I.vp=23;I.t4=0}}
+  /* Vuk rukom podize zasun, pa gura kapiju */
+  else if(I.vp==23){const q=I.t4,ch=I.ch|0,ox=v.x,oy=v.y;v.dx=-1;let walk=0;
+   if(q<.85){const rr=vkEase(q/.5);v.lat=vkEase((q-.5)/.3);v.man=0;const h=vkLatchPt(G,0),hp=[h[0],h[1]-v.lat*2.2],rs=[v.x-17,v.y+1];v.rch=[rs[0]+(hp[0]-rs[0])*rr,rs[1]+(hp[1]-rs[1])*rr];
+    if(!I.k1&&q>.5){I.k1=1;tn(2100,900,.05,.07,'square');kb7Later(()=>tn(1400,700,.04,.05,'square'),70)}}
+   else if(q<2.45){const p=(q-.85)/1.6,o=vkEase(p);v.man=o;v.lat=1;const h=vkLatchPt(G,o),P=vkSpot(G,o);v.rch=[h[0],h[1]-2];v.x=P[0];v.y=P[1];walk=1;
+    if(!I.k2){I.k2=1;tn(120,260,.9,.05,'sawtooth');kb7Later(()=>tn(190,95,.8,.04,'sawtooth'),520)}
+    if(p>.5&&!I.k3){I.k3=1;if(ch==1){L.pop.push({t:0,s:'ÍÍÍ...',o:0});tn(900,450,.35,.05,'sine')}else{L.mode=4;leonBark()}}}
+   else{const ts=q-2.45;v.man=1+.07*Math.exp(-5*ts)*Math.sin(16*ts);v.lat=1-vkEase(ts/.3);
+    if(ts<.4){const h=vkLatchPt(G,1),rs=[v.x-17,v.y+1],e=vkEase(ts/.4);v.rch=[h[0]+(rs[0]-h[0])*e,h[1]-2+(rs[1]-h[1]+2)*e]}else v.rch=null;
+    if(ts>1){v.man=1;v.rch=null;v.lat=0;I.vp=ch==1?25:24;I.t4=0;I.w24=0}}
+   const mv=Math.hypot(v.x-ox,v.y-oy)/Math.max(dt,.001);if(walk){v.w+=Math.hypot(v.x-ox,v.y-oy)/11}v.m+=((walk&&mv>3?1:0)-v.m)*Math.min(1,dt*9)}
+  /* "Ostavi ga": Vuk vraca kapiju rukom i zatvara zasun */
+  else if(I.vp==25){const q=I.t4,ox=v.x,oy=v.y;v.dx=-1;let walk=0;
+   if(!I.k5&&q>.05){I.k5=1;I.sayV=['Sedi, Leone! Čuvaj kuću!',2.8];speak(I.sayV[0]);L.pop.push({t:0,s:'ÍÍÍ...',o:0});tn(900,450,.35,.05,'sine')}
+   if(q<.45){const h=vkLatchPt(G,1),rs=[v.x-17,v.y+1],e=vkEase(q/.45);v.man=1;v.lat=1;v.rch=[rs[0]+(h[0]-rs[0])*e,rs[1]+(h[1]-2-rs[1])*e]}
+   else if(q<1.9){const p=(q-.45)/1.45,o=1-vkEase(p),h=vkLatchPt(G,o),P=vkSpot(G,o);v.man=o;v.lat=1;v.rch=[h[0],h[1]-2];v.x=P[0];v.y=P[1];walk=1;
+    if(!I.k6){I.k6=1;tn(260,110,.9,.05,'sawtooth')}}
+   else{const ts=q-1.9;v.man=.06*Math.exp(-9*ts)*Math.abs(Math.sin(18*ts));
+    if(!I.k7){I.k7=1;tn(520,110,.12,.12,'square');kb7Later(()=>tn(2100,900,.04,.06,'square'),130)}
+    v.lat=ts<.12?1:1-vkEase((ts-.12)/.15);v.rch=ts<.35?[G.gx1-1,G.fy-18+ts*20]:null;
+    if(ts>.9){v.man=0;v.lat=0;v.rch=null;L.mode=3;I.vp=24;I.t4=0;I.w24=0}}
+   const mv=Math.hypot(v.x-ox,v.y-oy)/Math.max(dt,.001);if(walk){v.w+=Math.hypot(v.x-ox,v.y-oy)/11}v.m+=((walk&&mv>3?1:0)-v.m)*Math.min(1,dt*9)}
+  /* Vuk ide do Pere */
+  else if(I.vp==24){const W=[[G.gx1+6,G.fy+36],[n.x-40,n.y+6]],T0=W[Math.min(I.w24|0,1)],dx=T0[0]-v.x,dy=T0[1]-v.y,d=Math.hypot(dx,dy),sp=78;
+   if(d>3){const k=Math.min(d,sp*dt);v.x+=dx/d*k;v.y+=dy/d*k;v.w+=dt*sp/11;if(Math.abs(dx)>.5)v.dx=dx>0?1:-1;v.m+=(1-v.m)*Math.min(1,dt*9)}
+   else if(I.w24<1)I.w24=1;
+   else{I.vp=3;I.t4=0}}
+  else if(I.vp==3){v.m+=(0-v.m)*Math.min(1,dt*9);v.dx=n.x>=v.x?1:-1;n.dx=v.x>=n.x?1:-1;const q=I.t4,ch=I.ch|0;
+   if(!I.c3&&q>.3){I.c3=1;I.sayV=[ch==1?'Idemo, Pero. Leon će paziti na kuću.':(I.back?'Evo me, ajde, idemo do Grobarskog.':'Ajde, Pero, idemo po Andreja.'),3];speak(I.sayV[0])}
+   if(!I.c6&&q>3.2){I.c6=1;I.say=[I.back?'Napokon, do đavola! Andrej, Vuk, idemo do Grobarskog.':'Dobro. Idemo po Andreja, čeka nas.',3];speak(I.say[0]);if(L.on&&ch!=1)leonBark()}
+   if(q>6.2){v.go=v.man==null?v.go:v.man;v.man=null;v.lat=0;v.rch=null;if(I.back){introEnd();return}I.st=0;I.vp=4;I.vd=1;I.dv=I.d;I.L=ch==1?INL2.filter(e=>!/Leone/.test(e[2])):INL2;I.li=0;I.sayV=null;I.i++;if(I.i>=I.pts.length){I.st=1;I.t2=0}}}}
+/* ===== Vuk otvara kapiju rukom: pomocne funkcije i pitanje o Leonu ===== */
+function vkEase(t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)}
+function vkGateEnd(G,o){const a=o*1.2;return[G.gx0+Math.cos(a)*G.gw,G.fy+Math.sin(a)*G.gw*.6]}
+function vkLatchPt(G,o){const e=vkGateEnd(G,o);return[e[0]-1,e[1]-16]}
+function vkSpot(G,o){const h=vkLatchPt(G,o);return[h[0]+27,h[1]+12]}
+const VKA=[['Vodi ga, bee. Samo neka ide iza tebe.','Može! Leone, ideš s nama!'],['Ostavi ga, Vuče. Skoro me je pojeo.','Dobro, Leone. Ti čuvaš kuću.'],['Vodi ga, ali neka ne grize, bee.','Ne grize on... samo malo.']];
+let vqe=null,vqCb=null;
+function vukAskClose(){vqCb=null;if(vqe)vqe.hidden=true}
+function vukPick(i){if(!vqCb)return;const cb=vqCb;vukAskClose();tn(300,500,.1,.05,'square');cb(i)}
+function vukAsk(cb){if(!vqe){vqe=document.createElement('div');vqe.style.cssText='position:fixed;left:50%;top:max(110px,16vh);transform:translateX(-50%);z-index:2147483000;width:min(92vw,420px);padding:12px 14px;border:1px solid #ffb347;border-radius:14px;background:rgba(13,31,22,.93);color:#f3f5f2;font:500 14px/1.4 Inter,Arial,sans-serif;box-shadow:0 8px 30px #0008';document.body.appendChild(vqe)}
+ const O=['Vodi ga','Ostavi ga kući','Vodi ga, ali neka ne grize'];
+ vqe.innerHTML='<b style="color:#ffb347;font-family:Oswald,Arial;letter-spacing:.1em">VUK</b><div style="margin:4px 0 8px">Pero, da li da vodim Leona sa nama?</div>'+O.map((t,i)=>'<button data-i="'+i+'" style="margin:4px 5px 0 0;padding:12px 16px;border-radius:999px;border:1px solid #ffb347;background:#0d1f16;color:#fff;font:700 15px Arial;cursor:pointer">'+(i+1)+'. '+t+'</button>').join('');
+ vqCb=cb;vqe.hidden=false;vqe.querySelectorAll('button').forEach(x=>x.onclick=()=>vukPick(+x.dataset.i));tn(320,520,.1,.05,'square')}
+addEventListener('keydown',e=>{if(gm.classList.contains('geo-mode'))return;if(!vqCb)return;if(e.key>='1'&&e.key<='3'){e.preventDefault();vukPick(+e.key-1)}});
+function vukSkip(){const I=INT;if(!I)return;const v=vuk;v.man=null;v.lat=0;v.rch=null;v.go=0;try{vukAskClose()}catch(e){}v.on=1;v.a=1;v.x=I.F.x-38;v.y=I.F.y+14;v.m=0;v.dx=1;I.vd=1;I.vp=4;I.sayV=null;try{leonSkip()}catch(e){}}
+function vukEnd(){const v=vuk;if(!v.on){v.on=1;v.a=1;v.x=npc.x-40;v.y=npc.y+12}v.say=['Ja sam Vuk Blažić. Idem s vama, ali ja ne trčim.',5];v.sayT=40;try{leonEnd()}catch(e){}}
+function vukReset(x,y){if(vuk.on){vuk.x=x;vuk.y=y;vuk.m=0;vuk.say=null;if(leon.on&&leon.mode==4){leon.x=x-30;leon.y=y+11}}}
+
+/* ===== LEON: Vukov pomeranski špic. Laje iza kapije dok Vuk ne izađe, pa ih prati do Andrejeve kuće ===== */
+const leon={x:0,y:0,w:0,m:0,dx:1,on:0,mode:0,t:0,nt:0,nb:0,bt:0,hp:0,sayT:40,pop:[]};
+/* mode: 1 = čuva kapiju, 2 = laje na kapiji, 3 = raduje se Vuku, 4 = prati Vuka */
+let cine=0;
+function cineStep(dt,t){cine+=(t-cine)*Math.min(1,dt*2.6);if(Math.abs(t-cine)<.004)cine=t}
+function leonGeom(){const H=vukHouse();return H?vukGeom(H):null}
+function leonInit(){const G=leonGeom();if(!G){leon.on=0;return}Object.assign(leon,{dead:0,hpv:100,fT:0,atk:0,bk:0,on:1,mode:1,x:G.gc-6,y:G.fy-7,dx:1,w:0,m:0,t:0,nt:0,nb:0,bt:0,hp:0,sayT:40,pop:[],stay:0});cine=0}
+function leonBark(){const L=leon;L.bt=.34;L.pop.push({t:0,s:['VAU!','AV!','VAU VAU!','AV AV!'][L.nb++%4],o:(Math.random()-.5)*10});
+ const dd=Math.hypot(L.x-cam.x,L.y-cam.y),v=.085*Math.max(.12,1-dd/800);
+ tn(1250+Math.random()*180,520,.085,v,'sawtooth');kb7Later(()=>tn(1750,760,.05,v*.55,'square'),45)}
+function leonSkip(){const L=leon;if(!L.on)return;if(L.stay){L.mode=3;L.pop=[];L.bt=0;return}L.mode=4;L.pop=[];L.bt=0;L.x=vuk.x-30;L.y=vuk.y+11;L.dx=1}
+function leonEnd(){const L=leon;if(!L.on)return;if(L.stay)return;if(L.mode!=4){L.mode=4;L.x=vuk.x-30;L.y=vuk.y+11}}
+function leonUp0(dt){const L=leon;if(!L.on)return;L.t+=dt;L.bt=Math.max(0,L.bt-dt);L.hp+=dt*10;
+ for(const p of L.pop)p.t+=dt;if(L.pop.length&&L.pop[0].t>.9)L.pop=L.pop.filter(p=>p.t<=.9);
+ const G=leonGeom();if(!G)return;const I=INT&&INT.on?INT:null;let mv=0;
+ if(L.mode<4){
+  const tx=G.gc-(L.mode==3?20:6);L.x+=(tx-L.x)*Math.min(1,dt*4);L.y=G.fy-7;
+  const tg=(L.mode==3&&vuk.on)?vuk:npc;L.dx=tg.x>=L.x?1:-1;
+  if(L.mode==1){if(I&&dist(L,npc)<210){L.mode=2;L.nt=.1}}
+  else if(L.mode==2){L.nt-=dt;if(L.nt<=0){leonBark();L.nt=(L.nb%3==0)?.85:.2+Math.random()*.07}}}
+ else{
+  const tg=vuk.on?vuk:npc,tx=tg.x-(tg.dx||1)*30,ty=tg.y+11,dx=tx-L.x,dy=ty-L.y,d=Math.hypot(dx,dy);
+  if(d>1400){L.x=tx;L.y=ty}
+  else if(d>9){const sp=Math.min(330,48+d*2.7),k=Math.min(d,sp*dt);L.x+=dx/d*k;L.y+=dy/d*k;if(Math.abs(dx)>.6)L.dx=dx>0?1:-1;L.w+=dt*sp/6;mv=1}
+  else if(Math.abs(tg.x-L.x)>5)L.dx=tg.x>L.x?1:-1;
+  push(L,5);
+  L.sayT-=dt;if(L.sayT<=0){L.sayT=40+Math.random()*50;if(!I&&dist(L,pl)<420)leonBark()}}
+ L.m+=(mv-L.m)*Math.min(1,dt*9)}
+function fluff(cx,cy,rx,ry,n,r,col,ph){c.fillStyle=col;for(let i=0;i<n;i++){const a=i/n*6.2832+(ph||0);c.beginPath();c.arc(cx+Math.cos(a)*rx,cy+Math.sin(a)*ry,r,0,7);c.fill()}c.beginPath();c.ellipse(cx,cy,rx,ry,0,0,7);c.fill()}
+function leonDraw0(){const L=leon;if(!L.on)return;
+ const jaw=L.bt>0?Math.sin(Math.min(1,L.bt/.34)*Math.PI):0,m=L.m,happy=L.mode==3,
+  hop=happy?-Math.abs(Math.sin(L.hp*.9))*5:-jaw*(L.mode==2?7:2.4)-(m>.3?Math.abs(Math.sin(L.w))*1.4:0),
+  wag=Math.sin(T*(happy?26:m>.3?15:L.mode==2?20:7))*(happy?.55:.32);
+ c.save();c.translate(L.x,L.y);c.scale(L.dx*.92,.92);c.lineCap=c.lineJoin='round';
+ c.fillStyle='rgba(0,0,0,.26)';c.beginPath();c.ellipse(1,1.8,12-(hop<-1?1.5:0),3.2,0,0,7);c.fill();
+ /* noge */
+ const sw=Math.sin(L.w)*3.6*m;
+ [[-7,-1],[-3.5,1],[5,1],[9,-1]].forEach(([lx,s],i)=>{const o=(i%2?1:-1)*sw;c.strokeStyle=i==1||i==2?'#e9c795':'#f3d9a8';c.lineWidth=3.3;c.beginPath();c.moveTo(lx,-5+hop*.3);c.lineTo(lx+o,-.6+(hop<0?hop*.55:0));c.stroke();c.fillStyle='#fbe9c6';c.beginPath();c.ellipse(lx+o+.8,-.4+(hop<0?hop*.55:0),2.2,1.2,0,0,7);c.fill();c.strokeStyle='#b98a52';c.lineWidth=.45;c.beginPath();c.moveTo(lx+o+.6,-1.2+(hop<0?hop*.55:0));c.lineTo(lx+o+.6,.2+(hop<0?hop*.55:0));c.moveTo(lx+o+1.9,-1.1+(hop<0?hop*.55:0));c.lineTo(lx+o+1.9,.2+(hop<0?hop*.55:0));c.stroke()});
+ c.translate(0,hop);c.rotate(-jaw*.05);
+ /* rep: veliki pahuljast, preko leđa */
+ c.save();c.translate(-9,-11);c.rotate(wag);
+ fluff(-3,-7,5.2,6,10,2.7,'#c7782c',.3);fluff(-3.4,-7.6,3.4,4.2,8,2.1,'#e3963f',.9);fluff(-4.2,-9,1.6,2,5,1.4,'#f5cf90',0);c.restore();
+ /* telo */
+ fluff(0,-9,10,6.2,12,3.2,'#d78a38',0);fluff(.6,-9.6,8,4.6,10,2.6,'#e7a04e',.4);
+ fluff(-2,-6.4,6,2.4,8,1.7,'#f1c585',.2);
+ c.fillStyle='rgba(120,60,15,.22)';c.beginPath();c.ellipse(-1,-4.2,8,1.6,0,0,7);c.fill();
+ c.strokeStyle='#bf7428';c.lineWidth=.7;for(let i=0;i<7;i++){const fx=-8+i*2.6;c.beginPath();c.moveTo(fx,-14.6+Math.abs(i-3)*.6);c.quadraticCurveTo(fx+.8,-12.4,fx+.2+(i%2?.8:-.8),-10.4);c.stroke()}
+ c.strokeStyle='#fbe2b4';c.lineWidth=.7;for(let i=0;i<4;i++){c.beginPath();c.moveTo(-6+i*3.4,-6.6);c.lineTo(-6.6+i*3.4,-4.4);c.stroke()}
+ /* grudi - krem kragna */
+ fluff(8.4,-8,3.6,4.6,8,2.2,'#f7dcaa',.2);fluff(9.2,-7.2,2.4,3,6,1.6,'#fff0cf',0);
+ /* ogrlica */
+ c.strokeStyle='#bd2f2a';c.lineWidth=1.8;c.beginPath();c.arc(9.2,-12.6,3.4,.9,2.9);c.stroke();c.fillStyle='#ffcf5a';c.beginPath();c.arc(10.3,-9.6,.9,0,7);c.fill();
+ /* glava */
+ c.save();c.translate(11.2+jaw*1.2,-15.2-jaw*1.4);c.rotate(-jaw*.2-(happy?Math.sin(L.hp*.9)*.12:0));
+ c.fillStyle='#c7782c';[[-3.8,-3,-1.2,-9.4,.6,-3.6],[3.2,-3.6,3.9,-9.8,.2,-3.6]].forEach(([a,b,d,e,f,g])=>{c.beginPath();c.moveTo(a,b);c.lineTo(d,e);c.lineTo(f,g);c.closePath();c.fill()});
+ c.fillStyle='#ef9f93';[[-3,-4.2,-1.6,-7.4,-.6,-4.4],[3,-4.4,3.4,-7.7,.9,-4.4]].forEach(([a,b,d,e,f,g])=>{c.beginPath();c.moveTo(a,b);c.lineTo(d,e);c.lineTo(f,g);c.closePath();c.fill()});
+ fluff(0,0,4.7,4.2,10,2.4,'#e3963f',0);fluff(1.4,.6,3.6,3.2,8,1.9,'#efb066',.5);
+ fluff(1.8,2.6,4.1,2.2,8,1.7,'#f8dfb0',0);
+ /* njuška */
+ c.fillStyle='#f6dcae';c.beginPath();c.ellipse(5.6,1.2,3.2,2.2,.12,0,7);c.fill();
+ if(jaw>.04||happy){c.fillStyle='#6a1820';c.beginPath();c.ellipse(5.9,2.5+jaw*.8,2.7,.6+jaw*2.3,.08,0,7);c.fill();c.fillStyle='#ff7c98';c.beginPath();c.ellipse(5.4,3.1+jaw*1.8,1.5,.7+jaw*.7,0,0,7);c.fill()}
+ c.fillStyle='#fbe9c6';c.beginPath();c.ellipse(5,.1,2.4,1.1,.1,0,7);c.fill();
+ c.fillStyle='#120b07';c.beginPath();c.ellipse(8.4,.1,1.35,1.05,0,0,7);c.fill();c.fillStyle='#ffffffcc';c.beginPath();c.arc(8,-.3,.35,0,7);c.fill();
+ /* oko */
+ if(happy&&Math.sin(L.hp*.9)>.7){c.strokeStyle='#120b07';c.lineWidth=1;c.beginPath();c.arc(3,-1.3,1.1,3.3,6.1);c.stroke()}
+ else{c.fillStyle='#0d0907';c.beginPath();c.arc(3,-1.4,1.25,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(3.4,-1.9,.45,0,7);c.fill()}
+ c.fillStyle='#f3b560';c.beginPath();c.arc(2.4,-3.3-jaw*.7,.8,0,7);c.fill();
+ c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=.35;[[7.4,1.6,10.8,.8],[7.4,2.2,10.6,2.5]].forEach(([a,b,d,e])=>{c.beginPath();c.moveTo(a,b);c.lineTo(d,e);c.stroke()});
+ c.strokeStyle='rgba(255,246,220,.9)';c.lineWidth=.6;for(let i=0;i<4;i++){c.beginPath();c.moveTo(-3.4+i*1.4,-4);c.lineTo(-3.8+i*1.5,-6)}c.stroke();
+ c.restore();c.restore();
+ /* VAU! */
+ for(const p of L.pop){const k=p.t/.9,s=k<.15?k/.15*1.25:1.25-Math.min(.25,(k-.15)*.5),x=L.x+L.dx*(20+k*14)+p.o*.4,y=L.y-34-k*20;
+  c.save();c.translate(x,y);c.rotate(L.dx*(-.15+p.o*.01));c.scale(s,s);c.globalAlpha=Math.max(0,1-Math.max(0,k-.55)/.45);c.font='700 13px Oswald,Arial';c.textAlign='center';c.lineWidth=4;c.strokeStyle='#201006';c.lineJoin='round';c.strokeText(p.s,0,0);c.fillStyle=k<.5?'#ffd36b':'#ffb347';c.fillText(p.s,0,0);c.restore();
+  if(k<.5){c.save();c.translate(L.x,L.y);c.scale(L.dx,1);c.globalAlpha=(1-k*2)*.85;c.strokeStyle='#fff3cf';c.lineWidth=1.8;c.lineCap='round';for(let q=0;q<3;q++){c.beginPath();c.arc(18,-21-jaw*5,7+q*4.5+k*11,-.55,.55);c.stroke()}c.restore()}}}
+function cineDraw(){try{gm.classList.toggle('kx-cut',!!((INT&&INT.on)||(FP&&FP.on)))}catch(e){}if(cine<.01)return;c.setTransform(D,0,0,D,0,0);const bh=Math.round(H*.11*cine);
+ c.fillStyle='#000';c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh);
+ const g=c.createRadialGradient(W/2,H/2,H*.32,W/2,H/2,H*.95);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${.5*cine})`);c.fillStyle=g;c.fillRect(0,bh,W,H-2*bh);
+ const I=INT;if(I&&I.on&&I.st==3&&I.vp<3&&I.t4>.35){const a=I.vp==0?Math.min(1,(I.t4-.35)*2.4):I.vp==1?1:Math.max(0,1-I.t4*1.4),sl=(1-a)*-26;
+  if(a>0){c.save();c.globalAlpha=a*cine;c.textAlign='left';const x=Math.max(18,W*.06)+sl,y=H-bh-24;c.lineJoin='round';
+   c.fillStyle='#ffb347';c.fillRect(x-12,y-34,3,50);
+   c.font='700 28px Oswald,Arial';try{c.letterSpacing='4px'}catch(e){}c.lineWidth=5;c.strokeStyle='#000';c.strokeText('LEON',x,y-8);c.fillText('LEON',x,y-8);
+   try{c.letterSpacing='0px'}catch(e){}c.font='600 12px Arial';c.fillStyle='#fff';c.shadowColor='#000';c.shadowBlur=5;c.fillText('Vukov pomeranski špic · čuvar kapije br. 25',x,y+12);c.restore()}}}
+
+
+let kbWaypoint=null,kbLastAuto=0;
+function kbReadSaves(){const out=[];for(const key of ['kb_manual_save_v2','kb_auto_save_v2'])try{const d=JSON.parse(KBStore.getItem(key)||'null');if(d&&d.v===2&&Number.isFinite(d.x)&&Number.isFinite(d.y)&&d.x>=0&&d.x<=WW&&d.y>=0&&d.y<=WH&&Number.isFinite(d.at))out.push(d)}catch(e){}return out.sort((a,b)=>b.at-a.at)}
+function kbBestSave(){try{return kbReadSaves()[0]||null}catch(e){return null}}
+function kbCanSave(){return !gm.hidden&&!!built&&!!run&&mode===1&&!dead&&!(INT&&INT.on)&&!(FP&&FP.on)&&!(KOM&&KOM.on)&&!(window.KBMP&&KBMP.on)}
+function kbWriteSave(auto=false,force=false){if(!kbCanSave())return false;const now=Date.now();if(auto&&!force&&now-kbLastAuto<20000)return false;kbA1ClassicSample(true);const d={kbDirector:window.KBMissionDirector?.adapters.capture(),v:2,at:now,x:pl.x,y:pl.y,q:Q,se:SE,sx:sc.x,sy:sc.y,scon:!!sc.on,bat:sc.bat,md:sc.md|0,wp:kbWaypoint?{x:kbWaypoint.x,y:kbWaypoint.y,title:kbWaypoint.title}:null};try{const saved=KBStore.setItem(auto?'kb_auto_save_v2':'kb_manual_save_v2',JSON.stringify(d));if(auto)kbLastAuto=now;return saved}catch(e){return false}}
+function kbLoadSave(){if(gm.hidden||(window.KBMP&&KBMP.on))return false;const d=kbBestSave();if(!d)return false;try{window.KBMissionDirector?.adapters.validateNative(d,'classic');INT=null;try{frReset()}catch(e){}init();mode=1;K={};J.x=J.y=0;hA=eA=eB=eC=eF=0;wvx=wvy=0;sv.x=sv.y=0;pl.x=Math.max(18,Math.min(WW-18,d.x));pl.y=Math.max(18,Math.min(WH-18,d.y));pl.f=pl.w=pl.vx=pl.vy=0;pl.m=0;cam.x=pl.x;cam.y=pl.y;for(let i=0;i<6;i++)push(pl,12);Q=Math.max(0,Math.min(3,d.q|0));SE=Math.max(0,Math.min(3,d.se|0));sc.x=Number.isFinite(d.sx)?Math.max(0,Math.min(WW,d.sx)):pl.x+32;sc.y=Number.isFinite(d.sy)?Math.max(0,Math.min(WH,d.sy)):pl.y+8;sc.on=d.scon?1:0;sc.bat=Math.max(0,Math.min(100,Number.isFinite(d.bat)?d.bat:100));sc.md=Math.max(0,Math.min(2,d.md|0));kbWaypoint=d.wp&&Number.isFinite(d.wp.x)&&Number.isFinite(d.wp.y)?{x:Math.max(0,Math.min(WW,d.wp.x)),y:Math.max(0,Math.min(WH,d.wp.y)),title:String(d.wp.title||'Označeno mesto')}:null;kbA1ClassicRestore(d);php=100;dead=false;pau=0;dvw=0;$('#bq').textContent='GRAFIKA: '+QN[Q];$('#bs').textContent='SEZONA: '+SN[SE];$('#bA').textContent='TRČI';$('#bB').textContent='TROTINET';$('#bB').hidden=0;$('#bC').hidden=1;$('#mm').hidden=0;$('#gq').hidden=0;$('#gr').hidden=0;$('#repel').hidden=0;$('#exitFootball').hidden=1;$('#kh').hidden=1;$('#kxpz')&&($('#kxpz').hidden=true);try{window.kbPause&&window.kbPause(0)}catch(e){}try{if(window.MMBIG){window.MMBIG=0;document.getElementById('mm').classList.remove('big')}}catch(e){}rs();ban=['POZICIJA UČITANA\nAvantura se nastavlja.',4];setGo('Pozicija učitana');return true}catch(e){console.error('Učitavanje pozicije nije uspelo',e);return false}}
+function kbSetWaypoint(x,y){if(!Number.isFinite(x)||!Number.isFinite(y))return false;x=Math.max(0,Math.min(WW,x));y=Math.max(0,Math.min(WH,y));let near=null,nd=1e9;for(const z of Z){if(!z||!z.n)continue;const d=Math.hypot(z.x-x,z.y-y);if(d<nd){nd=d;near=z}}kbWaypoint={x,y,title:near&&nd<145?near.n:'Označeno mesto'};try{tn(520,760,.09,.1,'sine')}catch(e){}return true}
+function kbClearWaypoint(){kbWaypoint=null}
+function kbActionLabel(){if(mode!==1)return 'AKCIJA';if(sc.on)return 'SIĐI';if(npc&&!npc.dead&&Math.hypot(npc.x-pl.x,npc.y-pl.y)<80)return 'PRIČAJ';return 'AKCIJA'}
+/* A1: ove funkcije žive u postojećem zatvaranju originalnog 2D pogona. */
+let kbA1SampleAt = 0;
+function kbA1ClassicState() {
+  return {version: 1, items: QM.got.map(Boolean), zones: [...new Set(Q2.v)].filter(i => Number.isInteger(i) && i >= 0 && i < 10),
+    suppliesDone: !!QM.done, exploreDone: !!Q2.done, suppliesStarted: !!QM.st, exploreStarted: !!Q2.st,
+    best: Number.isFinite(Q3.best) ? Math.max(0, Q3.best) : 0, raceRunning: !!Q3.st,
+    raceElapsed: Q3.st ? Math.max(0, (kb7.clock * 1000 - Q3.t0) / 1000) : 0,
+    raceCooldown: Math.min(20, Math.max(0, (Q3.cd - kb7.clock * 1000) / 1000))};
+}
+function kbA1ClassicSample(force = false) {
+  if (!window.KBMissionDirector) return;
+  if (!force && kb7.clock < kbA1SampleAt) return;
+  kbA1SampleAt = kb7.clock + .25;
+  window.KBMissionDirector.adapters.safe(d => d.observeClassic(kbA1ClassicState()));
+}
+function kbA1ClassicRestore(data = null) {
+  const A = window.KBMissionDirector?.adapters; if (!A) return;
+  A.safe(d => {
+    if (data) A.nativeRestore(data, 'classic');
+    const s = data && !data.kbDirector ? null : d.classicSnapshot(); if (!s) return;
+    QM.got = s.items.map(Number); QM.done = Number(s.suppliesDone); QM.st = Number(s.suppliesStarted);
+    Q2.v = s.zones.slice(); Q2.done = Number(s.exploreDone); Q2.st = Number(s.exploreStarted);
+    Q3.best = s.best; Q3.st = Number(s.raceRunning); Q3.t0 = kb7.clock * 1000 - s.raceElapsed * 1000;
+    Q3.cd = kb7.clock * 1000 + s.raceCooldown * 1000;
+  });
+}
+
+/* Zajednički životni ciklus, mjerenje i bezbjedni tajmeri originalne igre. */
+const kb7={stage:3,clock:0,jobs:[],jobId:100000,externalPause:false,audioPaused:false,musicWasPlaying:false,lastZone:-2,lastPhase:-1,saveAt:0,ready:false,step:1/60,acc:0,cost:8,frames:0,since:0,fps:0,effects:Q,requestedQ:Q,slow:0,fast:0,hitStop:0,view:null,env:{time:0,night:0,wind:0,humidity:0,season:SE},settings:{assist:false,reduced:matchMedia('(prefers-reduced-motion:reduce)').matches,largeText:false,largeControls:false,timeMode:'auto',vibration:true,onboarded:false,...KBStore.read('kb_2d_settings_v7',{})}};
+function kb7Later(fn,ms=0,...args){if(!run)return window.setTimeout(fn,ms,...args);const id=++kb7.jobId;kb7.jobs.push({id,at:kb7.clock+Math.max(0,Number(ms)||0)/1000,fn,args});return id;}
+function kb7Cancel(id){const i=kb7.jobs.findIndex(j=>j.id===id);if(i>=0)kb7.jobs.splice(i,1);else window.clearTimeout(id);}
+function kb7Release(){K={};J.x=J.y=0;hA=eA=eB=eC=eF=0;sp=0;wHold=0;kn.style.transform='';}
+function kb7AudioPause(on){if(kb7.audioPaused===on)return;kb7.audioPaused=on;if(on){try{AC?.suspend()?.catch(()=>{});if(kbAu&&!kbAu.paused){kb7.musicWasPlaying=true;kbAu.pause();}speechSynthesis.cancel();}catch(_){}}else{try{AC?.resume()?.catch(()=>{});if(kb7.musicWasPlaying){kb7.musicWasPlaying=false;kbAu?.play()?.catch(()=>{});}}catch(_){}}}
+function kb7Pause(on){kb7.externalPause=!!on;pau=on?1:0;kb7Release();kb7.acc=0;last=performance.now();kb7AudioPause(on);}
+function kb7Tick(dt){kb7.clock+=dt;for(let i=kb7.jobs.length-1;i>=0;i--){const j=kb7.jobs[i];if(j.at<=kb7.clock){kb7.jobs.splice(i,1);try{j.fn(...j.args);}catch(e){console.error('2D tajmer:',e);}}}
+ if(mode===1&&!INT?.on&&!FP.on&&!dead&&(zi!==kb7.lastZone||kb7.clock-kb7.saveAt>20)){kb7.lastZone=zi;kb7.saveAt=kb7.clock;kbWriteSave(true,true);}
+ if(KBST.on&&KBST.phase!==kb7.lastPhase){kb7.lastPhase=KBST.phase;KBStore.checkpoint({kind:'story',phase:KBST.phase,active:KBST.active,at:Date.now()});}
+ if(typeof kb7FeelTick==='function'&&kb7.stage>=3)kb7FeelTick(dt);
+}
+function kb7Start(){kb7.externalPause=false;kb7.acc=0;kb7.since=performance.now();kb7.frames=0;kb7AudioPause(false);if(!kb7.ready){kb7.ready=true;document.addEventListener('visibilitychange',()=>{if(!run||!gm.classList.contains('kb-original-2d'))return;if(document.hidden){kbWriteSave(true,true);kb7Release();kb7AudioPause(true);kb7.acc=0;}else{last=performance.now();window.dispatchEvent(new Event('kb:classic-pause-request'));}});window.addEventListener('blur',()=>{if(run&&gm.classList.contains('kb-original-2d'))kb7Release();});for(const id of ['st','bA','bW']){const e=$("#"+id);if(e)e.addEventListener('lostpointercapture',kb7Release);}}
+ if(typeof kb7ShowWelcome==='function'&&kb7.stage>=3)kb7ShowWelcome();
+}
+function kb7Stop(){kbA1ClassicSample(true);window.KBMissionDirector?.instance.flush();kbWriteSave(true,true);kb7.jobs.length=0;kb7Release();kb7AudioPause(true);kb7.externalPause=false;kb7.acc=0;if(typeof kb7HideUI==='function')kb7HideUI();try{speechSynthesis.cancel();}catch(_){}}
+function kb7Record(ms,ts){kb7.cost=kb7.cost*.95+ms*.05;kb7.frames++;if(ts-kb7.since>=1000){kb7.fps=Math.round(kb7.frames*1000/(ts-kb7.since));kb7.since=ts;kb7.frames=0;}if(cv.dataset.frameMs!==kb7.cost.toFixed(2)){cv.dataset.frameMs=kb7.cost.toFixed(2);cv.dataset.fps=String(kb7.fps);cv.dataset.effects=String(kb7.effects);cv.dataset.quality=String(Q);} }
+window.KB2DUI={pause:kb7Pause,get settings(){return kb7.settings;},get env(){return kb7.env;},get metrics(){return {fps:kb7.fps,frameMs:kb7.cost,effects:kb7.effects,quality:Q,pendingTimers:kb7.jobs.length,simulationMs:kb7.lastSimMs||0,drawingMs:kb7.lastDrawMs||0,lightingMs:kb7.lastLightMs||0,raysMs:kb7.lastRayMs||0,primeMs:kb7.primeMs||0};},setQuality(q){Q=kb7.requestedQ=Math.max(0,Math.min(3,q|0));kb7.effects=Q;rs();}};
+
+/* Ograničeno crtanje, interpolacija i postepeni budžet efekata. */
+kb7.fixed=new KB2DCore.FixedClock(60,5);kb7.drawList=[];kb7.grid=new KB2DCore.SpatialGrid();kb7.anchors=new KB2DCore.SpatialGrid();kb7.visible=[];kb7.anchorVisible=[];kb7.gridAt=-1;kb7.gridDogs=null;kb7.drawMark=0;kb7.miniAt=-1;kb7.drawAt=0;kb7.statsAt=0;kb7.dustPool=new KB2DCore.Pool(()=>({}),96);
+kb7.movePair=[0,0];
+function kb7Movement(){let x=(K.d||K.arrowright?1:0)-(K.a||K.arrowleft?1:0)+J.x,y=(K.s||K.arrowdown?1:0)-(K.w||K.arrowup?1:0)+J.y;GPR=0;try{const pads=navigator.getGamepads?.();if(pads)for(let i=0;i<pads.length;i++){const g=pads[i];if(!g?.connected)continue;const gx=g.axes[0]||0,gy=g.axes[1]||0,L=Math.hypot(gx,gy);if(L>.2){const m=Math.pow(Math.min(1,(L-.2)/.8),1.2);x+=gx/L*m;y+=gy/L*m;}GPR=g.buttons[1]?.pressed||g.buttons[5]?.pressed||g.buttons[7]?.pressed?1:0;break;}}catch(_){}const L=Math.max(1,Math.hypot(x,y));kb7.movePair[0]=x/L;kb7.movePair[1]=y/L;return kb7.movePair;}
+function kb7DustAdd(x,y,big){if(dust.length>=96||Math.random()>=.35)return;const p=kb7.dustPool.take();p.x=x+(Math.random()-.5)*8;p.y=y;p.vx=(Math.random()-.5)*20;p.vy=-10-Math.random()*14;p.l=.5;p.r=big?4:2.5;dust.push(p);}
+function kb7DustUp(dt){for(let i=dust.length-1;i>=0;i--){const p=dust[i];p.l-=dt;if(p.l<=0){dust[i]=dust[dust.length-1];dust.pop();kb7.dustPool.release(p);}else{p.x+=p.vx*dt;p.y+=p.vy*dt;}}}
+function kb7InView(x,y,margin=100){const v=kb7.view;return !v||mode!==1||x>=v.x0-margin&&x<=v.x1+margin&&y>=v.y0-margin&&y<=v.y1+margin;}
+function kb7VisibleDogs(){const v=kb7.view;if(!v)return dogs;if(kb7.gridDogs!==dogs||T-kb7.gridAt>.12){kb7.grid.rebuild(dogs);if(kb7.gridDogs!==dogs)kb7.anchors.rebuild(dogs,'hx','hy');kb7.gridDogs=dogs;kb7.gridAt=T;}kb7.grid.query(v.x0-100,v.y0-100,v.x1+100,v.y1+100,kb7.visible);kb7.anchors.query(v.x0-100,v.y0-100,v.x1+100,v.y1+100,kb7.anchorVisible);const mark=++kb7.drawMark;for(const d of kb7.visible)d._drawMark=mark;for(const d of kb7.anchorVisible)if(d._drawMark!==mark){d._drawMark=mark;kb7.visible.push(d);}return kb7.visible;}
+function kb7MiniSkip(){if(MM.canvas.hidden&&!window.MMBIG)return true;const rate=window.MMBIG?.08:.16;if(kb7.miniBig!==!!window.MMBIG){kb7.miniBig=!!window.MMBIG;kb7.miniAt=-1;}if(T-kb7.miniAt<rate)return true;kb7.miniAt=T;return false;}
+function kb7Prev(){kb7.px=pl.x;kb7.py=pl.y;kb7.cx=cam.x;kb7.cy=cam.y;kb7.nx=npc.x;kb7.ny=npc.y;}
+function kb7Sim(dt){window.KBMissionDirector?.instance.tick(dt,{engine:'2d'});kbA1ClassicSample();kb7Prev();T+=dt;kb7Tick(dt);if(mode===6)kbStTick(dt);else if(mode===1)wUpdate(dt);else if(mode===4)inUp(dt);else if(mode===5)osUp(dt);else if(mode===3){if(!mgOn)gUp(dt);}else if(!dvw)fUpdate(dt);try{window.KBMP?.tick(dt,{x:pl.x,y:pl.y,dx:pl.dx,m:pl.m,run:pl.run,f:pl.f,md:mode,sc:sc.on?1:0});}catch(_){}eA=eB=eC=eF=0;}
+function kb7Paint(){const interpolation=mode===1&&!INT?.on&&!FP.on&&Number.isFinite(kb7.px),x=pl.x,y=pl.y,cx=cam.x,cy=cam.y,nx=npc.x,ny=npc.y,a=kb7.fixed.alpha;
+ if(interpolation){pl.x=kb7.px+(x-kb7.px)*a;pl.y=kb7.py+(y-kb7.py)*a;cam.x=kb7.cx+(cx-kb7.cx)*a;cam.y=kb7.cy+(cy-kb7.cy)*a;npc.x=kb7.nx+(nx-kb7.nx)*a;npc.y=kb7.ny+(ny-kb7.ny)*a;}
+ try{if(mode===6)kbStDraw();else if(mode===1)wDraw();else if(mode===4)inDraw();else if(mode===5)osDraw();else if(mode===3)gDraw();else fDraw();kbBars(!!(INT?.on||FP.on));}
+ finally{if(interpolation){pl.x=x;pl.y=y;cam.x=cx;cam.y=cy;npc.x=nx;npc.y=ny;}}
+}
+function kb7Adapt(){const ceiling=kb7.requestedQ,eco=document.documentElement.classList.contains('kb5-eco');if(eco){kb7.effects=Math.min(kb7.effects,1);return;}kb7.slow=kb7.fast=0;if(Q!==ceiling){Q=ceiling;rs();}kb7.effects=ceiling;}
+function kb7Loop(ts){if(!run)return;const dt=Math.max(0,Math.min(.1,(ts-last)/1000||0));last=ts;if(document.hidden||kb7.externalPause||(pau&&!KOM.on)){kb7AudioPause(true);kb7.fixed.reset();rf=requestAnimationFrame(loop);return;}kb7AudioPause(false);const start=performance.now();if(kb7.hitStop>0){kb7.hitStop=Math.max(0,kb7.hitStop-dt);kb7.fixed.reset();}else kb7.fixed.advance(dt,kb7Sim);
+ kb7.lastSimMs=performance.now()-start;const interval=document.documentElement.classList.contains('kb5-eco')?30:14;if(ts-kb7.drawAt>=interval){kb7.drawAt=ts;kb7.lastLightMs=kb7.lastRayMs=0;const drawStart=performance.now();kb7Paint();kb7.lastDrawMs=performance.now()-drawStart;kb7Record(performance.now()-start,ts);kb7Adapt();}
+ rf=requestAnimationFrame(loop);
+}
+
+/* Jedna mapa svjetla niske rezolucije zamjenjuje pet nezavisnih gradiranja scene. */
+kb7.light={map:null,ctx:null,radial:null,cone:null,fog:null,field:new KBLight2D.LightField(128),at:-1,x:1e9,y:1e9,fanKey:'',sprites:new Map(),spriteLimit:192};
+function kb7Canvas(w,h){if(typeof OffscreenCanvas==='function')return new OffscreenCanvas(w,h);const a=document.createElement('canvas');a.width=w;a.height=h;return a;}
+function kb7Asset(kind){const a=kb7Canvas(256,256),g=a.getContext('2d');if(kind==='cone'){g.filter='blur(4px)';for(let i=0;i<3;i++){const r=g.createRadialGradient(28,128,0,28,128,226);r.addColorStop(0,'#ffffff99');r.addColorStop(.45,'#ffffff70');r.addColorStop(1,'#ffffff00');g.fillStyle=r;g.beginPath();g.moveTo(28,128);g.arc(28,128,226,-.52+i*.055,.52-i*.055);g.closePath();g.fill();}}
+ else{const r=g.createRadialGradient(128,128,0,128,128,126);r.addColorStop(0,kind==='fog'?'#acc2c74a':'#ffffffee');r.addColorStop(.42,kind==='fog'?'#9cb5bc25':'#ffffffa0');r.addColorStop(1,'#ffffff00');g.fillStyle=r;g.fillRect(0,0,256,256);}return a;}
+function kb7Assets(){if(kb7.light.radial)return;for(const key of ['radial','cone','fog']){const a=kb7Asset(key);kb7.light[key]=a;if(typeof createImageBitmap==='function')createImageBitmap(a).then(bitmap=>{kb7.light[key]=bitmap;}).catch(()=>{});}}
+function kb7Environment(){const e=kb7.env,p=kb7.settings.timeMode==='day'?.23:kb7.settings.timeMode==='night'?.73:(.03+KB5.clk/540)%1,sun=Math.sin((p+.1)*Math.PI*2);e.time=KB5.clk;e.phase=p;e.night=Math.max(0,Math.min(1,(.2-sun)/.85));e.humidity=R5.a;e.wind=Math.sin(KB5.clk*.031)*.35+R5.a*.55;e.season=SE;return e;}
+function kb7LightField(range){const started=performance.now();kb7.lastRayMs=0;const L=kb7.light;if(T-L.at<.22&&Math.hypot(pl.x-L.x,pl.y-L.y)<7)return;const segments=[];for(const h of HLg){const r=h.r;if(Math.hypot(r[0]+r[2]/2-pl.x,r[1]+r[3]/2-pl.y)>range+220)continue;segments.push(...KBLight2D.rectangle(r[0],r[1]+r[3]*.45,r[2],r[3]*.55,8));}for(const h of SLH)if(Math.hypot(h.x+h.w/2-pl.x,h.y+h.h/2-pl.y)<range+220)segments.push(...KBLight2D.rectangle(h.x,h.y+h.h*.45,h.w,h.h*.55,8));L.field.configure(pl.x,pl.y,range,segments,kb7.effects>1?128:64);L.at=T;L.x=pl.x;L.y=pl.y;kb7.lastRayMs=performance.now()-started;}
+function kb7Lighting(a,rr,px,py){const started=performance.now();kb7Assets();const L=kb7.light,e=kb7Environment(),scale=kb7.effects<1?.18:.25,w=Math.max(2,Math.ceil(W*scale)),h=Math.max(2,Math.ceil(H*scale)),z=kb7.view?.z||1,range=rr*1.8/z;
+ if(!L.map||L.map.width!==w||L.map.height!==h){L.map=kb7Canvas(w,h);L.ctx=L.map.getContext('2d');}const m=L.ctx;m.setTransform(scale,0,0,scale,0,0);m.clearRect(0,0,W,H);m.globalCompositeOperation='source-over';m.globalAlpha=1;m.fillStyle='rgba(4,15,29,'+Math.min(.91,.11+e.night*.69+dk(pl.x,pl.y)*.12)+')';m.fillRect(0,0,W,H);
+ kb7LightField(range);const project=q=>[px+(q.x-pl.x)*z,py+(q.y-pl.y)*z],key=L.field.serial+':'+Math.round(pl.f*300);if(L.fanKey!==key){L.fanKey=key;L.fan=L.field.polygon(pl.f,.52,kb7.effects>1);L.full=L.field.polygon(0,Math.PI,false);}
+ m.globalCompositeOperation='destination-out';m.save();KBLight2D.path(m,L.full,project);m.clip();m.globalAlpha=.83;m.drawImage(L.radial,px-rr*.63,py-rr*.63,rr*1.26,rr*1.26);m.restore();
+ m.save();KBLight2D.path(m,L.fan,project);m.clip();m.translate(px,py);m.rotate(pl.f);m.scale(rr*1.8/226,rr*1.8/226);m.globalAlpha=.97;m.drawImage(L.cone,-28,-128);m.restore();
+ if(e.night>.1){m.globalCompositeOperation='destination-out';for(const p of SLP){if(!kb7InView(p.x,p.y,130))continue;const q=project(p),r=105*z;m.globalAlpha=.20+e.night*.2;m.drawImage(L.radial,q[0]-r,q[1]-r,r*2,r*2);if(e.humidity>.1){m.globalAlpha=e.humidity*.23;m.drawImage(L.radial,q[0]-r*.19,q[1],r*.38,r*1.2);}}for(const h of HLg){if(h.ab)continue;const r=h.r,x=r[0]+r[2]*.8,y=r[1]+r[3];if(!kb7InView(x,y,100))continue;const q=project({x,y}),s=72*z;m.globalAlpha=.18*e.night;m.drawImage(L.radial,q[0]-s,q[1]-s,s*2,s*2);}}
+ m.globalCompositeOperation='source-over';for(let i=0;i<(kb7.effects>1?3:2);i++){const span=W*(.8+i*.2),x=((T*(7+i*4)+cam.x*(.04+i*.018))%(span+W)+span+W)%(span+W)-span,y=H*(.35+i*.24)+Math.sin(T*.14+i)*24;m.globalAlpha=(.07+e.night*.10+e.humidity*.10)/(i+1);m.drawImage(L.fog,x,y-H*.2,span,H*.52);m.drawImage(L.fog,x+span,y-H*.2,span,H*.52);}m.globalAlpha=1;
+ c.drawImage(L.map,0,0,W,H);if(KB5.tint&&KB5.tint.style.display!=='none')KB5.tint.style.display='none';if(cv.style.filter!=='none')cv.style.filter='none';kb7.lastLightMs=performance.now()-started;
+}
+function man(x,y,o){if(mode!==2||!o.kit||o.phone||o.rch||o.orb)return manRaw(x,y,o);const L=kb7.light,phase=Math.floor(((o.w||0)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)/(Math.PI*2)*16),rotation=Math.round((o.rot||0)*10),key=o.n+'|'+o.b+'|'+o.h+'|'+o.lg+'|'+!!o.st+'|'+SE+'|'+phase+'|'+rotation+'|'+(Q>1);let sprite=L.sprites.get(key);
+ if(!sprite){const factor=Q>1?2:1.5,a=kb7Canvas(84*factor,84*factor),ctx=a.getContext('2d'),old=c;ctx.setTransform(factor,0,0,factor,0,0);try{c=ctx;manRaw(42,60,{...o,w:phase/16*Math.PI*2,rot:rotation/10});}finally{c=old;}sprite={a};L.sprites.set(key,sprite);if(typeof createImageBitmap==='function')createImageBitmap(a).then(bitmap=>{if(L.sprites.get(key)===sprite)sprite.a=bitmap;else bitmap.close();}).catch(()=>{});if(L.sprites.size>L.spriteLimit){const oldest=L.sprites.keys().next().value;L.sprites.get(oldest).a.close?.();L.sprites.delete(oldest);}}if(!L.prewarming)c.drawImage(sprite.a,x-42,y-60,84,84);
+}
+
+function kb7PrimeFootball(){if(mode!==2||!F?.p)return;const before=performance.now();kb7.light.prewarming=true;try{for(const p of F.p)for(let phase=0;phase<16;phase++)man(0,0,{b:p.t?'#c8372d':'#2fa84f',h:p.n==='Andrej'?'#111':p.t?'#2a2a2a':'#5a3a22',st:p.n==='Andrej',sc:p.n==='Andrej',lg:p.gk?'#d8a83d':'#222',kit:1,rot:0,w:(phase+.1)/16*Math.PI*2,n:p.n,nc:p.n==='Andrej'?'#55d67b':'#fff',s:.95});}finally{kb7.light.prewarming=false;}kb7.primeMs=performance.now()-before;}
+
+/* Keširan šum za podloge i stereo upozorenja; koristi postojeći AudioContext i master. */
+kb7.audio={noise:null};
+function kb7Noise(){if(!AC)return null;if(!kb7.audio.noise){const buffer=AC.createBuffer(1,AC.sampleRate*.3,AC.sampleRate),data=buffer.getChannelData(0);let n=6127;for(let i=0;i<data.length;i++){n=Math.imul(n,1664525)+1013904223;data[i]=((n>>>0)/4294967296*2-1)*.4;}kb7.audio.noise=buffer;}return kb7.audio.noise;}
+function kb7Surface(){if(dp(pl.x,pl.y)>48)return kb7.env.humidity>.4?'blato':'trava';const s=slNear(pl.x,pl.y),p=slAt(s,0);return Math.hypot(p[0]-pl.x,p[1]-pl.y)<36?'asfalt':'zemlja';}
+function kb7Step(){if(!AC||AC.state!=='running')return;const kind=kb7Surface(),spec={asfalt:[1300,.06,.055],trava:[470,.09,.045],zemlja:[2200,.08,.055],blato:[240,.13,.065]}[kind],t=AC.currentTime,src=AC.createBufferSource(),filter=AC.createBiquadFilter(),gain=AC.createGain();src.buffer=kb7Noise();filter.type=kind==='zemlja'?'highpass':'lowpass';filter.frequency.value=spec[0];gain.gain.setValueAtTime(.0001,t);gain.gain.linearRampToValueAtTime(spec[2],t+.006);gain.gain.exponentialRampToValueAtTime(.0001,t+spec[1]);src.connect(filter);filter.connect(gain);gain.connect(AC.destination);src.start(t);src.stop(t+spec[1]+.01);src.onended=()=>{src.disconnect();filter.disconnect();gain.disconnect();};cv.dataset.surface=kind;}
+function kb7Bark(d){if(!AC||AC.state!=='running')return;const t=AC.currentTime,dist=Math.hypot(d.x-pl.x,d.y-pl.y),src=AC.createBufferSource(),filter=AC.createBiquadFilter(),gain=AC.createGain(),pan=AC.createStereoPanner?.();src.buffer=kb7Noise();src.playbackRate.value=.7;filter.type='bandpass';filter.frequency.value=570;filter.Q.value=1.2;const volume=.13/(1+dist/220);gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(Math.max(.001,volume),t+.02);gain.gain.exponentialRampToValueAtTime(.001,t+.12);gain.gain.exponentialRampToValueAtTime(Math.max(.001,volume*.6),t+.16);gain.gain.exponentialRampToValueAtTime(.0001,t+.3);src.connect(filter);filter.connect(gain);if(pan){pan.pan.value=Math.max(-1,Math.min(1,(d.x-pl.x)/300));gain.connect(pan);pan.connect(AC.destination);}else gain.connect(AC.destination);src.start(t);src.stop(t+.31);src.onended=()=>{src.disconnect();filter.disconnect();gain.disconnect();pan?.disconnect();};}
+
+/* Povratna informacija, pristupačnost i kratki ulaz u postojeću avanturu. */
+kb7.popups=[];kb7.feedbackPool=new KB2DCore.Pool(()=>({}),24);kb7.progress={distance:0,firstSteps:false,visited:{},wins:0,bestGoals:0,...KBStore.read('kb_2d_progress_v7',{})};kb7.repelToken=0;kb7.uiAt=-1;kb7.progressAt=0;kb7.movedFrom=null;kb7.finishedMatches=new WeakSet();
+function kb7SaveSettings(){kb7.settings.quality=kb7.requestedQ;KBStore.put('kb_2d_settings_v7',kb7.settings);kb7ApplySettings();}
+function kb7ApplySettings(){gm.classList.toggle('kb7-reduced',!!kb7.settings.reduced);gm.classList.toggle('kb7-large-text',!!kb7.settings.largeText);gm.classList.toggle('kb7-large-controls',!!kb7.settings.largeControls);gm.dataset.controls=kb7.settings.input||'auto';}
+function kb7Today(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Belgrade',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),get=k=>parts.find(p=>p.type===k)?.value;return get('year')+'-'+get('month')+'-'+get('day');}
+function kb7Daily(){const day=kb7Today();if(kb7.daily?.day===day)return kb7.daily;const saved=KBStore.read('kb_2d_daily_v7',null);if(saved?.day===day&&Array.isArray(saved.ids)&&Array.isArray(saved.done)){kb7.daily=saved;return saved;}if(!KB5.items)return null;let seed=0;for(const ch of day)seed=Math.imul(seed^ch.charCodeAt(0),16777619);const ids=KB5.items.filter(q=>!q.got).map(q=>q.id);for(let i=ids.length-1;i>0;i--){seed=Math.imul(seed,1664525)+1013904223|0;const j=(seed>>>0)%(i+1);[ids[i],ids[j]]=[ids[j],ids[i]];}kb7.daily={day,ids:ids.slice(0,3),done:[],distance:0,complete:false};return kb7.daily;}
+function kb7Toast(text){if(!kb7.toast)return;kb7.toast.textContent=text;kb7.toast.hidden=false;kb7.toastUntil=kb7.clock+4;}
+function kb7Popup(text,x,y,color='#ffb69d'){if(kb7.popups.length>=24)return;const p=kb7.feedbackPool.take();p.text=text;p.x=x;p.y=y;p.t=1;p.color=color;kb7.popups.push(p);}
+function kb7Hit(d,damage){kb7.hitStop=.045;kb7Popup(damage?'−'+damage+' HP':'UJED',pl.x,pl.y-30);if(kb7.settings.vibration&&!kb7.settings.reduced)try{navigator.vibrate?.(18);}catch(_){}kb7Toast('UJED · udalji se i pritisni R / RASTERIVAČ');}
+function kb7Repel(){kb7.repelToken++;for(const d of dogs){d._repelToken=kb7.repelToken;d._repelHeard=KB2DCore.repellerDecision(Math.random,!!kb7.settings.assist);}kb7Toast('RASTERIVAČ · neki psi ga neće čuti; ostavi sebi izlaz.');}
+function kb7FeedbackDraw(){const z=kb7.view?.z||1;for(const p of kb7.popups){const x=W/2+(p.x-cam.x)*z,y=H/2+(p.y-cam.y)*z-(1-p.t)*25;c.save();c.globalAlpha=Math.min(1,p.t*3);c.font='700 '+(kb7.settings.largeText?17:14)+'px Arial';c.textAlign='center';c.lineWidth=3;c.strokeStyle='#091512';c.strokeText(p.text,x,y);c.fillStyle=p.color;c.fillText(p.text,x,y);c.restore();}}
+function kb7FeelTick(dt){kb7Environment();for(let i=kb7.popups.length-1;i>=0;i--){const p=kb7.popups[i];p.t-=dt;if(p.t<=0){kb7.popups[i]=kb7.popups[kb7.popups.length-1];kb7.popups.pop();kb7.feedbackPool.release(p);}}
+ if(mode===1&&!INT?.on&&!FP.on&&!dead){const before=kb7.movedFrom;if(before){const delta=Math.hypot(pl.x-before.x,pl.y-before.y);if(delta<100){const m=delta/10;kb7.progress.distance+=m;const daily=kb7Daily();if(daily)daily.distance+=m;}}if(!kb7.movedFrom)kb7.movedFrom={x:pl.x,y:pl.y};else{before.x=pl.x;before.y=pl.y;}
+  if(!kb7.progress.firstSteps&&kb7.progress.distance>=5){kb7.progress.firstSteps=true;kb7Toast('PRVI KORACI · otključan prvi zapis u dnevniku · J');KBStore.put('kb_2d_progress_v7',kb7.progress);}
+  if(zi>=0)kb7.progress.visited[zi]=true;const daily=kb7Daily();if(daily&&!daily.complete){for(const id of daily.ids)if(!daily.done.includes(id)&&KB5.items.find(q=>q.id===id)?.got)daily.done.push(id);if(daily.ids.length?daily.done.length===daily.ids.length:daily.distance>=150){daily.complete=true;kb7Toast('DNEVNA SMJENA ZAVRŠENA · novi zapis u dnevniku');KBStore.put('kb_2d_daily_v7',daily);}}
+ }else kb7.movedFrom=null;
+ if(mode===2&&F?.over&&!kb7.finishedMatches.has(F)){kb7.finishedMatches.add(F);kb7.progress.bestGoals=Math.max(kb7.progress.bestGoals,F.sc[0]);if(F.sc[0]>F.sc[1])kb7.progress.wins++;KBStore.put('kb_2d_progress_v7',kb7.progress);}
+ if(kb7.clock-kb7.progressAt>15){kb7.progressAt=kb7.clock;KBStore.put('kb_2d_progress_v7',kb7.progress);if(kb7.daily)KBStore.put('kb_2d_daily_v7',kb7.daily);}
+ if(kb7.clock>kb7.toastUntil&&kb7.toast)kb7.toast.hidden=true;if(kb7.clock-kb7.uiAt>.12){kb7.uiAt=kb7.clock;kb7HUD();}
+}
+function kb7HUD(){if(!kb7.hud)return;const modeKey=String(mode),rideKey=sc.on?'1':'0';if(gm.dataset.gameMode!==modeKey)gm.dataset.gameMode=modeKey;if(gm.dataset.scooter!==rideKey)gm.dataset.scooter=rideKey;kb7.hud.hidden=mode!==1||!!INT?.on||!!FP.on;const hp=Math.max(0,Math.ceil(php)),hearts=Math.max(0,Math.min(5,Math.ceil(hp/20)));kb7.hud.querySelector('[data-hp]').textContent='♥'.repeat(hearts)+'♡'.repeat(5-hearts)+' · '+hp;kb7.hud.querySelector('[data-hp]').setAttribute('aria-label',hp+' od 100 zdravlja');let nearest=Infinity;for(const d of dogs)if(!d.peace&&!d.hid&&d.fl<=0)nearest=Math.min(nearest,Math.hypot(d.x-pl.x,d.y-pl.y));const danger=kb7.hud.querySelector('[data-danger]');danger.textContent=nearest<150?'⚠ PAS · '+Math.ceil(nearest/10)+' m':'KRAJ JE TRENUTNO MIRAN';danger.classList.toggle('danger',nearest<150);
+ const goal=kbWaypoint||{x:2600,y:165},a=Math.atan2(goal.x-pl.x,pl.y-goal.y),directions=['S','SI','I','JI','J','JZ','Z','SZ'],index=(Math.round(a/(Math.PI/4))+8)%8,compass=directions[index],arrow=['↑','↗','→','↘','↓','↙','←','↖'][index];kb7.hud.querySelector('[data-goal]').textContent=compass+' '+arrow+' '+Math.round(Math.hypot(goal.x-pl.x,goal.y-pl.y)/10)+' m · '+(kbWaypoint?.title||'Grobarsko');kb7.hud.querySelector('[data-save]').textContent=KBStore.durable?'AUTO ČUVANJE · J DNEVNIK':'ČUVANJE U OVOJ SESIJI · J DNEVNIK';}
+function kb7InitUI(){if(kb7.hud)return;$('#repel').textContent='RASTERIVAČ (R) · SPREMAN';const hud=document.createElement('div');hud.id='kb7Status';hud.innerHTML='<b data-hp></b><strong data-danger></strong><span data-goal></span><small data-save></small>';gm.appendChild(hud);kb7.hud=hud;const toast=document.createElement('div');toast.id='kb7Toast';toast.hidden=true;toast.setAttribute('role','status');gm.appendChild(toast);kb7.toast=toast;
+ const make=(id,title,body)=>{const el=document.createElement('div');el.id=id;el.className='kb7-modal';el.hidden=true;el.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="'+id+'Title"><small>KALAČ BRDO / 2D</small><h2 id="'+id+'Title">'+title+'</h2>'+body+'</div>';gm.appendChild(el);return el;};
+ kb7.welcome=make('kb7Welcome','DOBRO DOŠAO U KRAJ.','<p>Kreći se uz put, pokupi burek i čuvaj prolaz do Grobarskog. Lavež i oznaka ⚠ najavljuju opasnost.</p><p>Kako igraš?</p><div class="kb7-inputs"><button data-input="keyboard">▣ RAČUNAR</button><button data-input="touch">▯ ANDROID</button><button data-input="touch">▯ IPHONE</button></div><p>WASD / džojstik: kretanje · Shift / TRČI: sprint · F: trotinet · R: rasterivač · J: dnevnik · Esc: pauza.</p><button data-start="skip">PRESKOČI UVOD I KRENI</button><button data-start="intro">PRATI ORIGINALNI UVOD</button>');
+ kb7.journal=make('kb7Journal','DNEVNIK IZ KRAJA.','<div id="kb7JournalText"></div><button data-back>NAZAD U IGRU</button>');kb7.journal.querySelector('[data-back]').onclick=kb7CloseModal;
+ kb7.welcome.addEventListener('click',e=>{const input=e.target.closest('[data-input]');if(input){kb7.settings.input=input.dataset.input;for(const b of kb7.welcome.querySelectorAll('[data-input]'))b.setAttribute('aria-pressed',String(b===input));kb7SaveSettings();}const start=e.target.closest('[data-start]');if(start){kb7.settings.onboarded=true;kb7SaveSettings();kb7CloseModal();if(start.dataset.start==='skip')kb7SkipIntro();}});
+ window.addEventListener('keydown',e=>{if(gm.classList.contains('geo-mode'))return;if(!run||!gm.classList.contains('kb-original-2d')||e.ctrlKey||e.metaKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(e.key.toLowerCase()==='j'){e.preventDefault();e.stopImmediatePropagation();if(kb7.journal.hidden)kb7Journal();else kb7CloseModal();}},true);
+}
+function kb7ShowWelcome(){kb7InitUI();kb7ApplySettings();if(Number.isFinite(kb7.settings.quality))window.KB2DUI.setQuality(kb7.settings.quality);if(!kb7.settings.onboarded&&!window.KBPerfHooks){kb7.welcome.hidden=false;kb7Pause(true);kb7.welcome.querySelector('button').focus({preventScroll:true});}}
+function kb7SkipIntro(){if(INT?.on)introEnd();INT=null;FP.on=0;pl.x=cam.x=330;pl.y=cam.y=2130;npc.x=470;npc.y=2025;npc.dead=0;sv.x=sv.y=wvx=wvy=0;pl.m=0;sc.on=0;bSk.hidden=true;gm.classList.remove('kx-cut');ban=['KALAČ PUT\nPokupi zalihe, pazi na pse i pronađi prolaz do Grobarskog.',5];kb7Toast('Prvih pet metara otključava dnevnik. Drži se puta.');}
+function kb7CloseModal(){if(kb7.welcome)kb7.welcome.hidden=true;if(kb7.journal)kb7.journal.hidden=true;kb7Pause(false);cv.focus({preventScroll:true});}
+function kb7HideUI(){for(const e of [kb7.hud,kb7.toast,kb7.welcome,kb7.journal])if(e)e.hidden=true;KBStore.put('kb_2d_progress_v7',kb7.progress);if(kb7.daily)KBStore.put('kb_2d_daily_v7',kb7.daily);}
+function kb7Journal(){kb7InitUI();const pauseMenu=document.getElementById('kbClassicMenu');if(pauseMenu)pauseMenu.hidden=true;const host=kb7.journal.querySelector('#kb7JournalText');host.replaceChildren();const add=text=>{const p=document.createElement('p');p.textContent=text;host.appendChild(p);};const day=kb7Daily();add('GLAVNI CILJ · Izađi na kapiju Grobarskog i zaigraj sa ekipom.');add('Istraženo: '+Object.keys(kb7.progress.visited).length+' / '+Z.length+' lokacija · Burek '+(KB5.n||0)+' / '+(KB5.total||30));add('Fudbal: '+kb7.progress.wins+' pobjeda · najviše golova u meču: '+kb7.progress.bestGoals);if(day){add('DNEVNA SMJENA · '+day.day+' · '+(day.complete?'ZAVRŠENA':day.ids.length?'Pronađi '+day.ids.length+' zalihe: '+day.done.length+' / '+day.ids.length:'Pređi 150 m: '+Math.floor(day.distance)+' / 150 m'));if(day.ids.length&&!day.complete){const next=KB5.items.find(q=>day.ids.includes(q.id)&&!day.done.includes(q.id));if(next){const b=document.createElement('button');b.textContent='OZNAČI SLJEDEĆU ZALIHU NA MINIMAPI';b.onclick=()=>{kbSetWaypoint(next.x,next.y);kb7CloseModal();};host.appendChild(b);}}}if(kb7.progress.firstSteps)add('DOSTIGNUĆE · PRVI KORACI — upoznao si kontrole.');const cp=KBStore.checkpointData;if(cp?.kind==='story')add('Posljednje poglavlje priče: '+(cp.phase+1)+'.');kb7.journal.hidden=false;kb7Pause(true);kb7.journal.querySelector('button')?.focus({preventScroll:true});}
+function kb7Menu(menu){if(menu.querySelector('.kb7-settings'))return;const box=document.createElement('section');box.className='kb7-settings';box.innerHTML='<h3>PODEŠAVANJA IGRE</h3>';const select=(label,values,value,change)=>{const row=document.createElement('label'),title=document.createElement('span'),input=document.createElement('select');title.textContent=label;for(const [v,t]of values){const o=document.createElement('option');o.value=v;o.textContent=t;input.appendChild(o);}input.value=value;input.onchange=()=>change(input.value);row.append(title,input);box.appendChild(row);};select('Grafika',QN.map((n,i)=>[i,n]),kb7.requestedQ,v=>{window.KB2DUI.setQuality(+v);kb7SaveSettings();});select('Sezona',SN.map((n,i)=>[i,n]),SE,v=>{SE=+v;$('#bs').textContent='SEZONA: '+SN[SE];});select('Doba dana',[['auto','AUTO'],['day','DAN'],['night','NOĆ']],kb7.settings.timeMode,v=>{kb7.settings.timeMode=v;kb7SaveSettings();});
+ for(const [key,label]of [['assist','Lakši režim: sporiji psi i blaži ujedi'],['reduced','Smanjeno treperenje i podrhtavanje'],['largeText','Veći tekst'],['largeControls','Veća dugmad'],['vibration','Vibracija pri udarcu']]){const row=document.createElement('label'),input=document.createElement('input'),text=document.createElement('span');input.type='checkbox';input.checked=!!kb7.settings[key];input.onchange=()=>{kb7.settings[key]=input.checked;kb7SaveSettings();};text.textContent=label;row.append(input,text);box.appendChild(row);}
+ const sound=document.createElement('button');sound.textContent='ZVUK · PROMIJENI';sound.onclick=()=>document.querySelector('#kb5 [data-a="m"]')?.click();box.appendChild(sound);const language=document.createElement('p');language.textContent='Jezik: srpski (latinica)';box.appendChild(language);const journal=document.createElement('button');journal.textContent='DNEVNIK I DNEVNI IZAZOV · J';journal.onclick=()=>{menu.hidden=true;kb7Journal();};box.appendChild(journal);menu.firstElementChild.insertBefore(box,menu.querySelector('#kbClassicNotice'));}
+Object.assign(window.KB2DUI,{syncMenu(menu){const a=menu.querySelectorAll('select');if(a[0])a[0].value=String(kb7.requestedQ);if(a[1])a[1].value=String(SE);if(a[2])a[2].value=kb7.settings.timeMode;},decorateMenu:kb7Menu,openJournal:kb7Journal,skipIntro:kb7SkipIntro,handleEscape(){if(kb7.welcome&&!kb7.welcome.hidden){kb7.settings.onboarded=true;kb7SaveSettings();kb7CloseModal();return true;}if(kb7.journal&&!kb7.journal.hidden){kb7CloseModal();return true;}return false;}});
+Object.defineProperty(window.KB2DUI,'hasModal',{get:()=>!!(kb7.welcome&&!kb7.welcome.hidden||kb7.journal&&!kb7.journal.hidden)});
+
+window.KBClassicEngine={open:()=>{pau=0;open()},close:shut,get running(){return !!run}};
+window._kb={slInt:()=>INT,slSkip:()=>introSkip(),slPk:()=>HLg.find(h=>h.pk),tp:(x,y)=>{pl.x=x;pl.y=y;cam.x=x;cam.y=y},mgOpen,mgDart,mgTug,mgAct,mgG:()=>mgG,HLg:()=>HLg,state:()=>({x:pl.x,y:pl.y,mode,dead:!!dead,paused:!!pau,hp:php,season:SE,quality:Q,scooter:!!sc.on,intro:!!(INT&&INT.on),scene:!!(FP&&FP.on)}),save:()=>kbWriteSave(false,true),autoSave:(force=false)=>kbWriteSave(true,force),load:kbLoadSave,hasSave:()=>!!kbBestSave(),setWaypoint:kbSetWaypoint,getWaypoint:()=>kbWaypoint,clearWaypoint:kbClearWaypoint,tapAction:()=>{eB=1},actionLabel:kbActionLabel};
+kbA1ClassicRestore();
+window.KBMissionDirector?.adapters.connect('2d',{get player(){return {x:pl.x,y:pl.y};},get environment(){return {...kb7.env};},get missionState(){return kbA1ClassicState();},get running(){return !!run;},get paused(){return !!pau||kb7.externalPause;},holdForDirector(){kbA1ClassicSample(true);const before=[pau,kb7.externalPause];kb7Pause(true);return ()=>{if(!run)return;kb7Pause(!!before[0]||before[1]);pau=before[0];kb7.externalPause=before[1];};}});
+})();
+</script>
+<script>
+/* ===== SLOVA · HOROR EFEKTI (klikni na slovo / čitaj pismo) ===== */
+(()=>{
+const $=s=>document.querySelector(s),rm=matchMedia('(prefers-reduced-motion:reduce)').matches,M=$('#modal'),md=$('#m-d'),rd=Math.random;
+let mx=innerWidth/2,my=innerHeight/2,AC=null,lk=0,sc=[],raf=0,bag=[3,2,1,0],generation=0,lastEffect=0;
+const restorers=new Set();let readToken=0,readTimers=[],readingStop=null;
+const mk=(t,p)=>Object.assign(document.createElement(t),p||{});
+const dk=mk('div',{id:'dk'}),ey=mk('div',{id:'ey'}),cv=mk('canvas',{id:'fxc'});
+document.body.append(dk,ey,cv);const g=cv.getContext('2d');
+let fxScale=1;function sizeFX(){fxScale=Math.min(devicePixelRatio||1,1.5);cv.width=Math.round(innerWidth*fxScale);cv.height=Math.round(innerHeight*fxScale);g.setTransform(fxScale,0,0,fxScale,0,0)}
+sizeFX();addEventListener('resize',sizeFX,{passive:true});
+
+/* 1. razbij naslove na slova */
+function split(h){
+  if(h.classList.contains('sp'))return;
+  h.setAttribute('aria-label',h.textContent.replace(/\s+/g,' ').trim());let i=0;
+  (function w(n){[...n.childNodes].forEach(c=>{
+    if(c.nodeType==3){const f=document.createDocumentFragment();
+      c.nodeValue.split(/(\s+)/).forEach(s=>{if(!s)return;if(/^\s+$/.test(s)){f.append(' ');return}
+        const wd=mk('span',{className:'wd'});wd.setAttribute('aria-hidden','true');
+        [...s].forEach(ch=>{const l=mk('span',{className:'lt'});l.style.setProperty('--i',i++);l.append(ch);wd.append(l)});f.append(wd)});
+      c.replaceWith(f)}
+    else if(c.nodeType==1&&c.tagName!='BR')w(c)})})(h);
+  h.classList.add('sp');
+}
+document.querySelectorAll('main h1,main h2').forEach(split);
+$('.hero h1').after(mk('p',{className:'hnt',textContent:'Klikni na neko slovo. Ako smeš.'}));
+
+/* 2. zvuk (WebAudio, samo posle klika) */
+const au=()=>{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();return AC};
+function nz(d,f0,f1,v){const a=au(),n=a.sampleRate*d|0,b=a.createBuffer(1,n,a.sampleRate),o=b.getChannelData(0);
+  for(let i=0;i<n;i++)o[i]=(rd()*2-1)*(1-i/n);
+  const s=a.createBufferSource(),f=a.createBiquadFilter(),G=a.createGain();s.buffer=b;f.type='lowpass';
+  f.frequency.setValueAtTime(f0,a.currentTime);f.frequency.exponentialRampToValueAtTime(f1,a.currentTime+d);G.gain.value=v;
+  s.connect(f);f.connect(G);G.connect(a.destination);s.start()}
+function tn(f,d,v,ty,f2){const a=au(),o=a.createOscillator(),G=a.createGain(),t=a.currentTime;o.type=ty||'sine';
+  o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+  G.gain.setValueAtTime(v,t);G.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(G);G.connect(a.destination);o.start();o.stop(t+d)}
+const snd=f=>{try{f()}catch(e){}};
+
+/* 3. canvas scene (grom, dim, krv) */
+function run(d,f){sc.push({d,f,t0:performance.now()});if(sc.length>4)sc.shift();if(!raf){sizeFX();raf=requestAnimationFrame(loop)}}
+function loop(now){g.setTransform(fxScale,0,0,fxScale,0,0);g.clearRect(0,0,innerWidth,innerHeight);
+  sc=sc.filter(o=>{const p=(now-o.t0)/o.d;if(p>=1)return false;g.save();o.f(g,p);g.restore();return true});
+  raf=sc.length?requestAnimationFrame(loop):0;if(!raf)g.clearRect(0,0,cv.width,cv.height)}
+const pth=(x1,y1,x2,y2,n,j)=>{const a=[[x1,y1]];for(let i=1;i<n;i++){const t=i/n;a.push([x1+(x2-x1)*t+(rd()-.5)*j*(1-t*.5),y1+(y2-y1)*t+(rd()-.5)*j*.3])}a.push([x2,y2]);return a};
+function bolt(x,y){
+  const m=pth(x+(rd()-.5)*260,-10,x,y,16,110),br=[3,6,9,12].map(i=>pth(m[i][0],m[i][1],m[i][0]+(rd()-.5)*340,m[i][1]+90+rd()*150,6,50));
+  run(750,(g,p)=>{
+    if(p<.4){g.fillStyle=`rgba(200,220,255,${.8*(1-p/.4)})`;g.fillRect(0,0,cv.width,cv.height)}
+    g.globalAlpha=(Math.sin(p*15)>-.3?1:.3)*Math.pow(1-p,.7);g.lineJoin='round';g.strokeStyle='#eef6ff';g.shadowColor='#6fa8ff';g.shadowBlur=32;
+    [[m,5],...br.map(b=>[b,2.2])].forEach(([l,w])=>{g.beginPath();l.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.lineWidth=w;g.stroke()})})}
+function smoke(x,y){
+  const ps=Array.from({length:26},()=>({x:x+(rd()-.5)*40,y:y+(rd()-.5)*20,vx:(rd()-.5)*.6,vy:-(.5+rd()*1.4),r:6+rd()*10,e:rd()<.35}));
+  run(3600,(g,p)=>ps.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.r+=.18;g.globalAlpha=Math.max(0,q.e?1-p*2.5:.35*(1-p));g.fillStyle=q.e?'#ff7a18':'#777';g.beginPath();g.arc(q.x,q.y,q.e?q.r*.25:q.r,0,7);g.fill()}))}
+function drips(x,y,w){
+  const d=Array.from({length:5},(_,i)=>({x:x+(i/4-.5)*w*.9,l:50+rd()*150,s:.5+rd()*.9,w:2.5+rd()*3}));
+  run(4200,(g,p)=>{g.globalAlpha=Math.min(1,(1-p)*4);g.fillStyle=g.strokeStyle='#a3070f';g.lineCap='round';
+    d.forEach(q=>{const L=Math.min(q.l,p*q.l*3.2*q.s);g.lineWidth=q.w;g.beginPath();g.moveTo(q.x,y);g.lineTo(q.x,y+L);g.stroke();g.beginPath();g.arc(q.x,y+L,q.w*.95,0,7);g.fill()})})}
+function shake(){const m=$('main');m.classList.remove('shk');void m.offsetWidth;m.classList.add('shk');setTimeout(()=>m.classList.remove('shk'),600)}
+
+/* 4. oči koje prate miša */
+function pair(f,od){
+  const w=mk('div',{className:'ey'});if(f){w.style.setProperty('--f',f+'px');w.style.setProperty('--od',od+'s')}
+  for(let i=0;i<2;i++){const e=mk('b',{className:'eye',innerHTML:'<i></i>'});e.style.setProperty('--bd',rd()*3+'s');e.style.setProperty('--c',rd()<.7?'#e11':'#f5b90f');w.append(e)}
+  return w}
+function look(){
+  const es=document.querySelectorAll('.eye');
+  es.forEach(e=>{const r=e.getBoundingClientRect(),a=Math.atan2(my-(r.top+r.height/2),mx-(r.left+r.width/2)),k=r.width*.16;
+    e.style.setProperty('--px',Math.cos(a)*k+'px');e.style.setProperty('--py',Math.sin(a)*k*.6+'px')});
+  if(es.length)requestAnimationFrame(look);else lk=0}
+function scare(n,ms,avoid,dark){
+  if(dark)dk.classList.add('on');
+  const a=[];n=Math.min(n,Math.max(0,24-ey.children.length));
+  for(let i=0;i<n;i++){
+    let x,y,k=0,ok=1;
+    do{x=rd()*(innerWidth-130)+10;y=rd()*(innerHeight-60)+10;k++;
+      if(avoid){ok=!(x>avoid.left-130&&x<avoid.right+10&&y>avoid.top-50&&y<avoid.bottom+10)}}while(!ok&&k<40);
+    let f=50+rd()*80;
+    if(!ok){y=rd()<.5?4:innerHeight-18;f=34}
+    const p=pair(f,.2+rd()*1.6);p.style.left=x+'px';p.style.top=y+'px';ey.append(p);a.push(p)}
+  if(!lk){lk=1;requestAnimationFrame(look)}
+  const stop=()=>{if(dark)dk.classList.remove('on');a.forEach(p=>{p.classList.add('cl');setTimeout(()=>p.remove(),600)})};
+  if(ms)setTimeout(stop,ms);
+  return stop}
+
+/* 5. efekti na slovu: grom, oči, krv, glitch */
+const FX=[
+ (l,r)=>{bolt(r.x,r.y);smoke(r.x,r.y);l.classList.add('burn');shake();snd(()=>{nz(.3,7000,500,.10);nz(2.4,600,50,.06)});return 4500},
+ l=>{l.classList.add('eyed');l.append(pair());scare(9,5200,null,true);snd(()=>{tn(46,3,.14,'sawtooth',38);tn(700,1.8,.03,'sine',520)});return 5200},
+ (l,r)=>{l.classList.add('bleed');drips(r.x,r.b-6,r.w);snd(()=>{for(let i=0;i<6;i++)setTimeout(()=>snd(()=>tn(900-i*60,.14,.12,'sine',250)),300+i*380)});return 4800},
+ l=>{const h=l.closest('h1,h2'),ls=[...h.querySelectorAll('.lt')],o=ls.map(x=>x.firstChild.nodeValue);let n=0;
+   let iv;const restore=()=>{clearInterval(iv);ls.forEach((x,i)=>{if(x.firstChild)x.firstChild.nodeValue=o[i]});h.style.transform=h.style.filter='';restorers.delete(restore)};restorers.add(restore);iv=setInterval(()=>{ls.forEach((x,i)=>x.firstChild.nodeValue=rd()<.5?'▓▒░#@%&¤§Ж'[rd()*10|0]:o[i]);
+     h.style.transform=n%2?`translateX(${(rd()-.5)*14}px)`:'';h.style.filter=n%2?'drop-shadow(-4px 0 #f0f) drop-shadow(4px 0 #0ff)':'';
+     if(++n>10)restore();},70);
+   snd(()=>{nz(.5,9000,200,.055);tn(130,.5,.12,'square',35)});return 900}
+];
+function go(l){
+  if(rm||l.dataset.b||performance.now()-lastEffect<140)return;lastEffect=performance.now();const stamp=generation;
+  const b=l.getBoundingClientRect(),r={x:b.left+b.width/2,y:b.top+b.height/2,b:b.bottom,w:b.width};
+  const k=bag.length?bag.pop():(bag=[0,1,2,3].sort(()=>rd()-.5)).pop();
+  l.dataset.b=1;const d=FX[k](l,r)||900;
+  setTimeout(()=>{if(stamp!==generation)return;l.classList.remove('burn','eyed','bleed');const e=l.querySelector('.ey');if(e)e.remove();delete l.dataset.b},d)}
+
+/* 6. čitanje priče = čitanje pisma: crven savet, svetlo treperi, oči u mraku */
+function cleanReading(){readToken++;readTimers.forEach(clearTimeout);readTimers=[];if(readingStop)readingStop();readingStop=null;}
+function reading(){
+  cleanReading();if(rm)return;const token=readToken;
+  readTimers.push(setTimeout(()=>{
+    if(M.hidden||token!==readToken)return;
+    const t=md.textContent,k=t.lastIndexOf('Savet:');
+    if(k>0){md.textContent=t.slice(0,k).trimEnd();md.append(mk('span',{className:'sv',textContent:t.slice(k)}));}
+    readTimers.push(setTimeout(()=>{if(M.hidden||token!==readToken)return;readingStop=scare(6,0,$('.m-box').getBoundingClientRect(),false);snd(()=>{tn(46,2,.025,'sine',38);});},1200));
+  },30));
+}
+function clearTransient(){
+  generation++;cleanReading();sc=[];if(raf)cancelAnimationFrame(raf);raf=0;g.clearRect(0,0,innerWidth,innerHeight);dk.classList.remove('on');ey.replaceChildren();restorers.forEach(fn=>fn());restorers.clear();
+  document.querySelectorAll('.lt[data-b]').forEach(l=>{l.classList.remove('burn','bleed','eyed');l.querySelector('.ey')?.remove();delete l.dataset.b;});$('main').classList.remove('shk');
+}
+window.KBHorrorFX={clear:clearTransient};
+new MutationObserver(()=>{if(M.hidden)cleanReading();}).observe(M,{attributes:true,attributeFilter:['hidden']});
+addEventListener('pagehide',clearTransient);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearTransient();});
+const heroHeading=$('.hero h1');heroHeading.tabIndex=0;heroHeading.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();const letters=[...heroHeading.querySelectorAll('.lt')];if(letters.length)go(letters[Math.floor(Math.random()*letters.length)]);}});
+
+addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY;dk.style.setProperty('--mx',mx+'px');dk.style.setProperty('--my',my+'px')},{passive:true});
+document.addEventListener('click',e=>{
+  mx=e.clientX;my=e.clientY;dk.style.setProperty('--mx',mx+'px');dk.style.setProperty('--my',my+'px');
+  const l=e.target.closest('.lt');
+  if(l){go(l);return}
+  const t=e.target.closest('[data-m]');if(t&&t.dataset.d)reading()});
+})();
+</script>
+
+<div id="kld" hidden aria-label="Učitavanje igre" role="status"><canvas id="kldc"></canvas><div class="kld-sl"></div><div class="kld-vg"></div><div class="kld-lb t"></div><div class="kld-lb b"></div><i class="kld-cr a"></i><i class="kld-cr b"></i><i class="kld-cr c"></i><i class="kld-cr d"></i>
+<div class="kld-hd"><div class="kld-eye">NOĆNA AVANTURA</div><div class="kld-t" aria-label="Kalač brdo"></div><div class="kld-dv"><i></i><b></b><i></i></div><div class="kld-sub">OPEN-WORLD AVANTURA</div></div>
+<div class="kld-ch" id="kldch"><canvas id="kldcc" width="260" height="360"></canvas><div><h3 id="kldcn"></h3><b id="kldcr"></b><p id="kldcd"></p></div></div>
+<div class="kld-bt"><div class="kld-pc"><span id="kldp">0</span><small>%</small></div><div class="kld-ms" id="kldm"></div><div class="kld-bar"></div><div class="kld-tip" id="kldt"></div></div><div class="kld-fl"></div></div>
+
+
+<script>
+/* ===== LIKOVI iz „Tis je zatvoren“: ekipa, portreti u dresu, uloge ===== */
+window.KBCH=(()=>{
+const C=[
+{n:'Kosta',d:'Plavokos, srednje visine, nosi naočare. Jedini ima loptu.',hair:'#f4dc1a',gl:1},
+{n:'Dikić',d:'Bucmast, iste visine kao Kosta.',hair:'#4a3020',w:1.2},
+{n:'Lazar',d:'Fudbaler, malo viši od Koste i Dikića. Braon kosa i oči. Na telefonu igra blackjack, a boji se pasa lutalica.',hair:'#6b4226',h:1.1},
+{n:'Bogi',d:'Plavokos fudbaler, visine kao Kosta i Dikić.',hair:'#e8c75a'},
+{n:'Andrej',d:'Kao Lazar, ali voli whey i kreatin. Kad mu nestane, poludi.',hair:'#5a3a22',h:1.1,w:1.1},
+{n:'Pera',d:'Gimnazijalac iz Grobarske, stalno uči matematiku, retko izlazi.',hair:'#222',w:.9},
+{n:'Sting',d:'Perin nemački ovčar. Star i lenj, leži i retko laje.',dog:1},
+{n:'Mihajlo',d:'Stoske Skank. Nizak, bucmast, taman ten, crna kosa i oči. Mnogo spava.',skin:'#7a4f33',hair:'#111',h:.9,w:1.2},
+{n:'Vuk',d:'Košarkaš iz Norveške, zovu ga Blaža. Ima Kukirin G2 (45 km/h), sanja G4.',hair:'#8a5a2e',h:1.1}];
+const JN={Kosta:['Делија',30],Dikić:['Дичић',55],Lazar:['Лазар',21],Bogi:['Богдановић',11],Andrej:['Пејчић',19],Pera:['Пера',8],Mihajlo:['Мићко',11],Vuk:['Вук',10]};
+const ROLE={Kosta:'Vođa družine. Krije tajnu u Tisu.',Dikić:'Bucmasti drug, uvek gladan.',Lazar:'Fudbaler i kockar na telefonu.',Bogi:'Fudbaler, vazda upadne u nevolju.',Andrej:'Fudbaler. Živi za whey i kreatin.',Pera:'Gimnazijalac iz Grobarske.',Sting:'Perin stari ovčar sa dobrim nosom.',Mihajlo:'Stoske Skank. Spava i prodaje.',Vuk:'Košarkaš iz Norveške, zovu ga Blaža.'};
+function skin(g,c,cx,top,sc){const w=(c.w||1)*sc,h=(c.h||1)*sc,R=(x,y,a,b,col)=>{g.fillStyle=col;g.fillRect(cx+x*w,top+y*h,a*w,b*h)},sk=c.skin||'#f0e0b0';
+ if(c.dog){const D2=(x,y,a,b,col)=>{g.fillStyle=col;g.fillRect(cx+x*sc,top+y*sc,a*sc,b*sc)};D2(-60,150,110,55,'#6b4a2b');D2(-30,155,60,45,'#2b2018');D2(40,110,50,50,'#7d5a36');D2(78,130,28,20,'#222');D2(40,95,14,26,'#3a2a1a');D2(-72,152,16,10,'#3a2a1a');[-52,-20,10,36].forEach(x=>D2(x,205,12,36,'#4a3320'));D2(86,124,8,8,'#fff');return}
+ R(-33,0,66,22,c.hair);R(-30,22,60,38,sk);R(-12,60,24,14,sk);
+ if(c.gl){R(-26,28,22,12,'#e8e8f4');R(4,28,22,12,'#e8e8f4');g.strokeStyle='#5560a0';g.lineWidth=2;g.strokeRect(cx-26*w,top+28*h,22*w,12*h);g.strokeRect(cx+4*w,top+28*h,22*w,12*h)}else{R(-20,32,10,5,'#222');R(10,32,10,5,'#222')}
+ R(-5,48,10,3,'#c33');R(-62,70,24,100,sk);R(38,70,24,100,sk);R(-52,68,104,160,'#c8bde4');
+ const j=JN[c.n]||['',''];g.fillStyle='#fff';g.textAlign='center';g.font='bold '+(j[0].length>8?11:14)*sc+'px sans-serif';g.fillText(j[0],cx,top+92*h);g.font='bold '+50*sc+'px sans-serif';g.fillText(j[1],cx,top+152*h);
+ R(-42,228,84,40,'#a04aa0');R(-42,268,35,52,sk);R(7,268,35,52,sk);[-48,6].forEach(x=>{R(x,320,42,12,'#fff');R(x,329,42,3,'#b6e000');R(x+8,322,18,4,'#222')})}
+const portrait=(cv,i)=>{const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);skin(g,C[i],cv.width/2,cv.height*.03,cv.width/260*.95)};
+const panel=()=>'<div class="kx-ct">LIKOVI</div><p>Ekipa iz Grobarskog.</p><div class="kx-chg">'+C.map(c=>'<div class="kx-chc"><canvas width="100" height="130"></canvas><b>'+c.n+'</b><small class="r">'+ROLE[c.n]+'</small></div>').join('')+'</div><button class="kx-bk" type="button" data-p="">NAZAD</button>';
+const paintPanel=el=>el.querySelectorAll('.kx-chc canvas').forEach((cv,i)=>{const g=cv.getContext('2d');skin(g,C[i],50,4,.37)});
+return{C,ROLE,skin,portrait,panel,paintPanel}})();
+</script>
+<script>(()=>{
+const O=document.getElementById('kld'),cv=document.getElementById('kldc');if(!O||!cv)return;
+const ctx=cv.getContext('2d'),RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const TXT='KALAČ BRDO',MS=[[0,'Provera mape'],[18,'Šuma se budi'],[36,'Pas Reks nanjuši trag'],[56,'Ekipa se skuplja'],[74,'Palim lampu'],[90,'Spremamo se za Kalač put']];
+const TIPS=['WASD ili džojstik: kretanje. Shift ili TRČI: trčanje.','Space: šut. E: pas. T: sledeći prevoz.','Ako igra seka, smanji grafiku u podešavanjima.','Dodirni ekran jednom pre starta ako nema zvuka.','Pas Reks uvek oseti trag pre tebe.','Upoznaj celu ekipu: LIKOVI u glavnom meniju.'];
+const KP=[[0,0],[.16,.2],[.34,.4],[.42,.42],[.6,.68],[.72,.77],[.79,.78],[1,1]];
+const hd=O.querySelector('.kld-t'),pc=O.querySelector('#kldp'),ms=O.querySelector('#kldm'),tp=O.querySelector('#kldt'),bar=O.querySelector('.kld-bar');
+hd.innerHTML=[...TXT].map((ch,i)=>ch==' '?'<span class="sp" style="--i:'+i+'">&nbsp;</span>':'<span style="--i:'+i+'">'+ch+'</span>').join('');
