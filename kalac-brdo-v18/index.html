@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="sr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kalač Brdo v18 — Noćna Tajna</title>
+<style>html,body{margin:0;background:#09171b;color:#e3ebda;font:16px Arial,sans-serif}main{height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;box-sizing:border-box}h1{font-size:clamp(30px,7vw,62px);margin:0 0 16px}.track{width:min(420px,85vw);height:5px;border-radius:5px;background:#2c3b40;overflow:hidden;margin:20px}.bar{height:100%;width:0;background:#d9e88e;transition:width .15s}small{color:#b7c4b6}</style></head>
+<body><main><h1>KALAČ BRDO <span style="color:#d9e88e">v18</span></h1><div>Učitavanje igre…</div><div class="track"><div class="bar" id="progress"></div></div><small id="status">Povezivanje sa igrom</small></main>
+<script>
+(async()=>{
+const count=20,contents=new Array(count);let next=0,loaded=0;
+async function worker(){while(next<count){const i=next++;const url='./parts/'+String(i).padStart(3,'0')+'.txt';const r=await fetch(url);if(!r.ok)throw Error('Nedostaje deo '+(i+1)+' (HTTP '+r.status+')');contents[i]=await r.text();loaded++;document.getElementById('progress').style.width=Math.round(100*loaded/count)+'%';document.getElementById('status').textContent='Učitano '+loaded+' od '+count+' delova';}}
+await Promise.all(Array.from({length:4},()=>worker()));
+const content=contents.join('');document.open();document.write(content);document.close();
+})().catch(e=>{document.getElementById('status').textContent='Greška pri učitavanju: '+e.message+' — osveži stranicu';console.error('Kalač Brdo v18 loader',e)});
+</script></body></html>
